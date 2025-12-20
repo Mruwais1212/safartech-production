@@ -1,0 +1,269 @@
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap');
+
+body{
+    direction: rtl;
+}
+
+body,
+h1,
+.h1,
+h2,
+.h2,
+h3,
+.h3,
+h4,
+.h4,
+h5,
+.h5,
+h6,
+.h6,
+.lang-link  {
+    font-family: "Tajawal", sans-serif;
+}
+
+.about-section-first .about-section-content {
+    position: absolute;
+    left: 0;
+    right: auto;
+    top: 50%;
+    transform: translate(0, -50%);
+    width: 40%;
+    background-color: #ffffff;
+    border: #E1E4ED 1px solid;
+    border-radius: 15px;
+    padding: 2em;
+}
+.about-section-third img{
+    transform: rotateY(180deg);
+}
+ul{
+    padding-right: 0;
+}
+.day .collapse, .day .collapsing {
+    margin-right: 4em;
+    margin-left: auto;
+}
+.card.payment-card .card-body .payment-info .title .num {
+    margin-right:0;
+    margin-left: 12px;
+}
+.about-tabs .nav-tabs {
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    gap: 15px;
+    padding-bottom: 1.5em;
+    margin-bottom: 1em;
+}
+
+.date-div::before {
+    content: '\F214';
+    position: absolute;
+    left: 15px;
+    right: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 15px;
+    color: #000;
+    pointer-events: none;
+    font-family: 'bootstrap-icons';
+    display: none;
+}
+
+.select2-container--default .select2-selection--single,
+.select2-container--default .select2-results>.select2-results__options{
+    direction: rtl;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    right: auto;
+    left:20px
+}
+.form-check {
+    padding-right: 1.5em;
+}
+.form-check .form-check-input {
+    float: right;
+    margin-left: auto;
+    margin-right: -1.5em;
+
+}
+
+.search-page.hide::after {
+    left: 0px;
+    right: -20%;
+}
+
+#sidebar.active {
+    left: 0;
+    right: auto;
+    display: block;
+}
+
+.asRange .asRange-pointer .asRange-tip{
+    right:0;
+    margin-bottom: 0.5em;
+    transform: translate(50%, 0);
+}
+
+.asRange{
+    margin-bottom: 2em;
+
+}
+.fas.fa-plane{
+    transform: rotateY(180deg);
+}
+.ms-4 {
+    margin-right: auto !important;
+    margin-left: 1.5rem !important;
+}
+.me-4 {
+    margin-left: auto !important;
+    margin-right: 1.5rem !important;
+}
+.single-page .page-name abbr {
+    padding: 0 0 0 1em;
+}
+.plan-title h1 {
+    margin-right: 0;
+    margin-left: 1em;
+}
+.owl-carousel {
+    direction: ltr;
+}
+.hotels-cards .collection-sections .hotel-fees {
+    color: #585858;
+    font-size: 12px;
+    font-weight: 400;
+    text-align: end;
+}
+
+.collapse-div::before {
+    right: 4em;
+    left: auto;
+}
+.collapse-div::after {
+    right: 1.5em;
+    left: auto;
+}
+
+.day .collapse-div p > span {
+    margin-right: 1.5em;
+    margin-left: auto;
+}
+
+.back-to-top {
+    right: auto;
+    left:45px;
+}
+.search-page .search-top-bar .flight-box{
+    justify-content: center;
+}
+.search-page .search-top-bar .flight-box i {
+    margin-left: 0.5em;
+    margin-right: 0;
+}
+div:has(> .search-sidebar) {
+    border-right: 0px solid #CED0D4;
+    border-left: 1px solid #CED0D4;
+}
+.filter-path li::after{
+    content: '\F284';
+}
+.result-cards .result-card .card-section {
+    border-right: 0px solid #DED8D0;
+    border-left: 1px solid #DED8D0;
+}
+.steps-form .circle {
+    left: auto;
+    right: 20px;
+}
+.result-cards .result-card .card-section:nth-child(3) {
+    border-left: 0px solid #DED8D0;
+}
+.custom-number-input button{
+    left: 0;
+    right: auto;
+}
+.pe-4 {
+    padding-right: auto;
+    padding-left: 1.5rem !important;
+}
+.ps-4 {
+    padding-left: auto;
+    padding-right: 1.5rem !important;
+}
+.text-start {
+    text-align: right !important;
+}
+.text-end {
+    text-align: left !important;
+}
+@media (max-width: 992px) {
+    .navbar .nav-item .dropdown-menu {
+        top: 100%;
+        right: -170%;
+        left: auto;
+        transform: translate(0, 0);
+        margin-top: .125rem;
+        position: absolute;
+    }
+}
+
+.input-dropdown{
+    width: 300px;
+    left: 0;
+    right: auto;
+}
+@media (max-width: 992px) {
+    .navbar .nav-item .dropdown-menu {
+        top: 100%;
+        right: -170%;
+        left: auto;
+        transform: translate(0, 0);
+        margin-top: .125rem;
+        position: absolute;
+    }
+    .input-dropdown{
+        width: 100%;
+        right: auto;
+        left: auto;
+    }
+}
+
+.ball {
+    position: absolute;
+    bottom: 0px;
+    display: block;
+    height: 30px;
+    width: 30px;
+    border: 1px solid var(--primary);
+    background-color: var(--primary);
+    border-radius: 50%;
+    bottom: 50%;
+    right: left;
+    -webki-animation: bounce 3.5s infinite;
+    -moz-animation: bounce 3.5s infinite;
+    -ms-animation: bounce 3.5s infinite;
+    -o-animation: bounce 3.5s infinite;
+    animation: bounce 3.5s infinite;
+}
+
+.ball:nth-child(2) {
+    margin-right: 40%;
+    -webkit-animation-delay: 0.5s;
+    -moz-animation-delay: 0.5s;
+    -ms-animation-delay: 0.5s;
+    -o-animation-delay: 0.5s;
+    animation-delay: 0.5s;
+}
+
+.ball:nth-child(3) {
+    margin-right: 80%;
+    -webkit-animation-delay: 1s;
+    -moz-animation-delay: 1s;
+    -ms-animation-delay: 1s;
+    -o-animation-delay: 1s;
+    animation-delay: 1s;
+}

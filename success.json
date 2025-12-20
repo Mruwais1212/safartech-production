@@ -1,0 +1,1307 @@
+{
+    "ResultId": "OB1[TBO]kaXsjH aAt50kMxi6 Yncg0D7kVZ GYhMojfA2RldYvazGzL2W6ePgh334UIFbOR29DFGvJRfBy\/w0gnqljmBZjo69Oz9vQwYhfvbYrv4XldUvNVIquk2X\/UPVhfvcWa60UltDnzXIQyFSRtms5sgi Yv7NukY3x9f ubBebMJ0eRtR1yQrC9P pjbPo gA3yU4V0VTyC2nDjH6OJMnLZ2kqPQMCc6o N37FbivUumLuWASARwBY6mH T6wDrDSII5kZvrELaK22n966XuvCoEmIi\/MzYpH91pd1nJynjHe\/PTVjcVtoiSUXSHT cgI7fWaTF1GZbUTyisqYFSVUHQYsO\/NcGoOEfNObFLjEOTA8jMgtwL5jlREJhQhIkcnhkCmldTo7PSSNye8SpuUVvneSc\/E \/BHX7g70c3gyM bMBGz4DdSEToflTCAchrT7mrCCqs\/YgIbmWzbIGY94ULri\/ v KIxvI1k3Tof0D5d7ynbjytvG2xTCo3Cla7yepwxzOxVlfwCEYgHjovv1l7 TOXbS  vWjx6TMgpfXmAwXZxYCxHbsBdb0a2Bp9vTbSeq27af3F9HmQxAlwuTAJWaa0HAXZfP56aN\/C9A0E0=",
+    "Itinerary": {
+        "AgencySalesRepresentative": 0,
+        "IsHoldEligibleForLcc": false,
+        "IsManual": false,
+        "IssuancePCC": null,
+        "FlightId": 0,
+        "Segments_BE": [
+            {
+                "Baggage": "1 PC(s)",
+                "CabinBaggage": "1 PC(s)",
+                "CabinClass": 2,
+                "SupplierFareClass": null,
+                "TripIndicator": 1,
+                "SegmentIndicator": 1,
+                "Airline": {
+                    "AirlineCode": "SV",
+                    "AirlineName": "Saudia",
+                    "FlightNumber": "759",
+                    "FareClass": "V",
+                    "OperatingCarrier": "SV"
+                },
+                "NoOfSeatAvailable": 9,
+                "Origin": {
+                    "Airport": {
+                        "AirportCode": "DEL",
+                        "AirportName": "Indira Gandhi Airport",
+                        "Terminal": "3",
+                        "CityCode": "DEL",
+                        "CityName": "Delhi",
+                        "CountryCode": "IN",
+                        "CountryName": "India"
+                    },
+                    "DepTime": "2025-09-06T20:05:00"
+                },
+                "Destination": {
+                    "Airport": {
+                        "AirportCode": "JED",
+                        "AirportName": "King Abdulaziz Int'l",
+                        "Terminal": "1",
+                        "CityCode": "JED",
+                        "CityName": "Jeddah",
+                        "CountryCode": "SA",
+                        "CountryName": "Saudi Arabia"
+                    },
+                    "ArrTime": "2025-09-06T23:05:00"
+                },
+                "AccumulatedDuration": 330,
+                "Duration": 330,
+                "GroundTime": 0,
+                "Mile": 0,
+                "StopOver": false,
+                "FlightInfoIndex": "",
+                "StopPoint": "",
+                "StopPointArrivalTime": "0001-01-01T00:00:00",
+                "StopPointDepartureTime": "0001-01-01T00:00:00",
+                "Craft": "773",
+                "Remark": null,
+                "IsETicketEligible": true,
+                "FlightStatus": "Confirmed",
+                "Status": "",
+                "FareClassification": null
+            }
+        ],
+        "Passenger": [
+            {
+                "PaxId": 0,
+                "Title": "Mr",
+                "FirstName": "Eslam",
+                "LastName": "Ahmed",
+                "Mobile1": "54322323233",
+                "Mobile1CountryCode": "966",
+                "IsLeadPax": true,
+                "DateOfBirth": "2006-09-01T00:00:00",
+                "Type": "1",
+                "Gender": "1",
+                "Email": "eslamdahshan61@gmail.com",
+                "Nationality": {
+                    "CountryCode": "DZ",
+                    "CountryName": "Algeria"
+                },
+                "PassportNo": "53443434433",
+                "PassportExpiry": "2026-09-06T00:00:00",
+                "AddressLine1": "Cairo",
+                "Country": {
+                    "CountryCode": "SA",
+                    "CountryName": "Saudi Arabia"
+                },
+                "PaxKey": "AHMEDESLAMMR",
+                "Fare_BE": {
+                    "ServiceFeeDisplayType": 0,
+                    "Currency": "SAR",
+                    "BaseFare": 682.5,
+                    "Tax": 458.37,
+                    "TaxBreakup": [
+                        {
+                            "key": "K3",
+                            "value": 0
+                        },
+                        {
+                            "key": "YQTax",
+                            "value": 16.4
+                        },
+                        {
+                            "key": "YR",
+                            "value": 273.33
+                        },
+                        {
+                            "key": "PSF",
+                            "value": 0
+                        },
+                        {
+                            "key": "UDF",
+                            "value": 0
+                        },
+                        {
+                            "key": "INTax",
+                            "value": 0
+                        },
+                        {
+                            "key": "TransactionFee",
+                            "value": 0
+                        },
+                        {
+                            "key": "OtherTaxes",
+                            "value": 168.64
+                        }
+                    ],
+                    "YQTax": 16.4,
+                    "AdditionalTxnFeeOfrd": 0,
+                    "AdditionalTxnFeePub": 0,
+                    "PGCharge": 0,
+                    "OtherCharges": 0,
+                    "ChargeBU": [
+                        {
+                            "key": "TBOMARKUP",
+                            "value": 0
+                        },
+                        {
+                            "key": "GLOBALPROCUREMENTCHARGE",
+                            "value": 0
+                        },
+                        {
+                            "key": "CONVENIENCECHARGE",
+                            "value": 0
+                        },
+                        {
+                            "key": "OTHERCHARGE",
+                            "value": 0
+                        }
+                    ],
+                    "Discount": 0,
+                    "PublishedFare": 1140.87,
+                    "CommissionEarned": 0,
+                    "PLBEarned": 0,
+                    "IncentiveEarned": 0,
+                    "OfferedFare": 1140.86,
+                    "TdsOnCommission": 0,
+                    "TdsOnPLB": 0,
+                    "TdsOnIncentive": 0,
+                    "ServiceFee": 0,
+                    "TotalBaggageCharges": 0,
+                    "TotalMealCharges": 0,
+                    "TotalSeatCharges": 0,
+                    "TotalSpecialServiceCharges": 0,
+                    "VAT": {
+                        "IsVatApplicable": false,
+                        "VATAmount": 0,
+                        "VATCurrency": null,
+                        "VATRate": 0,
+                        "VATType": 1
+                    }
+                },
+                "PassportIssueCountryCode": null,
+                "PassportIssueDate": "0001-01-01T00:00:00",
+                "Mobile2": "",
+                "Mobile2CountryCode": "",
+                "PassengerIdType": 0,
+                "PassengerIdNo": null,
+                "PassengerIdExpiry": "0001-01-01T00:00:00",
+                "PassengerIdIssueDate": "0001-01-01T00:00:00",
+                "PassengerIdIssueCountryCode": null,
+                "City": {
+                    "CountryCode": null,
+                    "CityCode": "RUH",
+                    "CityName": "Riyadh"
+                },
+                "AddressLine2": "",
+                "Meal": null,
+                "Seat": null,
+                "FFAirline": null,
+                "FFNumber": null,
+                "TboAirPaxId": 0,
+                "PaxBaggage": [],
+                "PaxMeal": [],
+                "IDCardNo": null,
+                "ZipCode": null,
+                "PaxSeat": null,
+                "Ticket": null,
+                "PaxStatus": 0,
+                "TurkeyNumber": null,
+                "SavePaxDetails": true,
+                "IsTboAirBaggageAdded": false,
+                "IdDetailCode": null,
+                "DocumentDetails": null,
+                "IdDetails": [
+                    {
+                        "PaxId": 0,
+                        "IdType": 1,
+                        "IdNumber": "53443434433",
+                        "IssuedCountryCode": null,
+                        "IssueDate": null,
+                        "ExpiryDate": "2025-09-06T00:00:00"
+                    }
+                ]
+            }
+        ],
+        // "FareRules": [
+        //     {
+        //         "Airline": "SV",
+        //         "DepartureTime": "2025-09-06T20:05:00",
+        //         "Destination": "JED",
+        //         "FareBasisCode": "VAOTINB4",
+        //         "FareInclusions": null,
+        //         "FareRestriction": "",
+        //         "FareRuleDetail": "<table border='1'><tr><th>Sector Details</th><th>Pax Type</th><th>Duration</th><th>Amount</th></tr><tr><th rowspan='1'>DEL-JED</th><th rowspan='1'>Adult</th><td>REST OF TIME</td><td>INR 8180</td></tr></table><br /><br /><ul><li><b>There is no Minimum Stay requirement</b><br><li><b>There is no Maximum Stay requirement</b><br><fieldset><legend><b><b>Adult</b><br></b></legend><ul><li><b>Revalidation/Reissue</b><br>Fare Component <b>VAOTINB4</b>&emsp; Sector <b>DEL-JED</b> &nbsp;<ul><li>Revalidation, including failure to show at subsequent flight(s) : <b>Not Allowed</b></li><li>Reissue, including failure to show at first flight : <b>Allowed with Restrictions</b></li><li>Revalidation/Reissue request, including failure to show at first flight, must be made prior to <b>04SEP26  0000</b></li><li><b>Prior to Departure of journey</b><ul><u>Revalidation</u> : <b>Allowed with Restrictions</b><li>Penalty fee : <b>4675 INR(at today exchange rates 4675 INR) </b></li><li>Maximum revalidation penalty fee for entire ticket (per revalidation) : <b>4675 INR</b></li><u>Reissue</u><li>Penalty fee between : <b>0 INR/4675 INR</b></li><li>Maximum reissue penalty fee for entire ticket (per reissue) : <b>4675 INR</b></li></ul></li><li><b>Failure to show at first flight</b><ul><li>Revalidation : <b>Not Allowed</b></li><u>Reissue</u><li>Penalty fee : <b>18695 INR(at today exchange rates 18695 INR) </b></li><li>Maximum reissue penalty fee for entire ticket (per reissue) : <b>18695 INR</b></li></ul></li><li><b>After departure of journey</b><ul><li>Revalidation/Reissue request must be made prior to : <b>No restriction</b></li></ul></li><li><b>Failure to show at subsequent flight(s)</b><ul><li>Revalidation/Reissue request must be made prior to : <b>No restriction</b></li></ul></li></ul></li><li><b>Refund</b><br>Fare Component <b>VAOTINB4</b>&emsp; Sector <b>DEL-JED</b> &nbsp;<ul><li>Refund, including failure to show at subsequent flight(s) : <b>Not Allowed</b></li><li><b>Prior to Departure of journey</b><ul><li>Refund : <b>Allowed with Restrictions</b></li><li>Penalty fee : <b>8180 INR(at today exchange rates 8180 INR) </b></td></tr><li>Maximum Refund penalty fee for entire ticket : <b>8180 INR</b></li><li>Refund request must be made prior to : <b>No restriction</b></li></ul></li><li><b>Failure to show at first flight</b><ul><li>Refund : <b>Not Allowed</b></li><li>Refund request must be made prior to : <b>No restriction</b></li></ul></li><li><b>After departure of journey</b><ul><li>Refund request must be made prior to : <b>No restriction</b></li></ul></li><li><b>Failure to show at subsequent flight(s)</b><ul><li>Refund request must be made prior to : <b>No restriction</b></li></ul></li></ul></li><br><b>* Revalidation is a modification of the original ticket without any reissue of a new ticket.</b><br><b>* For Reissue, Penalty fees are in addition to any difference in fare.</b><br><b>* For Refund, certain Taxes are non-refundable.</b></ul></fieldset></ul><br/> <br/>RateClass : VAOTINB4<br/>FareClass : VAOTINB4<br/>marketing Company : SV<br/>Booking Class : V<br/>Origin : DEL<br/>destination : JED<br/>ruleSectionLocalId : 1<br/>ruleCategoryCode : (5)<br/>AP.ADVANCE RES/TKT  RESERVATIONS ARE REQUIRED FOR ALL SECTORS.         NOTE -          IF A TICKET IS USED OUT OF SEQUENCE SV RESERVES TH          E RIGHT TO CANCEL ANY PNR OR INVALIDATE THE REMAIN          ING FLIGHT COUPONS.<br/>ruleSectionLocalId : 2<br/>ruleCategoryCode : (16)<br/>PE.PENALTIESFOR VAOTINB4 TYPE FARES         NOTE -          THIS IS A QUICK REFERENCE ONLY          TO DISPLAY DETAILED PENALTIES MUST CHECK BELOW          CATEGORIES          CHANGES/VC FQN31 CAT31 VOLUNTARY CHANGES          REFUND /VR FQN33 CAT33 VOLUNTARY REFUND          ------------------------------          RESERVATION REQUIRED TKT MUST NOT LEFT OPEN.          PENALTY WILL APPLY BASED ON THE TRAVEL DATE IN          THE TKT.          CANCELING THE RESERVATION WITH NO ACTION ON THE          TKT WILL LEAD TO NO-SHOW PENALTY FEES.          -----------------------------          E3 TAX IS NON-REFUNDABLE EXCEPT FOR INVOLUNTARY          CASES SOME OTHER TAXES ARE NON REF PLEASE CHECK          TAX RULE          -----------------------------          FOR PARTIALLY USED TICKET HISTORICAL FARE WILL          APPLY.          FOR UNUSED TICKET CURRENT FARE WILL APPLY.          -----------------------------          ONLY ONE PENALTY IS APPLIED IN ORDER TO          REVALIDATE/REISSUE OR REFUND          AT SAME TIME.          ------------------------------------          FAIL TO BOARD FEES SAR 1000  CHANGES    BEFORE DEPARTURE      PER TICKET CHARGE SAR 200.00 FOR REISSUE/REVALIDATION.      CHILD/INFANT DISCOUNTS APPLY.  CANCELLATIONS    BEFORE DEPARTURE      PER TICKET CHARGE SAR 350.00 FOR REFUND.      CHILD/INFANT DISCOUNTS APPLY.  CHANGES/CANCELLATIONS    AFTER DEPARTURE      PER COUPON CHARGE SAR 800.00 FOR REFUND/REISSUE/        REVALIDATION.      CHILD/INFANT DISCOUNTS APPLY.<br/><ul><li>APART FROM AIRLINE CHARGES,GST+RAF+ APPLICABLE CHARGES IF ANY, WILL BE CHARGED.</li><li>MENTIONED FEE ARE INDICATIVE PER PAX AND PER SECTOR.</li><li>FOR DOMESTIC BOOKINGS, PASSENGERS ARE REQUIRED TO SUBMIT THE CANCELLATION OR REISSUE REQUEST AT LEAST 2 HOURS BEFORE THE AIRLINES CANCELLATION AND REISSUE POLICY.</li><li>FOR INTERNATIONAL BOOKINGS, PASSENGERS ARE REQUIRED TO SUBMIT THE CANCELLATION OR REISSUE REQUEST AT LEAST 4 HOURS BEFORE THE AIRLINES CANCELLATION AND REISSUE POLICY.</li></ul>",
+        //         "FlightId": -2147483648,
+        //         "Origin": "DEL",
+        //         "ReturnDate": "0001-01-01T00:00:00"
+        //     }
+        // ],
+        "PNR": "",
+        "InactivePNR": null,
+        "SplitPNR": null,
+        "SupplierCode": null,
+        "FlightBookingSource": 72,
+        "Destination": "JED",
+        "FareType": "PUBL",
+      
+        "LastVoidDate": "0001-01-01T00:00:00",
+        "Origin": "DEL",
+        "CreatedOn": "2025-09-04",
+        "TboAirBookingSourceId": 0,
+        "PaymentMode": 0,
+        "FailedBookingId": 0,
+        
+        "Ticketed": false,
+        "IsDomestic": false,
+      
+        "TravelDate": "2025-09-06T20:05:00",
+        "NonRefundable": true,
+        "BookingId": 0,
+        "BookingMode": 5,
+        "AgentRefNo": null,
+        "IsLcc": false,
+        "ClientIP": null,
+        "AirlineRemark": "",
+        "SearchType": 1,
+        "OnBehalfOf": 0,
+        "EarnedLoyaltyPoints": 0,
+        "TrackingId": "c632510f-665e-41d7-a105-b3997ef0e112",
+        "SupplierGroupId": 5,
+        "TripId": null,
+        "TripName": "Eslam Ahmed Trip",
+        "PNRStatus": 0,
+        "StaffRemarks": null,
+        "PricingKeyDetail": null,
+        "TokenId": "032adbe8-55ac-4412-b806-12b8817ae6e8",
+        "SSRData": null,
+        "isNewBooking": false,
+        "ParentBookingId": 0,
+        "isFromBulkImport": false,
+        "isApplicableforNewWidgetWallet": false,
+        "callBackUrl": "tboairdemo.techmaster.in",
+        "isCancellationcoverAdded": false,
+        "FoidDetails": {},
+        "BookingOperations": null,
+        "UpsellOptionsList": null,
+        "PaymentKey": null,
+        "HotelConfirmationNumber": null,
+        "HelpCenter": null,
+        
+       
+        "CustomizedFareType": null,
+        "ResultType": 2,
+
+          "FareInclusions": [],
+            "FirstNameFormat": null,
+            "IsBookableIfSeatNotAvailable": false,
+            "IsExclusiveFare": false,
+            "IsFreeMealAvailable": false,
+            "IsHoldAllowedWithSSR": false,
+            "IsHoldMandatoryWithSSR": false,
+            "LastNameFormat": null,
+            "ResultIndex": "OB1[TBO]kaXsjH aAt50kMxi6 Yncg0D7kVZ GYhMojfA2RldYvazGzL2W6ePgh334UIFbOR29DFGvJRfBy/w0gnqljmBZjo69Oz9vQwYhfvbYrv4XldUvNVIquk2X/UPVhfvcWa60UltDnzXIQyFSRtms5sgi Yv7NukY3x9f ubBebMJ0eRtR1yQrC9P pjbPo gA3yU4V0VTyC2nDjH6OJMnLZ2kqPQMCc6o N37FbivUumLuWASARwBY6mH T6wDrDSII5kZvrELaK22n966XuvCoEmIi/MzYpH91pd1nJynjHe/PTVjcVtoiSUXSHT cgI7fWaTF1GZbUTyisqYFSVUHQYsO/NcGoOEfNObFLjEOTA8jMgtwL5jlREJhQhIkcnhkCmldTo7PSSNye8SpuUVvneSc/E /BHX7g70c3gyM bMBGz4DdSEToflTCAchrT7mrCCqs/YgIbmWzbIGY94ULri/ v KIxvI1k3Tof0D5d7ynbjytvG2xTCo3Cla7yepwxzOxVlfwCEYgHjovv1l7 TOXbS  vWjx6TMgpfXmAwXZxYCxHbsBdb0a2Bp9vTbSeq27af3F9HmQxAlwuTAJWaa0HAXZfP56aN/C9A0E0=",
+            "Source": 135,
+            "IsLCC": false,
+            "IsRefundable": false,
+            "IsPanRequiredAtBook": false,
+            "IsPanRequiredAtTicket": false,
+            "IsPassportRequiredAtBook": false,
+            "IsPassportRequiredAtTicket": true,
+            "GSTAllowed": false,
+            "IsCouponAppilcable": true,
+            "IsGSTMandatory": false,
+            
+            "IsPassportFullDetailRequiredAtBook": false,
+            "ResultFareType": "RegularFare",
+            "Fare": {
+                "ServiceFeeDisplayType": 0,
+                "Currency": "SAR",
+                "BaseFare": 682.50,
+                "Tax": 458.37,
+                "TaxBreakup": [
+                    {
+                        "key": "K3",
+                        "value": 48.65
+                    },
+                    {
+                        "key": "YQTax",
+                        "value": 16.40
+                    },
+                    {
+                        "key": "YR",
+                        "value": 273.33
+                    },
+                    {
+                        "key": "PSF",
+                        "value": 0
+                    },
+                    {
+                        "key": "UDF",
+                        "value": 0
+                    },
+                    {
+                        "key": "INTax",
+                        "value": 41.93
+                    },
+                    {
+                        "key": "TransactionFee",
+                        "value": 0
+                    },
+                    {
+                        "key": "OtherTaxes",
+                        "value": 78.06
+                    }
+                ],
+                "YQTax": 16.40,
+                "AdditionalTxnFeeOfrd": 0,
+                "AdditionalTxnFeePub": 0,
+                "PGCharge": 0,
+                "OtherCharges": 0,
+                "ChargeBU": [
+                    {
+                        "key": "TBOMARKUP",
+                        "value": 0
+                    },
+                    {
+                        "key": "GLOBALPROCUREMENTCHARGE",
+                        "value": 0
+                    },
+                    {
+                        "key": "CONVENIENCECHARGE",
+                        "value": 0
+                    },
+                    {
+                        "key": "OTHERCHARGE",
+                        "value": 0
+                    }
+                ],
+                "Discount": 0,
+                "PublishedFare": 1140.87,
+                "CommissionEarned": 0,
+                "PLBEarned": 0,
+                "IncentiveEarned": 0,
+                "OfferedFare": 1140.86,
+                "TdsOnCommission": 0,
+                "TdsOnPLB": 0,
+                "TdsOnIncentive": 0,
+                "ServiceFee": 0,
+                "TotalBaggageCharges": 0,
+                "TotalMealCharges": 0,
+                "TotalSeatCharges": 0,
+                "TotalSpecialServiceCharges": 0,
+                "VAT": {
+                    "IsVatApplicable": false,
+                    "VATAmount": 0,
+                    "VATCurrency": null,
+                    "VATRate": 0.0,
+                    "VATType": 1
+                }
+            },
+            "BaseCurrencyFare": {
+                "ServiceFeeDisplayType": 0,
+                "Currency": "USD",
+                "BaseFare": 182.000369661,
+                "Tax": 122.232527001,
+                "TaxBreakup": [
+                    {
+                        "key": "K3",
+                        "value": 12.9739951140
+                    },
+                    {
+                        "key": "YQTax",
+                        "value": 4.3732567800
+                    },
+                    {
+                        "key": "YR",
+                        "value": 72.8876130000
+                    },
+                    {
+                        "key": "PSF",
+                        "value": 0
+                    },
+                    {
+                        "key": "UDF",
+                        "value": 0
+                    },
+                    {
+                        "key": "INTax",
+                        "value": 11.1809598342
+                    },
+                    {
+                        "key": "TransactionFee",
+                        "value": 0
+                    },
+                    {
+                        "key": "OtherTaxes",
+                        "value": 20.8167022728
+                    }
+                ],
+                "YQTax": 4.3732567800,
+                "AdditionalTxnFeeOfrd": 0,
+                "AdditionalTxnFeePub": 0.0000000000,
+                "PGCharge": 0,
+                "OtherCharges": 0.0,
+                "ChargeBU": [
+                    {
+                        "key": "TBOMARKUP",
+                        "value": 0
+                    },
+                    {
+                        "key": "GLOBALPROCUREMENTCHARGE",
+                        "value": 0
+                    },
+                    {
+                        "key": "CONVENIENCECHARGE",
+                        "value": 0
+                    },
+                    {
+                        "key": "OTHERCHARGE",
+                        "value": 0.0
+                    }
+                ],
+                "Discount": 0,
+                "PublishedFare": 304.232896662,
+                "CommissionEarned": 0,
+                "PLBEarned": 0,
+                "IncentiveEarned": 0,
+                "OfferedFare": 304.23,
+                "TdsOnCommission": 0,
+                "TdsOnPLB": 0,
+                "TdsOnIncentive": 0,
+                "ServiceFee": 0,
+                "TotalBaggageCharges": 0,
+                "TotalMealCharges": 0,
+                "TotalSeatCharges": 0,
+                "TotalSpecialServiceCharges": 0,
+                "VAT": {
+                    "IsVatApplicable": false,
+                    "VATAmount": 0.00,
+                    "VATCurrency": null,
+                    "VATRate": 0.0,
+                    "VATType": 1
+                }
+            },
+            "FareBreakdown": [
+                {
+                    "Currency": "SAR",
+                    "PassengerType": 1,
+                    "PassengerCount": 1,
+                    "BaseFare": 682.50,
+                    "Tax": 458.37,
+                    "TaxBreakUp": [
+                        {
+                            "key": "YQTax",
+                            "value": 16.40
+                        },
+                        {
+                            "key": "YR",
+                            "value": 273.33
+                        },
+                        {
+                            "key": "K3",
+                            "value": 48.65
+                        },
+                        {
+                            "key": "INTax",
+                            "value": 41.93
+                        },
+                        {
+                            "key": "OtherTaxes",
+                            "value": 78.06
+                        }
+                    ],
+                    "YQTax": 16.40,
+                    "AdditionalTxnFeeOfrd": 0,
+                    "AdditionalTxnFeePub": 0,
+                    "PGCharge": 0,
+                    "SupplierReissueCharges": 0
+                }
+            ],
+            "BaseCurrencyFareBreakdown": [
+                {
+                    "Currency": "USD",
+                    "PassengerType": 1,
+                    "PassengerCount": 1,
+                    "BaseFare": 182.000369661,
+                    "Tax": 122.232527001,
+                    "TaxBreakUp": [
+                        {
+                            "key": "YQTax",
+                            "value": 4.3732567800
+                        },
+                        {
+                            "key": "YR",
+                            "value": 72.8876130000
+                        },
+                        {
+                            "key": "K3",
+                            "value": 12.9739951140
+                        },
+                        {
+                            "key": "INTax",
+                            "value": 11.1809598342
+                        },
+                        {
+                            "key": "OtherTaxes",
+                            "value": 20.8167022728
+                        }
+                    ],
+                    "YQTax": 4.3732567800,
+                    "AdditionalTxnFeeOfrd": 0,
+                    "AdditionalTxnFeePub": 0.0000000000,
+                    "PGCharge": 0,
+                    "SupplierReissueCharges": 0
+                }
+            ],
+            "Segments": [
+                [
+                    {
+                        "Baggage": "1 PC(s)",
+                        "CabinBaggage": "1 PC(s)",
+                        "CabinClass": 2,
+                        "SupplierFareClass": null,
+                        "TripIndicator": 1,
+                        "SegmentIndicator": 1,
+                        "Airline": {
+                            "AirlineCode": "SV",
+                            "AirlineName": "Saudi Arabian Airlines",
+                            "FlightNumber": "759",
+                            "FareClass": "V",
+                            "OperatingCarrier": "SV"
+                        },
+                        "Origin": {
+                            "Airport": {
+                                "AirportCode": "DEL",
+                                "AirportName": "Indira Gandhi Airport",
+                                "Terminal": "3",
+                                "CityCode": "DEL",
+                                "CityName": "Delhi",
+                                "CountryCode": "IN",
+                                "CountryName": "India"
+                            },
+                            "DepTime": "2025-09-06T20:05:00"
+                        },
+                        "Destination": {
+                            "Airport": {
+                                "AirportCode": "JED",
+                                "AirportName": "King Abdulaziz Int'l",
+                                "Terminal": "1",
+                                "CityCode": "JED",
+                                "CityName": "Jeddah",
+                                "CountryCode": "SA",
+                                "CountryName": "Saudi Arabia"
+                            },
+                            "ArrTime": "2025-09-06T23:05:00"
+                        },
+                        "AccumulatedDuration": 330,
+                        "Duration": 330,
+                        "GroundTime": 0,
+                        "Mile": 0,
+                        "StopOver": false,
+                        "FlightInfoIndex": "",
+                        "StopPoint": "",
+                        "StopPointArrivalTime": "0001-01-01T00:00:00",
+                        "StopPointDepartureTime": "0001-01-01T00:00:00",
+                        "Craft": "773",
+                        "Remark": null,
+                        "IsETicketEligible": true,
+                        "FlightStatus": "Confirmed",
+                        "Status": "",
+                        "FareClassification": null
+                    }
+                ]
+            ],
+            "LastTicketDate": "2025-09-06T00:00:00",
+            "TicketAdvisory": null,
+            "FareRules": [
+                {
+                    "Origin": "DEL",
+                    "Destination": "JED",
+                    "Airline": "SV",
+                    "FareBasisCode": "VAOTINB4",
+                    "FareRuleDetail": "",
+                    "FareRestriction": "Y",
+                    "FareFamilyCode": "",
+                    "FareRuleIndex": ""
+                }
+            ],
+            "AirlineCode": "SV",
+            "MiniFareRules": [
+                [
+                    {
+                        "JourneyPoints": "",
+                        "Type": "",
+                        "From": "",
+                        "To": "",
+                        "Unit": "",
+                        "Details": "",
+                        "OnlineReissueAllowed": false,
+                        "OnlineRefundAllowed": false
+                    }
+                ]
+            ],
+            "ValidatingAirline": "SV",
+            "DealId": "A-0|O-0|S-0",
+            "FareClassification": {
+                "Color": "lightBlue",
+                "Type": "Publish"
+            }
+    },
+    "PNR": "",
+    "BookingId": "",
+    "CorporateCode": null,
+    "ConfirmPriceChangeTicket": false,
+    "IPAddress": "115.114.12.58",
+    "IsGenerateTicketRequestFromQueues": false,
+    "SegmentAnalyticsToken": "fdhzelbwysit22iibnxsghsj",
+    "TokenId": "032adbe8-55ac-4412-b806-12b8817ae6e8",
+    "TrackingId": "c632510f-665e-41d7-a105-b3997ef0e112",
+    "EndUserBrowserAgent": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/124.0.0.0 Safari\/537.36",
+    "PointOfSale": "IN",
+    "RequestOrigin": "India-https:\/\/www.tboair.com",
+    "UserData": "eslamdahshan61@gmail.com,966-54322323233,Mr Eslam Ahmed",
+    "WebServerIP": null
+}
+
+
+
+
+ 
+
+
+
+/// FAILED 
+
+
+
+{
+    "ResultId": "OB1[TBO]Ao7xLZ7Um3vzdrCjqBdqZDmyRVtfVQzJ7z7y YKYFlJRKMu1fjafWYVdE\/67OuCHd8OD1tVCh5BpEmO5FavcYUkzBYNujrsXBNbKIQsieRvmy3m0aQn3RcA5boCfwEv07mF\/fZEu88dsd0SWJ13fyNL4jFTg8qPFCr CgjkNpNjCAn1Sanc9BwvkHyRY3s0ClB198oJWRXzM 5lSu1orw9fQIUIoDYG3d\/bchmVJQJop0C7eqY4G107VMDwyWpZZNJ9XXoSx1cQyC1q1IsOn6lsqtX4lBk8CePscQUlg6EzNULwle6xyVghyld2vY DaFhdGo3Uc\/AeSOSB1CrscEXqHwQ0AuNaZq3pu5CiCm4LD9wHQr4yYmz\/vc2V8jgsFx H9y\/evzvyNkbAEKc8\/aYUxQBOQSlKRWy6MN10Eeyz5GQPjbwsD v8zwT9G\/jfHWAZa2nWTumus9EMuCa5PCEbnV7QJN85bbaPI1AO3lvhh9DT6m6iKoGl9OtlxmvW0\/wLHVKazySDaTHYQXsMRyEVvUYKU5FhERNZeLs6igQ5JSfa5iA6Jm6nMHda 6tVIFLvvWaUjWF9QmtKhJcezmViXfgL8W7aioSoRbSKZQVg=",
+    "Itinerary": {
+        "AgencySalesRepresentative": 0,
+        "IsHoldEligibleForLcc": false,
+        "IsManual": false,
+        "IssuancePCC": null,
+        "FlightId": 0,
+        "Segments_BE": [
+            {
+                "Baggage": "1 PC(s)",
+                "CabinBaggage": "1 PC(s)",
+                "CabinClass": 2,
+                "SupplierFareClass": null,
+                "TripIndicator": 1,
+                "SegmentIndicator": 1,
+                "Airline": {
+                    "AirlineCode": "SV",
+                    "AirlineName": "Saudi Arabian Airlines",
+                    "FlightNumber": "759",
+                    "FareClass": "V",
+                    "OperatingCarrier": "SV"
+                },
+                "Origin": {
+                    "Airport": {
+                        "AirportCode": "DEL",
+                        "AirportName": "Indira Gandhi Airport",
+                        "Terminal": "3",
+                        "CityCode": "DEL",
+                        "CityName": "Delhi",
+                        "CountryCode": "IN",
+                        "CountryName": "India"
+                    },
+                    "DepTime": "2025-09-06T20:05:00"
+                },
+                "Destination": {
+                    "Airport": {
+                        "AirportCode": "JED",
+                        "AirportName": "King Abdulaziz Int'l",
+                        "Terminal": "1",
+                        "CityCode": "JED",
+                        "CityName": "Jeddah",
+                        "CountryCode": "SA",
+                        "CountryName": "Saudi Arabia"
+                    },
+                    "ArrTime": "2025-09-06T23:05:00"
+                },
+                "AccumulatedDuration": 330,
+                "Duration": 330,
+                "GroundTime": 0,
+                "Mile": 0,
+                "StopOver": false,
+                "FlightInfoIndex": "",
+                "StopPoint": "",
+                "StopPointArrivalTime": "0001-01-01T00:00:00",
+                "StopPointDepartureTime": "0001-01-01T00:00:00",
+                "Craft": "773",
+                "Remark": null,
+                "IsETicketEligible": true,
+                "FlightStatus": "Confirmed",
+                "Status": "",
+                "FareClassification": null
+            }
+        ],
+        "Passenger": [
+            {
+                "PaxId": 0,
+                "Title": "Mr",
+                "FirstName": "Eslam",
+                "LastName": "Ahmed",
+                "Mobile1": "1555565432",
+                "Mobile1CountryCode": "966",
+                "IsLeadPax": true,
+                "DateOfBirth": "2004-04-15T00:00:00",
+                "Type": "1",
+                "Gender": "1",
+                "Email": "eslamdahshan61@gmail.com",
+                "Nationality": {
+                    "CountryCode": "BH",
+                    "CountryName": "Bahrain"
+                },
+                "PassportNo": "543212345654323",
+                "PassportExpiry": "2027-12-22T00:00:00",
+                "AddressLine1": "Cairo",
+                "Country": {
+                    "CountryCode": "SA",
+                    "CountryName": "Saudi Arabia"
+                },
+                "PaxKey": "AHMEDESLAMMR",
+                "Fare_BE": {
+                    "ServiceFeeDisplayType": 0,
+                    "Currency": "SAR",
+                    "BaseFare": 682.5,
+                    "Tax": 458.37,
+                    "TaxBreakup": [
+                        {
+                            "key": "K3",
+                            "value": 48.65
+                        },
+                        {
+                            "key": "YQTax",
+                            "value": 16.4
+                        },
+                        {
+                            "key": "YR",
+                            "value": 273.33
+                        },
+                        {
+                            "key": "PSF",
+                            "value": 0
+                        },
+                        {
+                            "key": "UDF",
+                            "value": 0
+                        },
+                        {
+                            "key": "INTax",
+                            "value": 41.93
+                        },
+                        {
+                            "key": "TransactionFee",
+                            "value": 0
+                        },
+                        {
+                            "key": "OtherTaxes",
+                            "value": 78.06
+                        }
+                    ],
+                    "YQTax": 16.4,
+                    "AdditionalTxnFeeOfrd": 0,
+                    "AdditionalTxnFeePub": 0,
+                    "PGCharge": 0,
+                    "OtherCharges": 0,
+                    "ChargeBU": [
+                        {
+                            "key": "TBOMARKUP",
+                            "value": 0
+                        },
+                        {
+                            "key": "GLOBALPROCUREMENTCHARGE",
+                            "value": 0
+                        },
+                        {
+                            "key": "CONVENIENCECHARGE",
+                            "value": 0
+                        },
+                        {
+                            "key": "OTHERCHARGE",
+                            "value": 0
+                        }
+                    ],
+                    "Discount": 0,
+                    "PublishedFare": 1140.87,
+                    "CommissionEarned": 0,
+                    "PLBEarned": 0,
+                    "IncentiveEarned": 0,
+                    "OfferedFare": 1140.86,
+                    "TdsOnCommission": 0,
+                    "TdsOnPLB": 0,
+                    "TdsOnIncentive": 0,
+                    "ServiceFee": 0,
+                    "TotalBaggageCharges": 0,
+                    "TotalMealCharges": 0,
+                    "TotalSeatCharges": 0,
+                    "TotalSpecialServiceCharges": 0,
+                    "VAT": {
+                        "IsVatApplicable": false,
+                        "VATAmount": 0,
+                        "VATCurrency": null,
+                        "VATRate": 0,
+                        "VATType": 1
+                    }
+                },
+                "PassportIssueCountryCode": null,
+                "PassportIssueDate": "0001-01-01T00:00:00",
+                "Mobile2": "",
+                "Mobile2CountryCode": "",
+                "PassengerIdType": 0,
+                "PassengerIdNo": null,
+                "PassengerIdExpiry": "0001-01-01T00:00:00",
+                "PassengerIdIssueDate": "0001-01-01T00:00:00",
+                "PassengerIdIssueCountryCode": null,
+                "City": {
+                    "CountryCode": null,
+                    "CityCode": "RUH",
+                    "CityName": "Riyadh"
+                },
+                "AddressLine2": "",
+                "Meal": null,
+                "Seat": null,
+                "FFAirline": null,
+                "FFNumber": null,
+                "TboAirPaxId": 0,
+                "PaxBaggage": [],
+                "PaxMeal": [],
+                "IDCardNo": null,
+                "ZipCode": null,
+                "PaxSeat": null,
+                "Ticket": null,
+                "PaxStatus": 0,
+                "TurkeyNumber": null,
+                "SavePaxDetails": true,
+                "IsTboAirBaggageAdded": false,
+                "IdDetailCode": null,
+                "DocumentDetails": null,
+                "IdDetails": [
+                    {
+                        "PaxId": 0,
+                        "IdType": 1,
+                        "IdNumber": "543212345654323",
+                        "IssuedCountryCode": null,
+                        "IssueDate": null,
+                        "ExpiryDate": "2027-12-22T00:00:00"
+                    }
+                ]
+            }
+        ],
+        "FareRules": [
+            {
+                "Origin": "DEL",
+                "Destination": "JED",
+                "Airline": "SV",
+                "FareBasisCode": "VAOTINB4",
+                "FareRuleDetail": "",
+                "FareRestriction": "Y",
+                "FareFamilyCode": "",
+                "FareRuleIndex": ""
+            }
+        ],
+        "PNR": "",
+        "InactivePNR": null,
+        "SplitPNR": null,
+        "SupplierCode": null,
+        "FlightBookingSource": 72,
+        "Destination": "JED",
+        "FareType": "RegularFare",
+        "LastTicketDate": "2025-09-06T00:00:00",
+        "LastVoidDate": "0001-01-01T00:00:00",
+        "Origin": "DEL",
+        "CreatedOn": "2025-09-04",
+        "TboAirBookingSourceId": 0,
+        "PaymentMode": 0,
+        "FailedBookingId": 0,
+        "ValidatingAirline": "SV",
+        "ValidatingAirlineCode": "SV",
+        "Ticketed": false,
+        "IsDomestic": false,
+        "AirlineCode": "SV",
+        "TravelDate": "2025-09-06T20:05:00",
+        "NonRefundable": true,
+        "BookingId": 0,
+        "BookingMode": 5,
+        "AgentRefNo": null,
+        "IsLcc": false,
+        "ClientIP": null,
+        "AirlineRemark": "1. For More than 12 hours transit time, need a transit visa. 2. Passengers holding UMRAH VISA and NEW WORK VISA on international flights within the Kingdom of Saudi Arabia  connection flights , providing that the connection time is minimum 3 hours.",
+        "SearchType": 1,
+        "OnBehalfOf": 0,
+        "EarnedLoyaltyPoints": 0,
+        "TrackingId": "17731f52-d639-4bf8-92f9-475a0eef522e",
+        "SupplierGroupId": 5,
+        "TripId": null,
+        "TripName": "Eslam Ahmed Trip",
+        "PNRStatus": 0,
+        "StaffRemarks": null,
+        "PricingKeyDetail": null,
+        "TokenId": "9fb9530f-69e5-4e76-a1cb-1c8efa7189a0",
+        "SSRData": null,
+        "isNewBooking": false,
+        "ParentBookingId": 0,
+        "isFromBulkImport": false,
+        "isApplicableforNewWidgetWallet": false,
+        "callBackUrl": "tboairdemo.techmaster.in",
+        "isCancellationcoverAdded": false,
+        "FoidDetails": {},
+        "BookingOperations": null,
+        "UpsellOptionsList": null,
+        "PaymentKey": null,
+        "HotelConfirmationNumber": null,
+        "HelpCenter": null,
+        "MiniFareRules": [
+            [
+                {
+                    "JourneyPoints": "",
+                    "Type": "",
+                    "From": "",
+                    "To": "",
+                    "Unit": "",
+                    "Details": "",
+                    "OnlineReissueAllowed": false,
+                    "OnlineRefundAllowed": false
+                }
+            ]
+        ],
+        "FareClassification": {
+            "Color": "lightBlue",
+            "Type": "Publish"
+        },
+        "CustomizedFareType": null,
+        "ResultType": 2,
+        "FareInclusions": [],
+        "FirstNameFormat": null,
+        "IsBookableIfSeatNotAvailable": false,
+        "IsExclusiveFare": false,
+        "IsFreeMealAvailable": false,
+        "IsHoldAllowedWithSSR": false,
+        "IsHoldMandatoryWithSSR": false,
+        "LastNameFormat": null,
+        "ResultIndex": "OB1[TBO]Ao7xLZ7Um3vzdrCjqBdqZDmyRVtfVQzJ7z7y+YKYFlJRKMu1fjafWYVdE\/67OuCHd8OD1tVCh5BpEmO5FavcYUkzBYNujrsXBNbKIQsieRvmy3m0aQn3RcA5boCfwEv07mF\/fZEu88dsd0SWJ13fyNL4jFTg8qPFCr+CgjkNpNjCAn1Sanc9BwvkHyRY3s0ClB198oJWRXzM+5lSu1orw9fQIUIoDYG3d\/bchmVJQJop0C7eqY4G107VMDwyWpZZNJ9XXoSx1cQyC1q1IsOn6lsqtX4lBk8CePscQUlg6EzNULwle6xyVghyld2vY+DaFhdGo3Uc\/AeSOSB1CrscEXqHwQ0AuNaZq3pu5CiCm4LD9wHQr4yYmz\/vc2V8jgsFx+H9y\/evzvyNkbAEKc8\/aYUxQBOQSlKRWy6MN10Eeyz5GQPjbwsD+v8zwT9G\/jfHWAZa2nWTumus9EMuCa5PCEbnV7QJN85bbaPI1AO3lvhh9DT6m6iKoGl9OtlxmvW0\/wLHVKazySDaTHYQXsMRyEVvUYKU5FhERNZeLs6igQ5JSfa5iA6Jm6nMHda+6tVIFLvvWaUjWF9QmtKhJcezmViXfgL8W7aioSoRbSKZQVg=",
+        "Source": 135,
+        "IsLCC": false,
+        "IsRefundable": false,
+        "IsPanRequiredAtBook": false,
+        "IsPanRequiredAtTicket": false,
+        "IsPassportRequiredAtBook": false,
+        "IsPassportRequiredAtTicket": true,
+        "GSTAllowed": false,
+        "IsCouponAppilcable": true,
+        "IsGSTMandatory": false,
+        "IsPassportFullDetailRequiredAtBook": false,
+        "ResultFareType": "RegularFare",
+        "Fare": {
+            "ServiceFeeDisplayType": 0,
+            "Currency": "SAR",
+            "BaseFare": 682.5,
+            "Tax": 458.37,
+            "TaxBreakup": [
+                {
+                    "key": "K3",
+                    "value": 48.65
+                },
+                {
+                    "key": "YQTax",
+                    "value": 16.4
+                },
+                {
+                    "key": "YR",
+                    "value": 273.33
+                },
+                {
+                    "key": "PSF",
+                    "value": 0
+                },
+                {
+                    "key": "UDF",
+                    "value": 0
+                },
+                {
+                    "key": "INTax",
+                    "value": 41.93
+                },
+                {
+                    "key": "TransactionFee",
+                    "value": 0
+                },
+                {
+                    "key": "OtherTaxes",
+                    "value": 78.06
+                }
+            ],
+            "YQTax": 16.4,
+            "AdditionalTxnFeeOfrd": 0,
+            "AdditionalTxnFeePub": 0,
+            "PGCharge": 0,
+            "OtherCharges": 0,
+            "ChargeBU": [
+                {
+                    "key": "TBOMARKUP",
+                    "value": 0
+                },
+                {
+                    "key": "GLOBALPROCUREMENTCHARGE",
+                    "value": 0
+                },
+                {
+                    "key": "CONVENIENCECHARGE",
+                    "value": 0
+                },
+                {
+                    "key": "OTHERCHARGE",
+                    "value": 0
+                }
+            ],
+            "Discount": 0,
+            "PublishedFare": 1140.87,
+            "CommissionEarned": 0,
+            "PLBEarned": 0,
+            "IncentiveEarned": 0,
+            "OfferedFare": 1140.86,
+            "TdsOnCommission": 0,
+            "TdsOnPLB": 0,
+            "TdsOnIncentive": 0,
+            "ServiceFee": 0,
+            "TotalBaggageCharges": 0,
+            "TotalMealCharges": 0,
+            "TotalSeatCharges": 0,
+            "TotalSpecialServiceCharges": 0,
+            "VAT": {
+                "IsVatApplicable": false,
+                "VATAmount": 0,
+                "VATCurrency": null,
+                "VATRate": 0,
+                "VATType": 1
+            }
+        },
+        "BaseCurrencyFare": {
+            "ServiceFeeDisplayType": 0,
+            "Currency": "USD",
+            "BaseFare": 182.000369661,
+            "Tax": 122.232527001,
+            "TaxBreakup": [
+                {
+                    "key": "K3",
+                    "value": 12.973995114
+                },
+                {
+                    "key": "YQTax",
+                    "value": 4.37325678
+                },
+                {
+                    "key": "YR",
+                    "value": 72.887613
+                },
+                {
+                    "key": "PSF",
+                    "value": 0
+                },
+                {
+                    "key": "UDF",
+                    "value": 0
+                },
+                {
+                    "key": "INTax",
+                    "value": 11.1809598342
+                },
+                {
+                    "key": "TransactionFee",
+                    "value": 0
+                },
+                {
+                    "key": "OtherTaxes",
+                    "value": 20.8167022728
+                }
+            ],
+            "YQTax": 4.37325678,
+            "AdditionalTxnFeeOfrd": 0,
+            "AdditionalTxnFeePub": 0,
+            "PGCharge": 0,
+            "OtherCharges": 0,
+            "ChargeBU": [
+                {
+                    "key": "TBOMARKUP",
+                    "value": 0
+                },
+                {
+                    "key": "GLOBALPROCUREMENTCHARGE",
+                    "value": 0
+                },
+                {
+                    "key": "CONVENIENCECHARGE",
+                    "value": 0
+                },
+                {
+                    "key": "OTHERCHARGE",
+                    "value": 0
+                }
+            ],
+            "Discount": 0,
+            "PublishedFare": 304.232896662,
+            "CommissionEarned": 0,
+            "PLBEarned": 0,
+            "IncentiveEarned": 0,
+            "OfferedFare": 304.23,
+            "TdsOnCommission": 0,
+            "TdsOnPLB": 0,
+            "TdsOnIncentive": 0,
+            "ServiceFee": 0,
+            "TotalBaggageCharges": 0,
+            "TotalMealCharges": 0,
+            "TotalSeatCharges": 0,
+            "TotalSpecialServiceCharges": 0,
+            "VAT": {
+                "IsVatApplicable": false,
+                "VATAmount": 0,
+                "VATCurrency": null,
+                "VATRate": 0,
+                "VATType": 1
+            }
+        },
+        "FareBreakdown": [
+            {
+                "Currency": "SAR",
+                "PassengerType": 1,
+                "PassengerCount": 1,
+                "BaseFare": 682.5,
+                "Tax": 458.37,
+                "TaxBreakUp": [
+                    {
+                        "key": "YQTax",
+                        "value": 16.4
+                    },
+                    {
+                        "key": "YR",
+                        "value": 273.33
+                    },
+                    {
+                        "key": "K3",
+                        "value": 48.65
+                    },
+                    {
+                        "key": "INTax",
+                        "value": 41.93
+                    },
+                    {
+                        "key": "OtherTaxes",
+                        "value": 78.06
+                    }
+                ],
+                "YQTax": 16.4,
+                "AdditionalTxnFeeOfrd": 0,
+                "AdditionalTxnFeePub": 0,
+                "PGCharge": 0,
+                "SupplierReissueCharges": 0
+            }
+        ],
+        "BaseCurrencyFareBreakdown": [
+            {
+                "Currency": "USD",
+                "PassengerType": 1,
+                "PassengerCount": 1,
+                "BaseFare": 182.000369661,
+                "Tax": 122.232527001,
+                "TaxBreakUp": [
+                    {
+                        "key": "YQTax",
+                        "value": 4.37325678
+                    },
+                    {
+                        "key": "YR",
+                        "value": 72.887613
+                    },
+                    {
+                        "key": "K3",
+                        "value": 12.973995114
+                    },
+                    {
+                        "key": "INTax",
+                        "value": 11.1809598342
+                    },
+                    {
+                        "key": "OtherTaxes",
+                        "value": 20.8167022728
+                    }
+                ],
+                "YQTax": 4.37325678,
+                "AdditionalTxnFeeOfrd": 0,
+                "AdditionalTxnFeePub": 0,
+                "PGCharge": 0,
+                "SupplierReissueCharges": 0
+            }
+        ],
+        "Segments": [
+            [
+                {
+                    "Baggage": "1 PC(s)",
+                    "CabinBaggage": "1 PC(s)",
+                    "CabinClass": 2,
+                    "SupplierFareClass": null,
+                    "TripIndicator": 1,
+                    "SegmentIndicator": 1,
+                    "Airline": {
+                        "AirlineCode": "SV",
+                        "AirlineName": "Saudi Arabian Airlines",
+                        "FlightNumber": "759",
+                        "FareClass": "V",
+                        "OperatingCarrier": "SV"
+                    },
+                    "Origin": {
+                        "Airport": {
+                            "AirportCode": "DEL",
+                            "AirportName": "Indira Gandhi Airport",
+                            "Terminal": "3",
+                            "CityCode": "DEL",
+                            "CityName": "Delhi",
+                            "CountryCode": "IN",
+                            "CountryName": "India"
+                        },
+                        "DepTime": "2025-09-06T20:05:00"
+                    },
+                    "Destination": {
+                        "Airport": {
+                            "AirportCode": "JED",
+                            "AirportName": "King Abdulaziz Int'l",
+                            "Terminal": "1",
+                            "CityCode": "JED",
+                            "CityName": "Jeddah",
+                            "CountryCode": "SA",
+                            "CountryName": "Saudi Arabia"
+                        },
+                        "ArrTime": "2025-09-06T23:05:00"
+                    },
+                    "AccumulatedDuration": 330,
+                    "Duration": 330,
+                    "GroundTime": 0,
+                    "Mile": 0,
+                    "StopOver": false,
+                    "FlightInfoIndex": "",
+                    "StopPoint": "",
+                    "StopPointArrivalTime": "0001-01-01T00:00:00",
+                    "StopPointDepartureTime": "0001-01-01T00:00:00",
+                    "Craft": "773",
+                    "Remark": null,
+                    "IsETicketEligible": true,
+                    "FlightStatus": "Confirmed",
+                    "Status": "",
+                    "FareClassification": null
+                }
+            ]
+        ],
+        "TicketAdvisory": null,
+        "DealId": "A-0|O-0|S-0"
+    },
+    "PNR": "",
+    "BookingId": "",
+    "CorporateCode": null,
+    "ConfirmPriceChangeTicket": false,
+    "IPAddress": "115.114.12.58",
+    "IsGenerateTicketRequestFromQueues": false,
+    "SegmentAnalyticsToken": "fdhzelbwysit22iibnxsghsj",
+    "TokenId": "9fb9530f-69e5-4e76-a1cb-1c8efa7189a0",
+    "TrackingId": "17731f52-d639-4bf8-92f9-475a0eef522e",
+    "EndUserBrowserAgent": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/124.0.0.0 Safari\/537.36",
+    "PointOfSale": "IN",
+    "RequestOrigin": "India-https:\/\/www.tboair.com",
+    "UserData": "eslamdahshan61@gmail.com,966-1555565432,Mr Eslam Ahmed",
+    "WebServerIP": null
+} 

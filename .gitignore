@@ -1,0 +1,63 @@
+# ===== OS / Editor =====
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ===== IDEs =====
+.idea/
+.vscode/
+.fleet/
+
+# ===== PHP / Laravel =====
+/vendor/
+/storage/*.key
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+.phpunit.cache/
+.phpunit.result.cache
+.php-cs-fixer.cache
+auth.json
+
+# ===== Environment Files (SECRETS) =====
+.env
+.env.*
+!.env.example
+.env.backup
+.env.production
+
+# ===== Node / Frontend =====
+node_modules/
+npm-debug.log
+yarn-error.log
+/build/
+/dist/
+/.next/
+/public/build/
+/public/hot/
+
+# ===== Uploads & Generated Files =====
+/uploads/
+/public/uploads/
+/public/storage/
+/public/reports/
+/temp/
+
+# ===== Firebase / Google / Third-Party Keys =====
+public/fcm.json
+*.pem
+*.key
+*.crt
+
+# ===== Docker =====
+docker-compose.override.yml
+
+# ===== Logs =====
+*.log
+php_errors.log
+
+# ===== Homestead =====
+Homestead.json
+Homestead.yaml

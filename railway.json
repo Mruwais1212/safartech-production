@@ -1,0 +1,15 @@
+{
+    "build": {
+        "builder": "DOCKERFILE",
+        "dockerfilePath": "Dockerfile"
+    },
+    "deploy": {
+        "startCommand": "sh -c 'php-fpm -D && nginx -g \"daemon off;\"'",
+        "restartPolicyType": "ALWAYS"
+    },
+    "variables": {
+        "APP_ENV": "production",
+        "APP_DEBUG": "false",
+        "LOG_CHANNEL": "stderr"
+    }
+}

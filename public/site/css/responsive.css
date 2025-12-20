@@ -1,0 +1,399 @@
+@media (max-width: 991.98px) {
+    .nav-bar {
+        margin: 0;
+        padding: 0;
+    }
+
+    .navbar-light .navbar-nav .nav-link {
+        margin-right: 0;
+        padding: 10px 0;
+    }
+
+    .navbar-light .navbar-nav {
+        border-top: 1px solid #EEEEEE;
+    }
+}
+
+
+@media (min-width: 992px) {
+    .navbar .nav-item .dropdown-menu {
+        display: block;
+        top: 5rem;
+        margin-top: 0;
+        opacity: 0;
+        visibility: hidden;
+        transition: .5s;
+
+    }
+
+    .navbar .nav-item .dropdown-menu.show {
+        visibility: visible;
+        transition: .5s;
+        opacity: 1;
+        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(5px);
+    }
+}
+
+@media (min-width: 992px) {
+    .header {
+        margin-top: -120px;
+        padding-top: 4rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .header-carousel .owl-nav {
+        left: 25px;
+    }
+}
+
+@media (min-width: 576px) {
+    .testimonial-carousel {
+        padding-left: 4rem;
+        padding-right: 4rem;
+    }
+}
+
+@media (min-width: 42em) {
+    .grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+@media only screen and (max-width:600px) {
+    .hotels-cards .card {
+        display: block;
+    }
+
+    .hotels-cards .card .img-container {
+        height: 250px;
+        width: 100%;
+    }
+
+    .hotels-cards .card-content {
+        border: 0;
+        border-top: 1px solid #ccc;
+    }
+}
+
+@media (min-width: 992px) {
+    .contact-page {
+        margin-top: -120px;
+    }
+
+    .contact-page .contact-form {
+        padding-top: 120px;
+    }
+}
+
+@media (min-width: 992px) {
+    .auth-page {
+        margin-top: -120px;
+        padding-top: 10em;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .card.payment-card {
+        padding-right: 0;
+        padding-left: 0;
+    }
+    #sidebar{
+        width: 100%;
+    }
+    div:has(> .step-form-bg) {
+        padding-top: 8em!important;
+        padding-bottom: 3em!important;
+    }
+    .gallery-item:nth-child(1) {
+        grid-column: 1 / 4;
+        grid-row: 1 / 5;
+        height: auto;
+    }
+    /* .steps-form .progress-container::before {
+        content: '';
+        background-color: #DED8D0;
+        position: absolute;
+        top: 18px;
+        left: 20px;
+        right: 20px;
+        transform: translateY(-50%);
+        height: 2px;
+        width: 80%;
+        z-index: 1;
+    } */
+    .steps-form .circle {
+        right: 20px;
+        left:auto;
+    }
+    .card.payment-card .card-body .payment-info .column{
+        width: calc(100% - 25px);
+    }
+    .payment-info {
+        flex-direction: column;
+    }
+    .card.payment-card .card-body .payment-type .types{
+        flex-wrap: wrap;
+    }
+    .card.payment-card .card-body .payment-type .types a{
+       flex:45%;
+       width: 45%;
+    }
+    .passenger-table tr td{
+        padding: 1em 1.5em;
+        font-size: 11px;
+    }
+    .asRange{
+        width: 80%;
+    }
+    .remove-class{
+        display: block;
+    }
+    /*.filter-sidebar{*/
+    /*    position: fixed;*/
+    /*    top: 0;*/
+    /*    bottom: 0;*/
+    /*    right: 0;*/
+    /*    left: 0;*/
+    /*    width: 100%;*/
+    /*    height: 100%;*/
+    /*    background: #ffffff;*/
+    /*    z-index: 9999999999999;*/
+    /*    overflow-y: scroll;*/
+    /*    padding: 2em 1em;*/
+    /*}*/
+
+    .filter-btn{
+        display: block;
+        margin-bottom: 1.5em;
+    }
+    .filter-sidebar{
+        /*display: none;*/
+    }
+    .filter-sidebar.active{
+        display: block !important;
+    }
+    .remove-class{
+        display: flex!important;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .passenger-table tr th{
+        font-size: 11px;
+    }
+    .nav-bar {
+        position: absolute;
+    }
+
+    .dropdown-menu[data-bs-popper] {
+        left: auto;
+        right: 0
+    }
+
+    .about-section-first .about-section-content {
+        position: relative;
+        width: 100%;
+        top: auto;
+        transform: translate(0, 0);
+    }
+
+    .about-section-first img {
+        width: 100%;
+    }
+
+    .about-section-second {
+        flex-direction: column;
+    }
+
+    .about-section-second ul {
+        gap: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        align-self: center;
+        margin-top: 2em;
+    }
+
+    .about-section-second li {
+        width: 100%;
+    }
+
+    .about-section-second h3 {
+        width: 100%;
+    }
+
+    .about-section-third img {
+        display: none;
+    }
+
+    .ai-form .form-group,
+    .ai-form .grid {
+        margin-top: 0.5em;
+        margin-bottom: 1em;
+    }
+
+    .ai-visit-places {
+        overflow: hidden;
+    }
+
+    .day .collapse .card,
+    .day .collapsing .card {
+        border: 0;
+        background-color: #FCFCFC;
+        padding: 1em;
+        border-radius: 20px;
+    }
+
+    .day .collapse,
+    .day .collapsing {
+        margin-left: 1em;
+    }
+
+    .contact-page {
+        display: flex;
+        align-items: stretch;
+        justify-content: stretch;
+        flex-direction: column;
+    }
+
+    .contact-page .contact-form {
+        padding: 1.5em;
+    }
+
+    .search-page .search-top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        flex-direction: column;
+    }
+
+    .search-page .search-top-bar .flight-box {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: #07080F;
+        border: 1px solid #B5B5B5;
+        padding: 0.5em 1.2em;
+        border-radius: 10px;
+        width: 100%;
+    }
+
+    .result-cards .result-card {
+        flex-direction: column;
+    }
+
+    .hotels-cards .card .img-container,
+    .hotels-cards .card .hotel-image-carousel,
+    .hotels-cards .fav-vip {
+        width: 100%;
+    }
+
+    .hotels-cards .collection-sections {
+        flex-direction: column;
+    }
+
+    .collection-sections,
+    .hotels-cards .collection-sections,
+    .hotels-cards .collection-sections .section-second {
+        justify-content: start;
+        align-items: start;
+    }
+
+    .gallery-container {
+        display: grid;
+        grid-template-columns: 30% 30% repeat(auto-fill, 30%);
+        /* grid-template-rows: repeat(auto-fill, 50%); */
+        grid-gap: 0.8rem;
+        justify-content: space-between;
+    }
+
+    .header {
+        overflow: hidden;
+    }
+
+    .header-carousel .owl-nav {
+        left: 50%;
+    }
+
+    .flight-details {
+        border: 1px solid #E0E0E0;
+        border-radius: 15px;
+        padding: 1em 1em 0 1em;
+        background-color: #FDFDFD;
+    }
+
+    .airway-details {
+        gap: 0;
+        transform: scale(0.8);
+    }
+
+    .airway-details>* {
+        flex: auto;
+    }
+
+    .nav-filter-rooms {
+        flex-wrap: wrap;
+    }
+
+    .rooms-filter-header {
+        flex-direction: column;
+    }
+    .single-page .page-name abbr {
+        background-color: #ffffff;
+        position: relative;
+        z-index: 1;
+        padding: 0 1em 0 0;
+        font-size: 20px;
+    }
+    .previous-page.last-step .header-summery{
+        flex-direction: column;
+    }
+    .plan-actions{
+        flex-direction: column;
+    }
+    .last-step .header-summery h3{
+        font-size: 16px;
+    }
+}
+@media (min-width: 1400px) {
+    .container, .container-sm, .container-md, .container-lg, .container-xl, .container-xxl {
+        max-width: 100%;
+    }
+    .header{
+        overflow: hidden;
+    }
+    .navbar .nav-item .dropdown-menu {
+        top: 100%;
+        left: auto;
+        right: 0;
+        margin-top: .125rem;
+    }
+    .steps-form .progress{
+        width: 31%;
+        left: 50px;
+    }
+}
+@media (max-width: 1400px) and (min-width: 992px) {
+    .container, .container-sm, .container-md, .container-lg, .container-xl, .container-xxl {
+        /* max-width: 100%; */
+    }
+    .navbar .nav-item .dropdown-menu {
+        top: 100%;
+        left: auto;
+        right: 0;
+        margin-top: .125rem;
+    }
+    .header{
+        overflow: hidden;
+    }
+}
+@media(max-width: 992px) {
+    .navbar .dropup,.navbar  .dropend,.navbar  .dropdown,.navbar  .dropstart{
+        position: inherit;
+    }
+    .navbar .icon-menu{
+        position: relative;
+    }
+}

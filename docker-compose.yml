@@ -1,0 +1,161 @@
+
+# networks:
+#   laravel:
+#     driver: bridge
+
+# services:
+#   app:
+#     image: nginx:latest
+#     working_dir: /var/www/html
+#     container_name: safer-tech-php
+#     tty: true
+#     ports:
+#       - "80:80"
+#       - "443:443"
+#     volumes:      
+#       - '.:/var/www/html'
+#       - .:/var/www/html/vendor
+#       - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf
+#     depends_on:
+#       - php
+#       - mysql
+#     networks:
+#       - laravel
+
+#   mysql:
+#     image: mysql:8.0
+#     container_name: safer-tech-mysql
+#     restart: unless-stopped
+#     tty: true
+#     ports:
+#       - "3306:3306"
+#     environment:
+#       MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+#       MYSQL_ROOT_HOST: "%"
+#       MYSQL_DATABASE: '${DB_DATABASE}'
+#       #MYSQL_USER: '${DB_USERNAME}'
+#       #MYSQL_PASSWORD: '${DB_PASSWORD}'
+#       MYSQL_ALLOW_EMPTY_PASSWORD: 1
+#     networks:
+#       - laravel
+#     volumes:
+#       -  'db_data:/var/lib/mysql'  
+
+#   php:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#     tty: true  
+#     ports:
+#       - "9000:9000"
+#     volumes:
+#       - './:/var/www/html'
+#       - ./php.ini:/usr/local/etc/php/conf.d/local.ini
+#     networks:
+#       - laravel
+
+#   mailhog:
+#     image: mailhog/mailhog:latest
+#     #platform: linux/arm64
+#     ports:
+#       - "1025:1025"
+#       - "8025:8025"
+#     networks:
+#       - laravel
+#   phpmyadmin:
+#     image: phpmyadmin/phpmyadmin:latest
+#     container_name: safer-tech-phpmyadmin
+#     platform: linux/arm64
+#     restart: unless-stopped
+#     ports:
+#       - "8080:80"
+#     environment:
+#       PMA_HOST: mysql  # Must match your MySQL service name
+#       PMA_PORT: 3306
+#     networks:
+#       - laravel
+#     depends_on:
+#       - mysql
+# volumes:
+#   db_data:
+#    driver: local
+
+
+
+#version: '3.8'
+
+networks:
+  laravel:
+    driver: bridge
+
+services:
+  app:
+    image: nginx:latest
+    working_dir: /var/www/html
+    container_name: safer-tech-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - '.:/var/www/html'
+      - './docker/nginx.conf:/etc/nginx/conf.d/default.conf'
+    depends_on:
+      - php
+      #- mysql
+    networks:
+      - laravel
+
+  # mysql:
+  #   image: mysql:8.0
+  #   container_name: safer-tech-mysql
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3306:3306"
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+  #     MYSQL_DATABASE: '${DB_DATABASE}'
+  #     MYSQL_ALLOW_EMPTY_PASSWORD: 1
+  #   volumes:
+  #     - 'db_data:/var/lib/mysql'
+  #   networks:
+  #     - laravel
+
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: safer-tech-php
+    volumes:
+      - './:/var/www/html'
+      - './php.ini:/usr/local/etc/php/conf.d/local.ini'
+    networks:
+      - laravel
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    #platform: linux/arm64
+    container_name: safer-tech-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - laravel
+
+  # phpmyadmin:
+  #   image: phpmyadmin/phpmyadmin:5.2.1
+  #   platform: linux/amd64
+  #   container_name: safer-tech-phpmyadmin
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8080:80"
+  #   environment:
+  #     PMA_HOST: mysql
+  #     PMA_PORT: 3306
+  #   depends_on:
+  #     - mysql
+  #   networks:
+  #     - laravel
+
+volumes:
+  db_data:
+    driver: local
