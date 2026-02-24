@@ -62,7 +62,6 @@ Route::group(['middleware' => ['web']], function () {
     Route::get('summary', 'PaymentController@summary');
     Route::post('payment', 'PaymentController@payment');
     Route::get('success', 'PaymentController@success');
-    Route::get('payment-moyasar', 'PaymentController@payment');
     Route::get('moyasar-callback', 'PaymentController@moyasarCallback');
     Route::get('moyasar-success', 'PaymentController@moyasarSuccess');
     Route::get('booking-error', 'PaymentController@bookingError');
@@ -71,7 +70,7 @@ Route::group(['middleware' => ['web']], function () {
     Route::post('search-flights', 'FlightController@search');
     Route::post('search-flights-new', 'FlightController@searchNew');
     Route::get('select-flight', 'FlightController@selectFlight');
-    Route::get('cancel-flight/{pnr}', 'FlightController@cancel_flight');
+    Route::post('cancel-flight/{pnr}', 'FlightController@cancel_flight')->middleware('auth:web');
 
     Route::get('hotels', 'HotelController@index');
     Route::get('hotel/{id}', 'HotelController@show');
@@ -83,117 +82,72 @@ Route::group(['middleware' => ['web']], function () {
 
     Route::get('search-city', 'HotelController@searchCity');
     Route::get('search-airport-city', 'HotelController@searchAirportCity');
-    Route::get('cancel-hotel/{booking_code}', 'HotelController@cancel_hotel');
+    Route::post('cancel-hotel/{booking_code}', 'HotelController@cancel_hotel')->middleware('auth:web');
 
     Route::post('tbo-hotel', 'TBOHotelDetailsController@hotelDetails');
 
-    Route::get('/generate-invoice/{id}', [InvoiceController::class, 'generateInvoice']);
+    Route::get('/generate-invoice/{id}', [InvoiceController::class, 'generateInvoice'])->middleware('auth:web');
 
-    Route::get('/session-data', [SessionController::class, 'showSessionData']);
     Route::get('/flight-details',[\App\Http\Controllers\Website\MyTripController::class,'flight_test']);
-    
+
     // Booking Details Health Check Routes
-    Route::get('/health/booking-system', [\App\Http\Controllers\BookingHealthController::class, 'systemHealth']);
-    Route::get('/health/booking-details/{id}', [\App\Http\Controllers\BookingHealthController::class, 'bookingDetails']);
-    Route::get('/health/recent-bookings', [\App\Http\Controllers\BookingHealthController::class, 'recentBookingsStatus']);
-    Route::get('/health/status', function() {
-        return response()->json([
-            'status' => 'ok',
-            'timestamp' => now()->toISOString(),
-            'version' => '1.0',
-            'service' => 'booking-details-monitoring'
-        ]);
+    Route::middleware(['auth:web'])->group(function () {
+        Route::get('/health/booking-system', [\App\Http\Controllers\BookingHealthController::class, 'systemHealth']);
+        Route::get('/health/booking-details/{id}', [\App\Http\Controllers\BookingHealthController::class, 'bookingDetails']);
+        Route::get('/health/recent-bookings', [\App\Http\Controllers\BookingHealthController::class, 'recentBookingsStatus']);
     });
 });
 
-// Test SSR data structure
-Route::get('/test-ssr', function () {
-    $ssrData = session('ssr_data', []);
-    $passengers = session('passengers', []);
-    
-    return response()->json([
-        'ssr_data' => $ssrData,
-        'passengers' => $passengers,
-        'session_keys' => array_keys(session()->all())
-    ]);
+
+Route::get('/health/status', function () {
+    return response()->json(['status' => 'ok']);
 });
 
-// Test passenger data with SSR
-Route::get('/test-passengers', function () {
-    $passengers = session('passengers', []);
-    
-    return response()->json([
-        'passengers' => $passengers,
-        'count' => count($passengers),
-        'first_passenger' => $passengers[0] ?? null,
-        'ssr_data_summary' => array_map(function($passenger, $index) {
-            return [
-                'index' => $index,
-                'name' => ($passenger['first_name'] ?? '') . ' ' . ($passenger['last_name'] ?? ''),
-                'selected_meal' => $passenger['selected_meal'] ?? 'none',
-                'meal_price' => $passenger['meal_price'] ?? 0,
-                'selected_baggage' => $passenger['selected_baggage'] ?? 'none',
-                'baggage_price' => $passenger['baggage_price'] ?? 0,
-            ];
-        }, $passengers, array_keys($passengers))
-    ]);
-});
+Route::middleware('web')->group(function () {
+    if (app()->environment('local')) {
+        Route::get('/session-data', [SessionController::class, 'showSessionData']);
 
-// Test booking error page
-Route::get('/test-booking-error', function () {
-    return redirect('/booking-error')->with('error_message', 'This is a test booking error message. Payment was successful but booking failed.');
+        // Test SSR data structure
+        Route::get('/test-ssr', function () {
+            $ssrData = session('ssr_data', []);
+            $passengers = session('passengers', []);
+
+            return response()->json([
+                'ssr_data' => $ssrData,
+                'passengers' => $passengers,
+                'session_keys' => array_keys(session()->all())
+            ]);
+        });
+
+        // Test passenger data with SSR
+        Route::get('/test-passengers', function () {
+            $passengers = session('passengers', []);
+
+            return response()->json([
+                'passengers' => $passengers,
+                'count' => count($passengers),
+                'first_passenger' => $passengers[0] ?? null,
+                'ssr_data_summary' => array_map(function($passenger, $index) {
+                    return [
+                        'index' => $index,
+                        'name' => ($passenger['first_name'] ?? '') . ' ' . ($passenger['last_name'] ?? ''),
+                        'selected_meal' => $passenger['selected_meal'] ?? 'none',
+                        'meal_price' => $passenger['meal_price'] ?? 0,
+                        'selected_baggage' => $passenger['selected_baggage'] ?? 'none',
+                        'baggage_price' => $passenger['baggage_price'] ?? 0,
+                    ];
+                }, $passengers, array_keys($passengers))
+            ]);
+        });
+
+        // Test booking error page
+        Route::get('/test-booking-error', function () {
+            return redirect('/booking-error')->with('error_message', 'This is a test booking error message. Payment was successful but booking failed.');
+        });
+    }
 });
 
 // Manual trigger for InProgress flight booking details check
-Route::get('/admin/check-inprogress-flights/{pnr?}', function ($pnr = null) {
-    if (!auth('web')->user()) {
-        return response()->json(['error' => 'Unauthorized'], 403);
-    }
-    
-    try {
-        $query = \App\Models\ReservationFlight::query();
-        
-        if ($pnr) {
-            $query->where('pnr', $pnr);
-            $flights = $query->get();
-            
-            if ($flights->isEmpty()) {
-                return response()->json(['error' => "No flights found with PNR: {$pnr}"], 404);
-            }
-        } else {
-            $flights = $query->where('is_in_progress', true)
-                           ->where('status', 5)
-                           ->get();
-            
-            if ($flights->isEmpty()) {
-                return response()->json(['message' => 'No InProgress flights to check'], 200);
-            }
-        }
-        
-        $dispatched = [];
-        foreach ($flights as $flight) {
-            \App\Jobs\FetchFlightBookingDetailsJob::dispatch($flight->id, $flight->pnr, $flight->tbo_booking_id, 0);
-            
-            $dispatched[] = [
-                'flight_id' => $flight->id,
-                'pnr' => $flight->pnr,
-                'booking_id' => $flight->tbo_booking_id,
-                'status' => $flight->status
-            ];
-        }
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Dispatched ' . count($dispatched) . ' flight booking detail jobs',
-            'flights' => $dispatched
-        ]);
-        
-    } catch (\Exception $e) {
-        \Illuminate\Support\Facades\Log::error('Manual InProgress flight check error', [
-            'pnr' => $pnr,
-            'error' => $e->getMessage()
-        ]);
-        
-        return response()->json(['error' => $e->getMessage()], 500);
-    }
-})->name('admin.check.inprogress.flights');
+Route::get('/admin/check-inprogress-flights/{pnr?}', [\App\Http\Controllers\AdminMaintenanceController::class, 'checkInprogressFlights'])
+    ->middleware(['auth:admin', 'permission', 'throttle:10,1'])
+    ->name('admin.check.inprogress.flights');

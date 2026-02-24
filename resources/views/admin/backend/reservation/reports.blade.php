@@ -78,7 +78,7 @@
                     <td>{{ __('dashboard.' . \App\Enums\PaymentMethod::getLabel($reservation->payment_method)) }}</td>
                     <td>{{ $reservation->paid_at ? __('dashboard.payment_done') : __('dashboard.payment_not') }}</td>
                     <td>
-                        <a href="/generate-invoice/{{ $reservation->id }}" target="_blank" class="btn btn-primary">
+                        <a href="{{ url('/generate-invoice/'.$reservation->id) }}" target="_blank" class="btn btn-primary">
                             <i class="fa fa-file"></i>
                         </a>
                     </td>

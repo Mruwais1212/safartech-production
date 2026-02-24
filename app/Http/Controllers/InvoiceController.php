@@ -21,6 +21,14 @@ class InvoiceController extends Controller
     public function generateInvoice($id)
     {
         $reservation = Reservation::find($id);
+
+        if (! $reservation) {
+            abort(404);
+        }
+
+        if (! auth('admin')->check() && (int) $reservation->user_id !== (int) auth('web')->id()) {
+            abort(403);
+        }
         
         $total_price_calculate = PriceCalculationTrait::newCalculatePriceAmounts($reservation);
 
