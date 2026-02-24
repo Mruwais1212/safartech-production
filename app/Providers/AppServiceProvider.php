@@ -10,6 +10,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
@@ -43,6 +45,36 @@ class AppServiceProvider extends ServiceProvider
 
         Notification::extend('balance', function ($app) {
             return new BalanceChannel;
+        });
+
+        RateLimiter::for('search', function ($request) {
+            return $request->user('web')
+                ? Limit::perMinute(30)->by('user:' . $request->user('web')->id)
+                : Limit::perMinute(10)->by('ip:' . $request->ip());
+        });
+
+        RateLimiter::for('ai-generation', function ($request) {
+            return $request->user('web')
+                ? Limit::perMinute(30)->by('user:' . $request->user('web')->id)
+                : Limit::perMinute(10)->by('ip:' . $request->ip());
+        });
+
+        RateLimiter::for('payment-init', function ($request) {
+            return $request->user('web')
+                ? Limit::perMinute(5)->by('user:' . $request->user('web')->id)
+                : Limit::perMinute(5)->by('ip:' . $request->ip());
+        });
+
+        RateLimiter::for('cancel', function ($request) {
+            return $request->user('web')
+                ? Limit::perMinute(5)->by('user:' . $request->user('web')->id)
+                : Limit::perMinute(5)->by('ip:' . $request->ip());
+        });
+
+        RateLimiter::for('admin-ops', function ($request) {
+            $admin = $request->user('admin');
+
+            return Limit::perMinute(10)->by($admin ? 'admin:' . $admin->id : 'ip:' . $request->ip());
         });
 
         if (! Collection::hasMacro('paginate')) {

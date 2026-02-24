@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Website;
 
 use App\Http\Requests\Website\PassengerInformationRequest;
 use App\Services\TBOFlightBookingService;
+use App\Support\LogRedactor;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -77,7 +78,7 @@ class PassengerInformationController extends Controller
                 ]);
 
                 $ssrResponse = $tboService->ssr($traceId, $outboundResultIndex);
-                Log::info('SSR API response for outbound flight', $ssrResponse);
+                Log::info('SSR API response for outbound flight', LogRedactor::redact(['trace_id' => $traceId, 'response' => $ssrResponse]));
                 
                 // Parse the SSR response using the new method
                 //$parsedSSR = $tboService->parseSSRResponse($ssrResponse);
@@ -108,7 +109,7 @@ class PassengerInformationController extends Controller
                 ]);
 
                 $inboundSSRResponse = $tboService->ssr($traceId, $inboundResultIndex);
-                Log::info('SSR API response for inbound flight', $inboundSSRResponse);
+                Log::info('SSR API response for inbound flight', LogRedactor::redact(['trace_id' => $traceId, 'response' => $inboundSSRResponse]));
                 
                 // Parse the SSR response using the new method
                 //$parsedInboundSSR = $tboService->parseSSRResponse($inboundSSRResponse);
@@ -130,7 +131,7 @@ class PassengerInformationController extends Controller
         } catch (\Exception $e) {
             Log::error('Error calling SSR API from passenger page', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace_id' => $traceId ?? null,
             ]);
             
             // Set empty SSR data as fallback to prevent page crashes

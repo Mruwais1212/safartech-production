@@ -26,15 +26,15 @@ Route::group(['middleware' => ['auth:web']], function () {
 Route::group(['middleware' => ['web']], function () {
     Route::get('/', 'HomeController@index');
     Route::resource('ai-trip', 'AiTripController')->only('index', 'store');
-    Route::post('search-plans', 'AiTripController@searchPlans');
-    Route::post('search-plans-new', 'AiTripController@searchPlansNew');
+    Route::post('search-plans', 'AiTripController@searchPlans')->middleware('throttle:ai-generation');
+    Route::post('search-plans-new', 'AiTripController@searchPlansNew')->middleware('throttle:ai-generation');
 
     Route::get('ai-trip-planner', 'AiTripPlannerController@index');
     Route::get('latest-ai-trip-planner', 'MyLatestAiTripController@index')->middleware('auth:web');
     Route::get('latest-ai-trip-planner/{id}', 'MyLatestAiTripController@show')->middleware('auth:web');
     Route::get('ai-trip-latest-planner/{id}', 'MyLatestAiTripController@data')->middleware('auth:web');
     Route::post('ai-trip-results', 'AiTripPlannerController@show');
-    Route::post('ai-trip-planner', 'AiTripPlannerController@store');
+    Route::post('ai-trip-planner', 'AiTripPlannerController@store')->middleware('throttle:ai-generation');
     Route::resource('trips', 'TripController')->only('index', 'show');
     Route::get('plan/{id}', 'TripController@plan');
     Route::get('/search-results', [TripController::class, 'showResults'])->name('search.results');
@@ -60,29 +60,29 @@ Route::group(['middleware' => ['web']], function () {
     Route::get('export-trip/{id}', 'MyTripController@exportTripDetails')->middleware('auth:web');
 
     Route::get('summary', 'PaymentController@summary');
-    Route::post('payment', 'PaymentController@payment');
+    Route::post('payment', 'PaymentController@payment')->middleware('throttle:payment-init');
     Route::get('success', 'PaymentController@success');
     Route::get('moyasar-callback', 'PaymentController@moyasarCallback');
     Route::get('moyasar-success', 'PaymentController@moyasarSuccess');
     Route::get('booking-error', 'PaymentController@bookingError');
 
     Route::get('flights', 'FlightController@index');
-    Route::post('search-flights', 'FlightController@search');
-    Route::post('search-flights-new', 'FlightController@searchNew');
+    Route::post('search-flights', 'FlightController@search')->middleware('throttle:search');
+    Route::post('search-flights-new', 'FlightController@searchNew')->middleware('throttle:search');
     Route::get('select-flight', 'FlightController@selectFlight');
-    Route::post('cancel-flight/{pnr}', 'FlightController@cancel_flight')->middleware('auth:web');
+    Route::post('cancel-flight/{pnr}', 'FlightController@cancel_flight')->middleware(['auth:web', 'throttle:cancel']);
 
     Route::get('hotels', 'HotelController@index');
     Route::get('hotel/{id}', 'HotelController@show');
-    Route::post('search-hotels', 'HotelController@search');
-    Route::post('search-hotels-new', 'HotelController@searchNew');
+    Route::post('search-hotels', 'HotelController@search')->middleware('throttle:search');
+    Route::post('search-hotels-new', 'HotelController@searchNew')->middleware('throttle:search');
     Route::get('select-room/{id}', 'HotelController@selectRoom');
     Route::get('choose/{id}', 'HotelController@choose');
     Route::get('search-airport', 'HotelController@searchAirport');
 
     Route::get('search-city', 'HotelController@searchCity');
     Route::get('search-airport-city', 'HotelController@searchAirportCity');
-    Route::post('cancel-hotel/{booking_code}', 'HotelController@cancel_hotel')->middleware('auth:web');
+    Route::post('cancel-hotel/{booking_code}', 'HotelController@cancel_hotel')->middleware(['auth:web', 'throttle:cancel']);
 
     Route::post('tbo-hotel', 'TBOHotelDetailsController@hotelDetails');
 
@@ -149,5 +149,5 @@ Route::middleware('web')->group(function () {
 
 // Manual trigger for InProgress flight booking details check
 Route::get('/admin/check-inprogress-flights/{pnr?}', [\App\Http\Controllers\AdminMaintenanceController::class, 'checkInprogressFlights'])
-    ->middleware(['auth:admin', 'permission', 'throttle:10,1'])
+    ->middleware(['auth:admin', 'permission', 'throttle:admin-ops'])
     ->name('admin.check.inprogress.flights');
