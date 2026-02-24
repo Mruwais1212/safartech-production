@@ -15,6 +15,7 @@ use App\Mail\BookingEmail;
 use App\Models\Airport;
 use App\Models\TransactionCard;
 use App\Traits\PriceCalculationTrait;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
 class PaymentController extends Controller implements HasMiddleware
@@ -263,26 +264,31 @@ class PaymentController extends Controller implements HasMiddleware
             $totalSSRCost += $passengerSSRCost;
         }
 
-        // Get final total from request or calculate it
-        $finalTotalPrice = (float) $request->input('final_total_price', 0);
+        // Compute invoice total from server-authoritative session data only
+        $flight = session('flight', []);
+        $hotel = session('hotel', []);
+        $tripType = session('preferences.trip_type', 3);
+
+        $flightAmount = (float) ($flight['flight_amount'] ?? 0);
+        $inboundAmount = session()->has('flight.inbound_flightSegment') ? (float) ($flight['inbound_flight_amount'] ?? 0) : 0;
+        $hotelAmount = (float) ($hotel['TotalFareHotel'] ?? 0);
+
+        $baseTotalPrice = match ($tripType) {
+            1 => $flightAmount + $inboundAmount + $hotelAmount,
+            2 => $hotelAmount,
+            3 => $flightAmount + $inboundAmount,
+            default => 0,
+        };
+
+        $finalTotalPrice = $baseTotalPrice + $totalSSRCost;
+
         if ($finalTotalPrice <= 0) {
-            // Calculate final total if not provided using existing summary logic
-            $flight = session('flight', []);
-            $hotel = session('hotel', []);
-            $tripType = session('preferences.trip_type', 3);
-            
-            $flightAmount = $flight['flight_amount'] ?? 0;
-            $inboundAmount = session()->has('flight.inbound_flightSegment') ? $flight['inbound_flight_amount'] ?? 0 : 0;
-            $hotelAmount = $hotel['TotalFareHotel'] ?? 0;
-            
-            $baseTotalPrice = match ($tripType) {
-                1 => $flightAmount + $inboundAmount + $hotelAmount,
-                2 => $hotelAmount,
-                3 => $flightAmount + $inboundAmount,
-                default => 0,
-            };
-            
-            $finalTotalPrice = $baseTotalPrice + $totalSSRCost;
+            Log::warning('Invalid non-positive invoice amount blocked', [
+                'reservation_id' => null,
+                'payment_id' => null,
+            ]);
+
+            return redirect()->back()->with('error', 'Invalid payment amount');
         }
 
         // Store SSR summary for logging and reference
@@ -305,7 +311,7 @@ class PaymentController extends Controller implements HasMiddleware
         }
         
         // Use the final total price if SSR is included, otherwise use reservation price
-        $price = $finalTotalPrice > 0 ? $finalTotalPrice : $reservation->price;
+        $price = $finalTotalPrice;
         $currency = $reservation->currency ?: 'SAR';
 
         $invoice = MoyasarPaymentService::createInvoice([
@@ -582,89 +588,115 @@ class PaymentController extends Controller implements HasMiddleware
         }
 
         if (isset($payment['status']) && $payment['status'] == 'paid') {
-            $reservation = Reservation::where('payment_id', $payment['invoice_id'])
-                ->where('status', 0)
-                ->where('payment_method', 0)
-                ->first();
-            if (!$reservation) {
-               return redirect(url('/'));
-            }
-            if ($reservation) {
-                try {
-                    // Complete booking and get the result
+            $reservationId = null;
+
+            try {
+                $result = DB::transaction(function () use ($payment, &$reservationId) {
+                    $reservation = Reservation::where('payment_id', $payment['invoice_id'])->lockForUpdate()->first();
+
+                    if (! $reservation) {
+                        Log::warning('Moyasar success with missing reservation', [
+                            'reservation_id' => null,
+                            'payment_id' => $payment['invoice_id'] ?? null,
+                        ]);
+
+                        return ['type' => 'missing'];
+                    }
+
+                    $reservationId = $reservation->id;
+
+                    if ((int) $reservation->status === 1) {
+                        Log::info('Moyasar success replay for already completed reservation', [
+                            'reservation_id' => $reservation->id,
+                            'payment_id' => $payment['invoice_id'] ?? null,
+                        ]);
+
+                        return ['type' => 'already_success', 'reservation' => $reservation];
+                    }
+
+                    if ((int) $reservation->status === 2) {
+                        Log::info('Moyasar success replay for booking-failed reservation', [
+                            'reservation_id' => $reservation->id,
+                            'payment_id' => $payment['invoice_id'] ?? null,
+                        ]);
+
+                        return ['type' => 'already_failed', 'reservation' => $reservation];
+                    }
+
                     $bookingResult = ReservationService::completeBooking($reservation->id);
-                    
-                    // Check if booking/ticketing was successful
-                    if (!$bookingResult['success']) {
-                    Log::error('Booking/Ticketing failed for reservation ID: ' . $reservation->id . ' after successful payment', [
-                        'errors' => $bookingResult['errors'],
-                        'payment_id' => $payment['invoice_id'],
-                        'reservation_id' => $reservation->id
-                    ]);
-                    
-                    // Update reservation status to indicate booking failure but payment success
+
+                    if (! $bookingResult['success']) {
+                        $reservation->update([
+                            'status' => 2,
+                            'payment_method' => 1,
+                            'payment_type' => $payment['source']['company'],
+                            'paid_at' => now(),
+                            'booking_error' => implode('; ', $bookingResult['errors']),
+                        ]);
+
+                        TransactionCard::firstOrCreate([
+                            'reservation_id' => $reservation->id,
+                            'reference_number' => $payment['source']['reference_number'] ?? null,
+                        ], [
+                            'company' => $payment['source']['company'] ?? null,
+                            'number' => $payment['source']['number'] ?? null,
+                            'name' => $payment['source']['name'] ?? null,
+                        ]);
+
+                        Log::error('Booking failed after paid invoice', [
+                            'reservation_id' => $reservation->id,
+                            'payment_id' => $payment['invoice_id'] ?? null,
+                        ]);
+
+                        return ['type' => 'booking_failed', 'reservation' => $reservation];
+                    }
+
                     $reservation->update([
-                        'status' => 2, // Using status 2 to indicate payment success but booking failure
-                        'payment_method' => 1, 
-                        'payment_type' => $payment['source']['company'], 
-                        'paid_at' => now(),
-                        'booking_error' => implode('; ', $bookingResult['errors'])
-                    ]);
-                    
-                    // Still save transaction card info since payment was successful
-                    $transaction_card = new TransactionCard();
-                    $transaction_card->company = $payment['source']['company'];
-                    $transaction_card->number = $payment['source']['number'];
-                    $transaction_card->name = $payment['source']['name'];
-                    $transaction_card->reference_number = $payment['source']['reference_number'];
-                    $transaction_card->reservation_id = $reservation->id;
-                    $transaction_card->save();
-                    
-                    // Redirect to error page with booking failure message
-                    return redirect('/booking-error')->with('error_message', 'Payment was successful but booking failed. Please contact support with your reservation ID: ' . $reservation->id);
-                }
-                
-                // If booking was successful, proceed with normal flow
-                $reservation->update(['status' => 1, 'payment_method' => 1, 'payment_type' => $payment['source']['company'], 'paid_at' => now()]);
-                $transaction_card = new TransactionCard();
-                $transaction_card->company = $payment['source']['company'];
-                $transaction_card->number = $payment['source']['number'];
-                $transaction_card->name = $payment['source']['name'];
-                $transaction_card->reference_number = $payment['source']['reference_number'];
-                $transaction_card->reservation_id = $reservation->id;
-                $transaction_card->save();
-                Mail::to($reservation->user->email)->send(new BookingEmail($reservation));
-                } catch (\Exception $e) {
-                    Log::error('Exception occurred during booking completion for reservation ID: ' . $reservation->id, [
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString(),
-                        'payment_id' => $payment['invoice_id']
-                    ]);
-                    
-                    // Update reservation to indicate exception during booking
-                    $reservation->update([
-                        'status' => 2, // Payment success but booking exception
+                        'status' => 1,
                         'payment_method' => 1,
                         'payment_type' => $payment['source']['company'],
                         'paid_at' => now(),
-                        'booking_error' => 'Exception during booking: ' . $e->getMessage()
                     ]);
-                    
-                    // Still save transaction card info since payment was successful
-                    $transaction_card = new TransactionCard();
-                    $transaction_card->company = $payment['source']['company'];
-                    $transaction_card->number = $payment['source']['number'];
-                    $transaction_card->name = $payment['source']['name'];
-                    $transaction_card->reference_number = $payment['source']['reference_number'];
-                    $transaction_card->reservation_id = $reservation->id;
-                    $transaction_card->save();
-                    
-                    // Redirect to error page
-                    return redirect('/booking-error')->with('error_message', 'Payment was successful but an error occurred during booking. Please contact support with your reservation ID: ' . $reservation->id);
-                }
-            }
 
-            return view('website.success', compact('reservation'));
+                    TransactionCard::firstOrCreate([
+                        'reservation_id' => $reservation->id,
+                        'reference_number' => $payment['source']['reference_number'] ?? null,
+                    ], [
+                        'company' => $payment['source']['company'] ?? null,
+                        'number' => $payment['source']['number'] ?? null,
+                        'name' => $payment['source']['name'] ?? null,
+                    ]);
+
+                    return ['type' => 'completed', 'reservation' => $reservation];
+                });
+
+                if ($result['type'] === 'missing') {
+                    return redirect(url('/'));
+                }
+
+                $reservation = $result['reservation'];
+
+                if ($result['type'] === 'already_failed' || $result['type'] === 'booking_failed') {
+                    return redirect('/booking-error')->with('error_message', 'Payment was successful but booking failed. Please contact support with your reservation ID: ' . $reservation->id);
+                }
+
+                if ($result['type'] === 'completed') {
+                    Mail::to($reservation->user->email)->send(new BookingEmail($reservation));
+                    Log::info('Booking completed after payment success', [
+                        'reservation_id' => $reservation->id,
+                        'payment_id' => $payment['invoice_id'] ?? null,
+                    ]);
+                }
+
+                return view('website.success', compact('reservation'));
+            } catch (\Exception $e) {
+                Log::error('Exception during moyasarSuccess', [
+                    'reservation_id' => $reservationId,
+                    'payment_id' => $payment['invoice_id'] ?? null,
+                ]);
+
+                return redirect('/booking-error')->with('error_message', 'Payment was successful but an error occurred during booking. Please contact support with your reservation ID: ' . $reservationId);
+            }
         }
 
         return view('website.error');

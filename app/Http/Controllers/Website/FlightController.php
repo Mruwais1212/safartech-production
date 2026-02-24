@@ -385,8 +385,8 @@ class FlightController extends Controller
                 session(['flight.flightResult' => request()->result]);
             }
 
-            if (isset(request()->invoice_amount)) {
-                session(['flight.flight_amount' => request()->invoice_amount]);
+            if (isset($flight['Invoice_Amount'])) {
+                session(['flight.flight_amount' => (float) $flight['Invoice_Amount']]);
             }
 
             if (session('flight.inbound_flight')) {
@@ -408,8 +408,8 @@ class FlightController extends Controller
                 session(['flight.inbound_flightResult' => request()->result]);
             }
 
-            if (isset(request()->invoice_amount)) {
-                session(['flight.inbound_flight_amount' => request()->invoice_amount]);
+            if (isset($flight['Invoice_Amount'])) {
+                session(['flight.inbound_flight_amount' => (float) $flight['Invoice_Amount']]);
             }
 
             session(['flight.inbound_flight_selected' => true]);
@@ -424,7 +424,21 @@ class FlightController extends Controller
     public function cancel_flight($pnr)
     {
         $reservation_flight = ReservationFlight::where('pnr', $pnr)->first();
-        $last_name = ReservationPassenger::where('reservation_id', $reservation_flight->reservation_id)->first()->last_name;
+
+        if (! $reservation_flight) {
+            abort(404);
+        }
+
+        if ((int) optional($reservation_flight->reservation)->user_id !== (int) auth('web')->id()) {
+            abort(403);
+        }
+
+        $last_name = optional(ReservationPassenger::where('reservation_id', $reservation_flight->reservation_id)->first())->last_name;
+
+        if (! $last_name) {
+            abort(404);
+        }
+
         $request = [
             'pnr' => $pnr,
             'last_name' => $last_name,

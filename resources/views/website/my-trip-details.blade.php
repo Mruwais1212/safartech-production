@@ -725,7 +725,10 @@
                                                 <div class="modal-footer d-flex justify-content-between">
                                                     <button type="button" class="btn btn-secondary"
                                                         data-bs-dismiss="modal">{{ __('trans.close') }}</button>
-                                                    <a href="{{ url('cancel-hotel',$reservation->hotel->booking_code) }}" class="btn btn-primary">{{ __('trans.save_cancel') }}</a>
+                                                    <form method="POST" action="{{ url('cancel-hotel',$reservation->hotel->booking_code) }}" class="d-inline">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-primary">{{ __('trans.save_cancel') }}</button>
+                                                    </form>
                                                 </div>
                                             </div>
                                         </div>
@@ -1008,7 +1011,10 @@
                                                 <div class="modal-footer d-flex justify-content-between">
                                                     <button type="button" class="btn btn-secondary"
                                                         data-bs-dismiss="modal">{{ __('trans.close') }}</button>
-                                                    <a href="{{ url('cancel-flight',$reservation->flight[0]->pnr) }}" class="btn btn-primary">{{ __('trans.save_cancel') }}</a>
+                                                    <form method="POST" action="{{ url('cancel-flight',$reservation->flight[0]->pnr) }}" class="d-inline">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-primary">{{ __('trans.save_cancel') }}</button>
+                                                    </form>
                                                 </div>
                                             </div>
                                         </div>

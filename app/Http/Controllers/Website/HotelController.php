@@ -378,8 +378,22 @@ class HotelController extends Controller
 
     public function cancel_hotel($booking_code)
     {
-        $hotel_reservation = ReservationHotel::where('booking_code',$booking_code)->where('status',1)->firstOrFail();
+        $hotel_reservation = ReservationHotel::where('booking_code', $booking_code)
+            ->where('status', 1)
+            ->first();
+
+        if (! $hotel_reservation) {
+            abort(404);
+        }
+
+        if ((int) optional($hotel_reservation->reservation)->user_id !== (int) auth('web')->id()) {
+            abort(403);
+        }
+
         (new TBOHotelBookingService)->cancel($hotel_reservation);
-        return $hotel_reservation->is_refundable == 0 ?  redirect()->back()->with('success', __('dashboard.reservation_canceled')) : redirect()->back()->with('success', __('dashboard.cancel_pending'));
+
+        return $hotel_reservation->is_refundable == 0
+            ? redirect()->back()->with('success', __('dashboard.reservation_canceled'))
+            : redirect()->back()->with('success', __('dashboard.cancel_pending'));
     }
 }

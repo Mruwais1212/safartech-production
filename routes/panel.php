@@ -65,6 +65,7 @@ Route::group(['namespace' => 'Backend'], function () {
     Route::get('operations', 'OperationController@index');
 
     Route::get('refunds', 'RefundController@index');
+    Route::get('generate-invoice/{id}', [\App\Http\Controllers\InvoiceController::class, 'generateInvoice'])->middleware(['auth:admin', 'permission']);
 
     Route::get('cached-hotels', 'CacheHotelController@index');
     Route::post('allhotels', 'CacheHotelController@allhotels');
