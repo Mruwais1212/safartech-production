@@ -11,6 +11,7 @@ use App\Models\Reservation;
 use App\Models\ReservationFlight;
 use App\Traits\PriceCalculationTrait;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ReservationService
 {
@@ -382,9 +383,11 @@ class ReservationService
         return $reservation;
     }
 
-    public static function completeBooking($id)
+    public static function completeBooking($id, ?string $correlationId = null)
     {
         $reservation = Reservation::where('id', $id)->first();
+        $correlationId = $correlationId ?: ('res-' . $id . '-pay-' . ($reservation->payment_id ?? Str::uuid()->toString()));
+        Log::info('completeBooking start', ['correlation_id' => $correlationId, 'reservation_id' => $id]);
         $bookingSuccess = true; // Track overall booking success
         $errorMessages = []; // Collect error messages
 
@@ -461,10 +464,10 @@ class ReservationService
                 $bookingSuccess = false;
                 $errorMessage = $book['Status']['Description'] ?? 'Hotel booking failed';
                 $errorMessages[] = $errorMessage;
-                Log::error('Hotel booking failed for reservation ID: ' . $reservation->id, ['error' => $errorMessage, 'response' => $book]);
+                Log::error('Hotel booking failed', ['correlation_id' => $correlationId, 'reservation_id' => $reservation->id, 'error' => $errorMessage, 'status_code' => $book['Status']['Code'] ?? null]);
             }
 
-            Log::info('booking_room', $book);
+            Log::info('booking_room', ['correlation_id' => $correlationId, 'reservation_id' => $reservation->id, 'status_code' => $book['Status']['Code'] ?? null]);
 
             if ($reservation->type == 2 && $book['Status']['Code'] != 200) {
                 $bookingSuccess = false;
@@ -802,6 +805,8 @@ class ReservationService
 
         session(['flight' => null, 'hotel' => null, 'passengers' => null, 'preferences' => null, 'traceId' => null, 'outbound_flight' => null, 'inbound_flight' => null]);
         
+        Log::info('completeBooking end', ['correlation_id' => $correlationId, 'reservation_id' => $id, 'success' => $bookingSuccess, 'errors_count' => count($errorMessages)]);
+
         return [
             'success' => $bookingSuccess,
             'errors' => $errorMessages

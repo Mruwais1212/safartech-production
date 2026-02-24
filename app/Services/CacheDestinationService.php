@@ -29,7 +29,6 @@ class CacheDestinationService
 
         $apiKey = config('services.openai.key');
         $apiUrl = config('services.openai.url');
-        Log::info('apiKey: '.$apiKey);
         Log::info('apiUrl: '.$apiUrl);
 
         $input = ['from_date' => $request->start_date, 'to_date' => $request->end_date, 'departure_location' => @Airport::find($request->origin)->country.' , '.@Airport::find($request->origin)->city, 'to' => @$country->name_en, 'travel_interests' => $travelInterests, 'budget' => $request->max_budget, 'currency' => session('currency') ? session('currency') : 'SAR'];
@@ -171,11 +170,10 @@ class CacheDestinationService
                         $image = (new GooglePlaceService)->searchPlaces($city->name_en.' , '.$country->name_en, $raw->latitude, $raw->longitude);
 
                         if ($image) {
-                            $contents = file_get_contents($image);
-                            $userImage = 'destination-'.time().'-'.uniqid().'.jpg';
-                            $save_path = 'uploads/'.$userImage;
-                            file_put_contents($save_path, $contents);
-                            $destination->update(['image' => $userImage]);
+                            $userImage = app(SafeMediaDownloadService::class)->downloadToPublicDisk($image);
+                            if ($userImage) {
+                                $destination->update(['image' => $userImage]);
+                            }
                         }
                     }
 
@@ -190,11 +188,10 @@ class CacheDestinationService
                             // if (! file_exists('uploads/'.$place->image)) {
                             $image = (new GooglePlaceService)->searchPlaces($value, $raw->latitude, $raw->longitude);
                             if ($image) {
-                                $contents = file_get_contents($image);
-                                $userImage = 'destination-'.time().'-'.uniqid().'.jpg';
-                                $save_path = 'uploads/'.$userImage;
-                                file_put_contents($save_path, $contents);
-                                $place->update(['image' => $userImage]);
+                                $userImage = app(SafeMediaDownloadService::class)->downloadToPublicDisk($image);
+                                if ($userImage) {
+                                    $place->update(['image' => $userImage]);
+                                }
                             }
                             // }
                         }

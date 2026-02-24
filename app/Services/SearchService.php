@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Models\Airport;
 use App\Models\TBOHotel;
 use App\Models\Destination;
+use App\Support\LogRedactor;
 use Illuminate\Support\Str;
 use App\Models\Panel\Setting;
 use Illuminate\Support\Collection;
@@ -47,7 +48,7 @@ class SearchService
     {
        // Log::info('Preparing search data', ['request' => $request->all()]);
 
-        Log::info("Search Request Trip", $request->all());
+        Log::info("Search Request Trip", LogRedactor::redact(['request' => $request->all()]));
         $paxRooms = [];
         $roomCount = (int)($request['rooms'] ?? 1); // Get total rooms (e.g., 2)
 
@@ -278,7 +279,7 @@ class SearchService
             'country_id' => $request->country_id ?? ($trip ? $trip->country_id : null),
         ]);
 
-         Log::info('Preparing search data after', ['request' => $request->all()]);
+         Log::info('Preparing search data after', LogRedactor::redact(['request' => $request->all()]));
 
         return [
             'adults' => $request->adults ?: 1,
@@ -585,7 +586,7 @@ class SearchService
                 $hotels = $hotels->paginate(10);
         }
         Log::info('hotelsssss',[$hotels]);
-        Log::info('requestsssss',request()->all());
+        Log::info('requestsssss', LogRedactor::redact(['request' => request()->all()]));
 
         return $hotels;
     }

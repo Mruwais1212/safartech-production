@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use App\Support\LogRedactor;
 use Illuminate\Support\Facades\Validator;
 
 class HotelController extends Controller
@@ -101,7 +102,7 @@ class HotelController extends Controller
             'paxRooms' => $preferences['paxRooms'] ?? $paxRooms,
 
         ]);
-        Log::info('request(): ',request()->all());
+        Log::info('hotel search request', LogRedactor::redact(['request' => request()->all()]));
         $hotels = SearchService::searchAvailableHotelHasRooms(request(), $city_code);
         Log::info('Hotels: '.json_encode($hotels));
         if (! $hotels) {
@@ -281,7 +282,7 @@ class HotelController extends Controller
             'city_code' => $city_code,
 
         ]);
-        Log::info('request.all: ',request()->all());
+        Log::info('hotel search request', LogRedactor::redact(['request' => request()->all()]));
         Log::info('city_code: '.json_encode($city_code));
         $hotels = SearchService::searchAvailableHotelHasRooms(request(), $city_code);
         Log::info('hotels: '.json_encode($hotels));

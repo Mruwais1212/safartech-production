@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use App\Mail\BookingEmail;
 use App\Models\Airport;
 use App\Models\TransactionCard;
@@ -298,7 +299,7 @@ class PaymentController extends Controller implements HasMiddleware
             session(['final_total_price' => $finalTotalPrice]);
             
             Log::info('SSR data calculated from passenger session', [
-                'ssr_summary' => $ssrSummary,
+                'passengers_with_ssr' => count($ssrSummary),
                 'total_ssr_cost' => $totalSSRCost,
                 'final_total_price' => $finalTotalPrice
             ]);
@@ -336,7 +337,13 @@ class PaymentController extends Controller implements HasMiddleware
         if (array_key_exists('status', $invoice) && $invoice['status'] == 'initiated') {
             $reservation->update(['payment_id' => $invoice['id']]);
 
-            Log::info($invoice['id']);
+            $correlationId = 'res-' . $reservation->id . '-pay-' . ($invoice['id'] ?? Str::uuid()->toString());
+            Log::info('Payment invoice initiated', [
+                'correlation_id' => $correlationId,
+                'reservation_id' => $reservation->id,
+                'payment_id' => $invoice['id'] ?? null,
+                'status' => $invoice['status'] ?? null,
+            ]);
 
             return redirect($invoice['url']);
         }
@@ -360,6 +367,7 @@ class PaymentController extends Controller implements HasMiddleware
         }
 
         if (isset($payment['status']) && $payment['status'] == 'paid') {
+            Log::info('moyasarSuccess paid invoice received', ['payment_id' => $payment['invoice_id'] ?? null]);
             $reservation = Reservation::where('payment_id', $payment['invoice_id'])->first();
 
             return view('website.success', compact('reservation'));
@@ -583,12 +591,14 @@ class PaymentController extends Controller implements HasMiddleware
 
         // Check if there was an error getting the payment
         if (array_key_exists('error', $payment)) {
-            Log::error('Moyasar payment retrieval failed in success', $payment);
+            Log::error('Moyasar payment retrieval failed in success', ['payment_id' => $request->id]);
             return view('website.error');
         }
 
         if (isset($payment['status']) && $payment['status'] == 'paid') {
+            Log::info('moyasarSuccess paid invoice received', ['payment_id' => $payment['invoice_id'] ?? null]);
             $reservationId = null;
+            $correlationId = null;
 
             try {
                 $result = DB::transaction(function () use ($payment, &$reservationId) {
@@ -604,6 +614,7 @@ class PaymentController extends Controller implements HasMiddleware
                     }
 
                     $reservationId = $reservation->id;
+                    $correlationId = 'res-' . $reservation->id . '-pay-' . ($payment['invoice_id'] ?? 'unknown');
 
                     if ((int) $reservation->status === 1) {
                         Log::info('Moyasar success replay for already completed reservation', [
@@ -623,7 +634,7 @@ class PaymentController extends Controller implements HasMiddleware
                         return ['type' => 'already_failed', 'reservation' => $reservation];
                     }
 
-                    $bookingResult = ReservationService::completeBooking($reservation->id);
+                    $bookingResult = ReservationService::completeBooking($reservation->id, $correlationId);
 
                     if (! $bookingResult['success']) {
                         $reservation->update([
@@ -644,6 +655,7 @@ class PaymentController extends Controller implements HasMiddleware
                         ]);
 
                         Log::error('Booking failed after paid invoice', [
+                            'correlation_id' => $correlationId,
                             'reservation_id' => $reservation->id,
                             'payment_id' => $payment['invoice_id'] ?? null,
                         ]);
@@ -683,6 +695,7 @@ class PaymentController extends Controller implements HasMiddleware
                 if ($result['type'] === 'completed') {
                     Mail::to($reservation->user->email)->send(new BookingEmail($reservation));
                     Log::info('Booking completed after payment success', [
+                        'correlation_id' => $correlationId ?? ('res-' . $reservation->id . '-pay-' . ($payment['invoice_id'] ?? 'unknown')),
                         'reservation_id' => $reservation->id,
                         'payment_id' => $payment['invoice_id'] ?? null,
                     ]);
@@ -691,6 +704,7 @@ class PaymentController extends Controller implements HasMiddleware
                 return view('website.success', compact('reservation'));
             } catch (\Exception $e) {
                 Log::error('Exception during moyasarSuccess', [
+                    'correlation_id' => $correlationId ?? null,
                     'reservation_id' => $reservationId,
                     'payment_id' => $payment['invoice_id'] ?? null,
                 ]);

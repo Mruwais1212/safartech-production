@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Reservation;
+use App\Support\LogRedactor;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -23,7 +24,7 @@ class TBOHotelBookingService
 
     public function searchRooms($request)
     {
-        Log::info('$$$$$$ -- TBO Search Rooms Request', ['request' => $request->all()]);
+        Log::info('TBO Search Rooms Request', LogRedactor::redact(['request' => $request->all()]));
         $paxRooms = $request->paxRooms ?? [];
         $rooms = $request->rooms;
         $adults = $request->adults;
@@ -87,7 +88,7 @@ class TBOHotelBookingService
 
     public function searchAvailableHotelHasRooms($request)
     {
-          Log::info('$$$$$$ -- TBO Search Rooms Request', ['request' => $request->all()]);
+          Log::info('TBO Search Rooms Request', LogRedactor::redact(['request' => $request->all()]));
 
         // $paxRooms = [];
         // $rooms = $request->rooms;
@@ -148,7 +149,7 @@ class TBOHotelBookingService
         ];
       
         //Log::info('TBO Search Rooms', ['paxRooms' => $paxRooms]);
-        Log::info('searchRequest All Data Search', ['data' => $searchRequest]);
+        Log::info('searchRequest All Data Search', LogRedactor::redact(['data' => $searchRequest]));
 
         return Http::timeout(60)->withBasicAuth($this->username, $this->password)
             ->post($this->baseUrl.'/search', $searchRequest)
@@ -218,19 +219,19 @@ class TBOHotelBookingService
             'BookingCode' => $booking_code,
             'PaymentMode' => 'Limit',
         ])->json();
-        Log::info("prebook-info", ['response' => $pre]);
+        Log::info("prebook-info", ['booking_code' => $booking_code, 'status_code' => $pre['Status']['Code'] ?? null]);
         return $pre;
     }
 
     public function cancel($hotel)
     {
         if($hotel->confirmation_number){
-            Log::info("canceled hotel", ['hotel reservation data' => $hotel]);
+            Log::info("canceled hotel", ['booking_code' => $hotel->booking_code, 'reservation_id' => $hotel->reservation_id]);
             $pre = Http::timeout(1200)->withBasicAuth($this->username, $this->password)
             ->post($this->baseUrl.'/Cancel', [
                 'ConfirmationNumber' => $hotel->confirmation_number,
             ])->json();
-            Log::info("cancel success", ['canceled reserve' => $pre]);
+            Log::info("cancel success", ['booking_code' => $hotel->booking_code, 'status_code' => $pre['Status']['Code'] ?? null]);
             if ($pre['Status']['Code'] == 200) {
                 $hotel->status = $hotel->is_refundable == 1 ? 2 : 3;
                 $hotel->save();
@@ -261,16 +262,10 @@ class TBOHotelBookingService
 
     public function bookingRoom($request)
     {
-        Log::info('booking-room ', [
-            'BookingCode' => $request->booking_code,
-            'CustomerDetails' => $request->customer_details,
-            'ClientReferenceId' => $request->client_reference_id,
-            'BookingReferenceId' => $request->booking_reference_id,
-            'TotalFare' => $request->total_fare,
-            'EmailId' => $request->email,
-            'PhoneNumber' => $request->phone_number,
-            'BookingType' => 'Voucher',
-            'PaymentMode' => 'Limit',
+        Log::info('booking-room', [
+            'booking_code' => $request->booking_code,
+            'client_reference_id' => $request->client_reference_id,
+            'booking_reference_id' => $request->booking_reference_id,
         ]);
 
         $book = Http::timeout(1200)->withBasicAuth($this->username, $this->password)
@@ -286,7 +281,7 @@ class TBOHotelBookingService
             'PaymentMode' => 'Limit',
         ])->json();
 
-        Log::info('booking-room-response ', $book);
+        Log::info('booking-room-response', ['booking_code' => $request->booking_code, 'status_code' => $book['Status']['Code'] ?? null]);
 
         return $book;
     }
@@ -309,7 +304,7 @@ class TBOHotelBookingService
         $book = Http::timeout(1200)->withBasicAuth($this->username, $this->password)
         ->post($this->baseUrl.'/BookingDetail', $requestData)->json();
         
-        Log::info('booking details response', $book);
+        Log::info('booking details response', ['booking_reference_id' => $bookingReferenceId, 'confirmation_number' => $hotel->confirmation_number, 'status_code' => $book['Status']['Code'] ?? null]);
 
         return $book;
     }

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Country;
 use App\Models\ReservationFlight;
+use App\Support\LogRedactor;
 use Beste\Json;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -38,12 +39,12 @@ class TBOFlightBookingService
             if (!$response->successful() || !isset($responseData['TokenId'])) {
                 Log::error('TBO Authentication failed', [
                     'status' => $response->status(),
-                    'response' => $responseData
+                    'response' => LogRedactor::redact((array) $responseData)
                 ]);
                 throw new \Exception('TBO Authentication failed: ' . ($responseData['Error']['ErrorMessage'] ?? 'Unknown error'));
             }
              session(['traceId' => $responseData['TrackingId']]);
-            Log::info('TBO Authentication successful', ['TokenId' => substr($responseData['TokenId'], 0, 20) . '...']);
+            Log::info('TBO Authentication successful', ['trace_id' => $responseData['TrackingId'] ?? null]);
             return $responseData['TokenId'];
         });
     }
@@ -65,12 +66,12 @@ class TBOFlightBookingService
             if (!$response->successful() || !isset($responseData['TokenId'])) {
                 Log::error('TBO Authentication failed', [
                     'status' => $response->status(),
-                    'response' => $responseData
+                    'response' => LogRedactor::redact((array) $responseData)
                 ]);
                 throw new \Exception('TBO Authentication failed: ' . ($responseData['Error']['ErrorMessage'] ?? 'Unknown error'));
             }
              session(['traceId' => $responseData['TrackingId']]);
-            Log::info('TBO Authentication successful', ['TokenId' => substr($responseData['TokenId'], 0, 20) . '...']);
+            Log::info('TBO Authentication successful', ['trace_id' => $responseData['TrackingId'] ?? null]);
             return ['TokenId' => $responseData['TokenId'], 'TraceId' => $responseData['TrackingId']] ;
         });
     }
@@ -1194,15 +1195,11 @@ class TBOFlightBookingService
             'UserData' =>  $userData,
             'WebServerIP' => null,
         ];
-        Log::info('Five: ticket-flight-Request ');
-
-        Log::info(json_encode($array, JSON_PRETTY_PRINT));
+        Log::info('ticket-flight-request', ['trace_id' => $traceId, 'result_index' => $flight['ResultIndex'] ?? null]);
         $response = Http::timeout(1900)->post(config('services.tbo_flight.after_booking').'/Booking/Ticket/', $array);
         $responseData = $response->json();
         
-        Log::info('Five: ticket-flight-response ');
-
-        Log::info($responseData);
+        Log::info('ticket-flight-response', ['trace_id' => $traceId, 'pnr' => $responseData['PNR'] ?? null, 'status' => $responseData['Status'] ?? null]);
 
         // Check for session timeout and retry with fresh TraceId
         if (isset($responseData['Response']['Error']['ErrorMessage']) && 
@@ -1744,8 +1741,7 @@ class TBOFlightBookingService
                    ($leadPassenger->Mobile1CountryCode ?? '966') . '-' . ($leadPassenger->Mobile1 ?? '4355353') . ',' .
                    ($leadPassenger->Title ?? 'Mr') . ' ' . ($leadPassenger->FirstName ?? 'FirstName') . ' ' . ($leadPassenger->LastName ?? 'LastName');
 
-        Log::info('SEGMENTS:');
-        Log::info(json_encode($Segments_BE, JSON_PRETTY_PRINT));
+        Log::info('Segments prepared for booking', ['segments_count' => count($Segments_BE), 'trace_id' => $traceId]);
 
 
         $bookingRequest =(object) [
@@ -1840,16 +1836,13 @@ class TBOFlightBookingService
         
 
 
-            Log::info('Five: ticket-flight-Request ');
-
-            Log::info(json_encode($bookingRequest, JSON_PRETTY_PRINT));
+            Log::info('ticket-flight-request', ['trace_id' => $traceId, 'result_index' => $flight['ResultIndex'] ?? null]);
             $responseTicket = Http::timeout(1900)->post(config('services.tbo_flight.after_booking').'/Booking/Ticket/', $bookingRequest);
             $responseTicketData = $responseTicket->json();
             
             Log::info('Five: ticket-flight-response ');
 
-            //Log::info($responseTicketData);
-            Log::info(json_encode($responseTicketData, JSON_PRETTY_PRINT));
+            Log::info('ticket-flight-response', ['trace_id' => $traceId, 'pnr' => $responseTicketData['PNR'] ?? null, 'status' => $responseTicketData['Status'] ?? null]);
 
             
 
@@ -1858,15 +1851,11 @@ class TBOFlightBookingService
         }else{
             
 
-                Log::info('Four: book-flight-Request ');
-
-                Log::info(json_encode($bookingRequest, JSON_PRETTY_PRINT));
+                Log::info('book-flight-request', ['trace_id' => $traceId, 'result_index' => $flight['ResultIndex'] ?? null]);
                 $bookingResponse = Http::timeout(1900)->post(config('services.tbo_flight.after_booking').'/Booking/Book/', $bookingRequest);
                 $responseData = $bookingResponse->json();
                 
-                Log::info('Four: book-flight-response ');
-
-                Log::info(json_encode($responseData, JSON_PRETTY_PRINT));
+                Log::info('book-flight-response', ['trace_id' => $traceId, 'pnr' => $responseData['PNR'] ?? null, 'status' => $responseData['Status'] ?? null]);
 
 
                 if (!((isset($responseData['IsSuccess']) && $responseData['IsSuccess']) || 
@@ -1911,7 +1900,7 @@ class TBOFlightBookingService
                                 'BookingId' => $responseData['BookingId']
                             ];
                             
-                            Log::info('Attempting cancellation with request:', $cancelRequest);
+                            Log::info('Attempting cancellation request', ['pnr' => $cancelRequest['PNR'] ?? null, 'booking_id' => $cancelRequest['BookingId'] ?? null]);
                             
                             // Try different cancel endpoints
                             $cancelResponse = Http::timeout(30)->post(config('services.tbo_flight.after_booking').'/Booking/ReleasePNR/', $cancelRequest);
@@ -1919,7 +1908,7 @@ class TBOFlightBookingService
                             // $cancelResponse = Http::timeout(30)->post(config('services.tbo_flight.url').'/Booking/CancelBooking/', $cancelRequest);
                             
                             $cancelData = $cancelResponse->json();
-                            Log::info('Cancellation response:', $cancelData);
+                            Log::info('Cancellation response', ['pnr' => $cancelRequest['PNR'] ?? null, 'status' => $cancelData['Status'] ?? null]);
                             
                         } catch (\Exception $e) {
                             Log::error('Cancellation failed:', ['error' => $e->getMessage()]);
@@ -1972,16 +1961,11 @@ class TBOFlightBookingService
         
 
 
-                Log::info('Five: ticket-flight-Request ');
-
-                Log::info(json_encode($bookingRequest, JSON_PRETTY_PRINT));
+                Log::info('ticket-flight-request', ['trace_id' => $traceId, 'pnr' => $PNR]);
                 $responseTicket = Http::timeout(1900)->post(config('services.tbo_flight.after_booking').'/Booking/Ticket/', $bookingRequest);
                 $responseTicketData = $responseTicket->json();
                 
-                Log::info('Five: ticket-flight-response ');
-
-                //Log::info($responseTicketData);
-                Log::info(json_encode($responseTicketData, JSON_PRETTY_PRINT));
+                Log::info('ticket-flight-response', ['trace_id' => $traceId, 'pnr' => $responseTicketData['PNR'] ?? $PNR, 'status' => $responseTicketData['Status'] ?? null]);
 
                 
 
@@ -2635,7 +2619,7 @@ class TBOFlightBookingService
                 return [
                     'status' => 'error',
                     'error' => $responseData['Response']['Error'],
-                    'response' => $responseData
+                    'response' => LogRedactor::redact((array) $responseData)
                 ];
             }
 
