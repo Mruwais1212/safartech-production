@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\ReconcileFailedPaidReservationsJob;
 use App\Models\Reservation;
 use App\Models\ReservationFlight;
 use App\Models\User;
@@ -121,6 +122,7 @@ class CriticalSecurityPatchesTest extends TestCase
             'status' => 0,
             'payment_method' => 0,
             'payment_id' => 'inv_test_123',
+            'callback_nonce' => str_repeat('a', 48),
         ]);
 
         $moyasarMock = Mockery::mock('alias:App\\Services\\MoyasarPaymentService');
@@ -136,13 +138,13 @@ class CriticalSecurityPatchesTest extends TestCase
         ]);
 
         $reservationServiceMock = Mockery::mock('alias:App\\Services\\ReservationService');
-        $reservationServiceMock->shouldReceive('completeBooking')->once()->with($reservation->id)->andReturn([
+        $reservationServiceMock->shouldReceive('completeBooking')->once()->with($reservation->id, Mockery::type('string'))->andReturn([
             'success' => true,
             'errors' => [],
         ]);
 
-        $this->actingAs($user, 'web')->get('/moyasar-success?id=pay_1')->assertOk();
-        $this->actingAs($user, 'web')->get('/moyasar-success?id=pay_1')->assertOk();
+        $this->actingAs($user, 'web')->get('/moyasar-success?id=pay_1&nonce='.str_repeat('a', 48))->assertOk();
+        $this->actingAs($user, 'web')->get('/moyasar-success?id=pay_1&nonce='.str_repeat('a', 48))->assertOk();
 
         $this->assertDatabaseHas('reservations', [
             'id' => $reservation->id,
@@ -150,5 +152,61 @@ class CriticalSecurityPatchesTest extends TestCase
         ]);
 
         $this->assertDatabaseCount('transaction_cards', 1);
+    }
+
+    public function test_moyasar_success_missing_or_invalid_nonce_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user, 'web')->get('/moyasar-success?id=pay_1')->assertStatus(400);
+
+        $reservation = Reservation::create([
+            'user_id' => $user->id,
+            'type' => 3,
+            'price' => 250,
+            'currency' => 'SAR',
+            'status' => 0,
+            'payment_id' => 'inv_test_456',
+            'callback_nonce' => str_repeat('b', 48),
+        ]);
+
+        $moyasarMock = Mockery::mock('alias:App\\Services\\MoyasarPaymentService');
+        $moyasarMock->shouldReceive('getInvoice')->once()->andReturn([
+            'status' => 'paid',
+            'invoice_id' => 'inv_test_456',
+            'source' => ['company' => 'visa'],
+        ]);
+
+        $this->actingAs($user, 'web')->get('/moyasar-success?id=pay_2&nonce='.str_repeat('c', 48))->assertStatus(403);
+
+        $this->assertDatabaseHas('reservations', [
+            'id' => $reservation->id,
+            'status' => 0,
+        ]);
+    }
+
+    public function test_reconciliation_job_updates_attempt_metadata_for_failed_paid_reservations(): void
+    {
+        $user = User::factory()->create();
+
+        $reservation = Reservation::create([
+            'user_id' => $user->id,
+            'type' => 3,
+            'price' => 300,
+            'currency' => 'SAR',
+            'status' => 2,
+            'paid_at' => now(),
+            'booking_error' => 'initial',
+            'reconcile_attempt_count' => 0,
+            'reconciliation_status' => 'reconcile_pending',
+        ]);
+
+        (new ReconcileFailedPaidReservationsJob())->handle();
+
+        $reservation->refresh();
+
+        $this->assertEquals(1, $reservation->reconcile_attempt_count);
+        $this->assertNotNull($reservation->last_reconciled_at);
+        $this->assertEquals('reconcile_pending', $reservation->reconciliation_status);
+        $this->assertStringContainsString('reconciliation_hotfix_v3_1', $reservation->booking_error ?? '');
     }
 }

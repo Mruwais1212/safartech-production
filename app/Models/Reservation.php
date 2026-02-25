@@ -20,7 +20,9 @@ class Reservation extends Model
         'payment_method',
         'status',
         'payment_id',
+        'callback_nonce',
         'paid_at',
+        'payment_processed_at',
         'to_id',
         'to_city',
         'from_id',
@@ -32,7 +34,10 @@ class Reservation extends Model
         'payment_type',
         'search_request',
         'booking_reference_id',
-        'booking_error'
+        'booking_error',
+        'reconcile_attempt_count',
+        'last_reconciled_at',
+        'reconciliation_status'
     ];
 
     public function user()

@@ -27,6 +27,10 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/moyasar',
+        ]);
+
         $middleware->alias([
             'localize' => \Mcamara\LaravelLocalization\Middleware\LaravelLocalizationRoutes::class,
             'localizationRedirect' => \Mcamara\LaravelLocalization\Middleware\LaravelLocalizationRedirectFilter::class,
@@ -65,5 +69,6 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule) {
         $schedule->command('app:cache-t-b-o-hotel-in-database-command')->dailyAt('01:00');
         $schedule->command('queue:work --stop-when-empty --tries=3 --timeout=720')->everyMinute()->withoutOverlapping();
+        $schedule->command('reservations:reconcile-failed-paid')->everyMinutes(max(1, (int) config('payment.reconciliation_interval_minutes', 10)))->withoutOverlapping();
     })
     ->create();
