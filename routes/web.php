@@ -5,6 +5,7 @@ use App\Http\Controllers\Website\TripController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\Website\SessionController;
+use App\Http\Controllers\Webhooks\MoyasarWebhookController;
 
 Route::get('page/{page}', function ($page) {
     return view("website.$page");
@@ -22,6 +23,9 @@ Route::group(['middleware' => ['auth:web']], function () {
     Route::resource('change-password', 'ChangePasswordController')->only('index', 'store');
     Route::resource('edit-profile', 'EditProfileController')->only('index', 'store');
 });
+
+
+Route::post('webhooks/moyasar', MoyasarWebhookController::class)->middleware('throttle:moyasar-webhook');
 
 Route::group(['middleware' => ['web']], function () {
     Route::get('/', 'HomeController@index');

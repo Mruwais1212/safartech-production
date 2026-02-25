@@ -71,6 +71,10 @@ class AppServiceProvider extends ServiceProvider
                 : Limit::perMinute(5)->by('ip:' . $request->ip());
         });
 
+        RateLimiter::for('moyasar-webhook', function ($request) {
+            return Limit::perMinute(20)->by('moyasar-webhook:' . $request->ip());
+        });
+
         RateLimiter::for('admin-ops', function ($request) {
             $admin = $request->user('admin');
 

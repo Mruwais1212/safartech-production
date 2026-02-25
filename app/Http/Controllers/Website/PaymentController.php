@@ -18,6 +18,7 @@ use App\Models\TransactionCard;
 use App\Traits\PriceCalculationTrait;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 
 class PaymentController extends Controller implements HasMiddleware
 {
@@ -245,27 +246,23 @@ class PaymentController extends Controller implements HasMiddleware
         $passengers = session('passengers', []);
         $totalSSRCost = 0;
         $ssrSummary = [];
-        
+
         foreach ($passengers as $index => $passenger) {
             $mealPrice = $passenger['meal_price'] ?? 0;
             $baggagePrice = $passenger['baggage_price'] ?? 0;
             $passengerSSRCost = $mealPrice + $baggagePrice;
-            
+
             if ($passengerSSRCost > 0) {
-                $ssrSummary[$index] = [
-                    'name' => ($passenger['first_name'] ?? '') . ' ' . ($passenger['last_name'] ?? ''),
-                    'meal' => $passenger['selected_meal'] ?? 'none',
-                    'baggage' => $passenger['selected_baggage'] ?? 'none',
+                $ssrSummary[] = [
                     'meal_price' => $mealPrice,
                     'baggage_price' => $baggagePrice,
-                    'total' => $passengerSSRCost
+                    'total' => $passengerSSRCost,
                 ];
             }
-            
+
             $totalSSRCost += $passengerSSRCost;
         }
 
-        // Compute invoice total from server-authoritative session data only
         $flight = session('flight', []);
         $hotel = session('hotel', []);
         $tripType = session('preferences.trip_type', 3);
@@ -292,16 +289,18 @@ class PaymentController extends Controller implements HasMiddleware
             return redirect()->back()->with('error', 'Invalid payment amount');
         }
 
-        // Store SSR summary for logging and reference
-        if (!empty($ssrSummary)) {
-            session(['ssr_summary' => $ssrSummary]);
+        if (! empty($ssrSummary)) {
+            session(['ssr_summary' => [
+                'passengers_with_ssr' => count($ssrSummary),
+                'total_ssr_cost' => $totalSSRCost,
+            ]]);
             session(['total_ssr_cost' => $totalSSRCost]);
             session(['final_total_price' => $finalTotalPrice]);
-            
+
             Log::info('SSR data calculated from passenger session', [
                 'passengers_with_ssr' => count($ssrSummary),
                 'total_ssr_cost' => $totalSSRCost,
-                'final_total_price' => $finalTotalPrice
+                'final_total_price' => $finalTotalPrice,
             ]);
         }
 
@@ -310,8 +309,10 @@ class PaymentController extends Controller implements HasMiddleware
         if (! $reservation) {
             return redirect()->back()->with('error', 'Something went wrong');
         }
-        
-        // Use the final total price if SSR is included, otherwise use reservation price
+
+        $callbackNonce = Str::random(48);
+        $reservation->update(['callback_nonce' => $callbackNonce]);
+
         $price = $finalTotalPrice;
         $currency = $reservation->currency ?: 'SAR';
 
@@ -319,25 +320,23 @@ class PaymentController extends Controller implements HasMiddleware
             'amount' => $price,
             'currency' => $currency,
             'description' => 'test invoice',
-            'callback_url' => url('moyasar-callback'),
-            'success_url' => url('moyasar-success'),
+            'callback_url' => url('moyasar-callback').'?nonce='.$callbackNonce,
+            'success_url' => url('moyasar-success').'?nonce='.$callbackNonce,
             'metadata' => collect([
                 'reservation_id' => $reservation->id,
                 'user_id' => auth('web')->id(),
             ]),
+            'reservation_id' => $reservation->id,
         ]);
-        
-        // Check if there was an error in invoice creation
+
         if (array_key_exists('error', $invoice)) {
-            //Log::error('Moyasar invoice creation failed', $invoice);
-            return back()->with('error', 'Payment service error: ' . ($invoice['message'] ?? 'Unknown error'));
+            return back()->with('error', 'Payment service error: '.($invoice['message'] ?? 'Unknown error'));
         }
-        
-        // Handle successful invoice creation
+
         if (array_key_exists('status', $invoice) && $invoice['status'] == 'initiated') {
             $reservation->update(['payment_id' => $invoice['id']]);
 
-            $correlationId = 'res-' . $reservation->id . '-pay-' . ($invoice['id'] ?? Str::uuid()->toString());
+            $correlationId = 'res-'.$reservation->id.'-pay-'.($invoice['id'] ?? Str::uuid()->toString());
             Log::info('Payment invoice initiated', [
                 'correlation_id' => $correlationId,
                 'reservation_id' => $reservation->id,
@@ -358,23 +357,43 @@ class PaymentController extends Controller implements HasMiddleware
 
     public function moyasarCallback(Request $request)
     {
+        $validation = Validator::make($request->query(), [
+            'id' => ['required', 'string', 'max:191'],
+            'nonce' => ['required', 'string', 'size:48'],
+        ]);
+
+        if ($validation->fails()) {
+            return response('Invalid callback parameters', 400);
+        }
+
         $payment = MoyasarPaymentService::getInvoice($request->id);
 
-        // Check if there was an error getting the payment
         if (array_key_exists('error', $payment)) {
-            Log::error('Moyasar payment retrieval failed in callback', $payment);
+            Log::error('Moyasar payment retrieval failed in callback', [
+                'payment_id' => $request->id,
+            ]);
+
             return view('website.error');
         }
 
         if (isset($payment['status']) && $payment['status'] == 'paid') {
-            Log::info('moyasarSuccess paid invoice received', ['payment_id' => $payment['invoice_id'] ?? null]);
-            $reservation = Reservation::where('payment_id', $payment['invoice_id'])->first();
+            $reservation = Reservation::where('payment_id', $payment['invoice_id'] ?? null)->first();
+
+            if (! $reservation || ! hash_equals((string) $reservation->callback_nonce, (string) $request->nonce)) {
+                return response('Forbidden', 403);
+            }
+
+            Log::info('Moyasar callback verified', [
+                'reservation_id' => $reservation->id,
+                'payment_id' => $payment['invoice_id'] ?? null,
+            ]);
 
             return view('website.success', compact('reservation'));
         }
 
         return view('website.error');
     }
+
 
     //  private function callSSR()
     // {
@@ -587,22 +606,30 @@ class PaymentController extends Controller implements HasMiddleware
     
     public function moyasarSuccess(Request $request)
     {
+        $validation = Validator::make($request->query(), [
+            'id' => ['required', 'string', 'max:191'],
+            'nonce' => ['required', 'string', 'size:48'],
+        ]);
+
+        if ($validation->fails()) {
+            return response('Invalid success parameters', 400);
+        }
+
         $payment = MoyasarPaymentService::getInvoice($request->id);
 
-        // Check if there was an error getting the payment
         if (array_key_exists('error', $payment)) {
             Log::error('Moyasar payment retrieval failed in success', ['payment_id' => $request->id]);
+
             return view('website.error');
         }
 
         if (isset($payment['status']) && $payment['status'] == 'paid') {
-            Log::info('moyasarSuccess paid invoice received', ['payment_id' => $payment['invoice_id'] ?? null]);
             $reservationId = null;
             $correlationId = null;
 
             try {
-                $result = DB::transaction(function () use ($payment, &$reservationId) {
-                    $reservation = Reservation::where('payment_id', $payment['invoice_id'])->lockForUpdate()->first();
+                $result = DB::transaction(function () use ($payment, $request, &$reservationId, &$correlationId) {
+                    $reservation = Reservation::where('payment_id', $payment['invoice_id'] ?? null)->lockForUpdate()->first();
 
                     if (! $reservation) {
                         Log::warning('Moyasar success with missing reservation', [
@@ -613,10 +640,14 @@ class PaymentController extends Controller implements HasMiddleware
                         return ['type' => 'missing'];
                     }
 
-                    $reservationId = $reservation->id;
-                    $correlationId = 'res-' . $reservation->id . '-pay-' . ($payment['invoice_id'] ?? 'unknown');
+                    if (! hash_equals((string) $reservation->callback_nonce, (string) $request->nonce)) {
+                        return ['type' => 'forbidden'];
+                    }
 
-                    if ((int) $reservation->status === 1) {
+                    $reservationId = $reservation->id;
+                    $correlationId = 'res-'.$reservation->id.'-pay-'.($payment['invoice_id'] ?? 'unknown');
+
+                    if ($reservation->payment_processed_at !== null || (int) $reservation->status === 1) {
                         Log::info('Moyasar success replay for already completed reservation', [
                             'reservation_id' => $reservation->id,
                             'payment_id' => $payment['invoice_id'] ?? null,
@@ -640,9 +671,11 @@ class PaymentController extends Controller implements HasMiddleware
                         $reservation->update([
                             'status' => 2,
                             'payment_method' => 1,
-                            'payment_type' => $payment['source']['company'],
+                            'payment_type' => $payment['source']['company'] ?? null,
                             'paid_at' => now(),
+                            'payment_processed_at' => now(),
                             'booking_error' => implode('; ', $bookingResult['errors']),
+                            'reconciliation_status' => 'reconcile_pending',
                         ]);
 
                         TransactionCard::firstOrCreate([
@@ -650,8 +683,6 @@ class PaymentController extends Controller implements HasMiddleware
                             'reference_number' => $payment['source']['reference_number'] ?? null,
                         ], [
                             'company' => $payment['source']['company'] ?? null,
-                            'number' => $payment['source']['number'] ?? null,
-                            'name' => $payment['source']['name'] ?? null,
                         ]);
 
                         Log::error('Booking failed after paid invoice', [
@@ -666,8 +697,10 @@ class PaymentController extends Controller implements HasMiddleware
                     $reservation->update([
                         'status' => 1,
                         'payment_method' => 1,
-                        'payment_type' => $payment['source']['company'],
+                        'payment_type' => $payment['source']['company'] ?? null,
                         'paid_at' => now(),
+                        'payment_processed_at' => now(),
+                        'reconciliation_status' => null,
                     ]);
 
                     TransactionCard::firstOrCreate([
@@ -675,12 +708,14 @@ class PaymentController extends Controller implements HasMiddleware
                         'reference_number' => $payment['source']['reference_number'] ?? null,
                     ], [
                         'company' => $payment['source']['company'] ?? null,
-                        'number' => $payment['source']['number'] ?? null,
-                        'name' => $payment['source']['name'] ?? null,
                     ]);
 
                     return ['type' => 'completed', 'reservation' => $reservation];
                 });
+
+                if ($result['type'] === 'forbidden') {
+                    return response('Forbidden', 403);
+                }
 
                 if ($result['type'] === 'missing') {
                     return redirect(url('/'));
@@ -689,13 +724,13 @@ class PaymentController extends Controller implements HasMiddleware
                 $reservation = $result['reservation'];
 
                 if ($result['type'] === 'already_failed' || $result['type'] === 'booking_failed') {
-                    return redirect('/booking-error')->with('error_message', 'Payment was successful but booking failed. Please contact support with your reservation ID: ' . $reservation->id);
+                    return redirect('/booking-error')->with('error_message', 'Payment was successful but booking failed. Please contact support with your reservation ID: '.$reservation->id);
                 }
 
                 if ($result['type'] === 'completed') {
                     Mail::to($reservation->user->email)->send(new BookingEmail($reservation));
                     Log::info('Booking completed after payment success', [
-                        'correlation_id' => $correlationId ?? ('res-' . $reservation->id . '-pay-' . ($payment['invoice_id'] ?? 'unknown')),
+                        'correlation_id' => $correlationId ?? ('res-'.$reservation->id.'-pay-'.($payment['invoice_id'] ?? 'unknown')),
                         'reservation_id' => $reservation->id,
                         'payment_id' => $payment['invoice_id'] ?? null,
                     ]);
@@ -709,13 +744,14 @@ class PaymentController extends Controller implements HasMiddleware
                     'payment_id' => $payment['invoice_id'] ?? null,
                 ]);
 
-                return redirect('/booking-error')->with('error_message', 'Payment was successful but an error occurred during booking. Please contact support with your reservation ID: ' . $reservationId);
+                return redirect('/booking-error')->with('error_message', 'Payment was successful but an error occurred during booking. Please contact support with your reservation ID: '.$reservationId);
             }
         }
 
         return view('website.error');
     }
-    
+
+
     public function bookingError(Request $request)
     {
         // This route is specifically for booking/ticketing errors
