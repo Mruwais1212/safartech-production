@@ -171,18 +171,25 @@ class PassengerInformationController extends Controller
     public function updateSSRData(Request $request)
     {
         try {
-            $passengerIndex = $request->input('passenger_index');
-            $ssrType = $request->input('ssr_type'); // 'meal' or 'baggage'
-            $ssrValue = $request->input('ssr_value');
-            $ssrPrice = $request->input('ssr_price', 0);
+            $validated = $request->validate([
+                'passenger_index' => ['required', 'integer', 'min:0'],
+                'ssr_type'        => ['required', 'in:meal,baggage'],
+                'ssr_value'       => ['required', 'string', 'max:255'],
+                'ssr_price'       => ['nullable', 'numeric', 'min:0'],
+            ]);
+
+            $passengerIndex = (int) $validated['passenger_index'];
+            $ssrType        = $validated['ssr_type'];
+            $ssrValue       = $validated['ssr_value'];
+            $ssrPrice       = (float) ($validated['ssr_price'] ?? 0);
 
             // Get current passengers from session
             $passengers = session('passengers', []);
 
-            if (!isset($passengers[$passengerIndex])) {
+            if (! array_key_exists($passengerIndex, $passengers)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Passenger not found'
+                    'message' => 'Passenger not found',
                 ], 404);
             }
 

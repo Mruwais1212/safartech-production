@@ -14,6 +14,15 @@ return [
     |
     */
 
+    'moyasar' => [
+        'secret_key' => env('MOYASAR_SECRET_KEY'),
+        'base_url'   => env('MOYASAR_BASE_URL', 'https://api.moyasar.com'),
+    ],
+
+    'google_maps' => [
+        'api_key' => env('GOOGLE_MAPS_API_KEY'),
+    ],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],

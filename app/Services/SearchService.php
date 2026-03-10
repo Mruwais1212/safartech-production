@@ -178,7 +178,7 @@ class SearchService
             }
         } else {
             // Case 2: destination is a city name - try trip city first, then request destination
-            $destination = Airport::where('city', @$trip->city->name_en)->first();
+            $destination = Airport::where('city', $trip?->city?->name_en)->first();
             if (!$destination && $request->destination) {
                 $destination = Airport::where('city', $request->destination)->first();
             }
@@ -255,7 +255,7 @@ class SearchService
             }
         } else {
             // Case 2: destination is a city name - try trip city first, then request destination
-            $destination = Airport::where('city', @$trip->city->name_en)->first();
+            $destination = Airport::where('city', $trip?->city?->name_en)->first();
             if (!$destination && $request->destination) {
                 $destination = Airport::where('city', $request->destination)->first();
             }
@@ -416,11 +416,13 @@ class SearchService
         //     'limited_hotels_sent' => count($limitedHotelCodes),
         //     'request_data' => $request->all()
         // ]);
-        if(!isset($request['paxRooms']) || empty($request['paxRooms'])) {
-           $paxRooms[] = (object)[
-                'Adults' => (int) $request['adults'],
-                'Children' =>  (int) $request['children'],
-                'ChildrenAges' => (int) $request['infants']
+        if (! isset($request['paxRooms']) || empty($request['paxRooms'])) {
+            // ChildrenAges must be an array of ages — use age 1 as a proxy for infants
+            $infantCount  = max(0, (int) ($request['infants'] ?? 0));
+            $paxRooms[] = (object) [
+                'Adults'       => (int) ($request['adults'] ?? 1),
+                'Children'     => (int) ($request['children'] ?? 0),
+                'ChildrenAges' => $infantCount > 0 ? array_fill(0, $infantCount, 1) : [],
             ];
         } else {
             $paxRooms = $request['paxRooms'];

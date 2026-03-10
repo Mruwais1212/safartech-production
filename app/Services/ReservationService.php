@@ -362,20 +362,20 @@ class ReservationService
 
         }
 
-        foreach (Session::get('passengers') as $passenger) {
+        foreach (Session::get('passengers', []) as $passenger) {
             $reservation->passengers()->create([
-                'first_name' => $passenger['first_name'],
-                'last_name' => $passenger['last_name'],
-                'pax_type' => $passenger['pax_type'],
-                'birth_date' => $passenger['birth_date'],
-                'email' => $passenger['email'],
-                'phone' => $passenger['phone'],
-                'nationality' => $passenger['nationality'],
-                'gender' => $passenger['gender'],
-                'address' => $passenger['address'],
-                'passport_number' => isset($passenger['passport_number']) ? $passenger['passport_number'] : '',
-                'passport_expiry_date' => isset($passenger['passport_expiry_date']) ? $passenger['passport_expiry_date'] : '1900-01-01',
-                'title' => @$passenger['title'],
+                'first_name'          => $passenger['first_name'] ?? '',
+                'last_name'           => $passenger['last_name'] ?? '',
+                'pax_type'            => $passenger['pax_type'] ?? 1,
+                'birth_date'          => $passenger['birth_date'] ?? null,
+                'email'               => $passenger['email'] ?? null,
+                'phone'               => $passenger['phone'] ?? null,
+                'nationality'         => $passenger['nationality'] ?? null,
+                'gender'              => $passenger['gender'] ?? null,
+                'address'             => $passenger['address'] ?? null,
+                'passport_number'     => $passenger['passport_number'] ?? '',
+                'passport_expiry_date' => $passenger['passport_expiry_date'] ?? '1900-01-01',
+                'title'               => $passenger['title'] ?? null,
             ]);
         }
 

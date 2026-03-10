@@ -2,28 +2,7 @@
 
 namespace App\Helpers;
 
-use App\Http\Resources\BalancesResource;
-use App\Models\Balance;
-use App\Models\Dafater;
-use App\Models\Orders;
 use App\Models\Panel\Setting;
-use App\Models\PayoutsAccounts;
-use App\Models\Settings;
-use App\Models\WithdrawMoney;
-use Carbon\Carbon;
-use http\Env\Response;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\App;
-use App\Http\Requests;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use mysql_xdevapi\Exception;
-use Validator;
-use JWTAuth;
-use \Tymon\JWTAuth\Exceptions\JWTException;
-use Tymon\JWTAuth\Exceptions\TokenExpiredException;
-use Tymon\JWTAuth\Exceptions\TokenInvalidException;
-use Ixudra\Curl\Facades\Curl;
 
 class PriceCalculationHelper
 {
