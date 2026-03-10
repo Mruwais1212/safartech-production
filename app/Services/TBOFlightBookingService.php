@@ -1011,7 +1011,7 @@ class TBOFlightBookingService
                 'PassportNo' => null,
                 'Nationality' => [
                     'CountryCode' => $passenger['nationality'],
-                    'CountryName' => Country::where('code', $passenger['nationality'])->first()->name_en,
+                    'CountryName' => Country::where('code', $passenger['nationality'])->first()?->name_en ?? $passenger['nationality'],
                 ],
                 'Country' => [
                     'CountryCode' => 'AE',
@@ -1688,11 +1688,11 @@ class TBOFlightBookingService
                 'PassportNo' => isset($passenger['passport_number']) && $passenger['passport_number'] ? $passenger['passport_number'] : null,
                 'Nationality' => [
                     'CountryCode' => $passenger['nationality'],
-                    'CountryName' => Country::where('code', $passenger['nationality'])->first()->name_en,
+                    'CountryName' => Country::where('code', $passenger['nationality'])->first()?->name_en ?? $passenger['nationality'],
                 ],
                 'Country' => [
                     'CountryCode' =>  $passenger['nationality'],
-                    'CountryName' => Country::where('code', $passenger['nationality'])->first()->name_en,
+                    'CountryName' => Country::where('code', $passenger['nationality'])->first()?->name_en ?? $passenger['nationality'],
                 ],
                 'City' => [
                     'CountryCode' => null,

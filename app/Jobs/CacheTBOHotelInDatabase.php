@@ -35,32 +35,32 @@ class CacheTBOHotelInDatabase implements ShouldQueue
 
         if (array_key_exists('HotelDetails', $hotels) && count($hotels['HotelDetails']) > 0) {
             foreach ($hotels['HotelDetails'] as $hotel) {
-                $location = explode('|', $hotel['Map']);
-                $latitude = @$location[0];
-                $longitude = @$location[1];
+                $location = explode('|', $hotel['Map'] ?? '');
+                $latitude = $location[0] ?? null;
+                $longitude = $location[1] ?? null;
 
                 TBOHotel::updateOrCreate(['code' => $hotel['HotelCode']], [
-                    'name_ar' => $this->lang == 'ar' ? @$hotel['HotelName'] : null,
-                    'name_en' => $this->lang == 'en' ? @$hotel['HotelName'] : null,
-                    'description_ar' => $this->lang == 'ar' ? @$hotel['Description'] : null,
-                    'description_en' => $this->lang == 'en' ? @$hotel['Description'] : null,
-                    'address' => @$hotel['Address'],
-                    'facilities_ar' => app()->getLocale() == 'ar' ? json_encode(@$hotel['HotelFacilities']) : null, // json_encode(@$hotel['HotelFacilities']),
-                    'facilities_en' => app()->getLocale() == 'en' ? json_encode(@$hotel['HotelFacilities']) : null, // json_encode(@$hotel['HotelFacilities']),
-                    'images' => json_encode(@$hotel['Images']),
-                    'attractions' => json_encode(@$hotel['Attractions'] ?? []),
-                    'latitude' => @$latitude,
-                    'longitude' => @$longitude,
-                    'rating' => @$hotel['HotelRating'],
-                    'pin_code' => @$hotel['PinCode'],
-                    'phone' => @$hotel['PhoneNumber'],
-                    'fax' => @$hotel['FaxNumber'],
-                    'city_code' => @$hotel['CityId'],
-                    'city_name' => @$hotel['CityName'],
-                    'country_code' => @$hotel['CountryCode'],
-                    'country_name' => @$hotel['CountryName'],
-                    'check_in_time' => @$hotel['CheckInTime'],
-                    'check_out_time' => @$hotel['CheckOutTime'],
+                    'name_ar' => $this->lang == 'ar' ? ($hotel['HotelName'] ?? null) : null,
+                    'name_en' => $this->lang == 'en' ? ($hotel['HotelName'] ?? null) : null,
+                    'description_ar' => $this->lang == 'ar' ? ($hotel['Description'] ?? null) : null,
+                    'description_en' => $this->lang == 'en' ? ($hotel['Description'] ?? null) : null,
+                    'address' => $hotel['Address'] ?? null,
+                    'facilities_ar' => app()->getLocale() == 'ar' ? json_encode($hotel['HotelFacilities'] ?? []) : null,
+                    'facilities_en' => app()->getLocale() == 'en' ? json_encode($hotel['HotelFacilities'] ?? []) : null,
+                    'images' => json_encode($hotel['Images'] ?? []),
+                    'attractions' => json_encode($hotel['Attractions'] ?? []),
+                    'latitude' => $latitude,
+                    'longitude' => $longitude,
+                    'rating' => $hotel['HotelRating'] ?? null,
+                    'pin_code' => $hotel['PinCode'] ?? null,
+                    'phone' => $hotel['PhoneNumber'] ?? null,
+                    'fax' => $hotel['FaxNumber'] ?? null,
+                    'city_code' => $hotel['CityId'] ?? null,
+                    'city_name' => $hotel['CityName'] ?? null,
+                    'country_code' => $hotel['CountryCode'] ?? null,
+                    'country_name' => $hotel['CountryName'] ?? null,
+                    'check_in_time' => $hotel['CheckInTime'] ?? null,
+                    'check_out_time' => $hotel['CheckOutTime'] ?? null,
                     'cached_at' => now(),
                 ]);
             }

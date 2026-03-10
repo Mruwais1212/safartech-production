@@ -9,7 +9,8 @@ Artisan::command('reservations:reconcile-failed-paid', function () {
     $this->info('Reconciliation job dispatched');
 });
 
-Schedule::command('queue:work --stop-when-empty')->everyMinute()->withoutOverlapping();
+// NOTE: queue:work is scheduled in bootstrap/app.php (--stop-when-empty, --tries=3, --timeout=720).
+// Do not duplicate it here — a single definition prevents double-processing under the scheduler model.
 
 // Monitor booking details system every 15 minutes
 Schedule::command('booking:monitor --alert-threshold=10')->everyFifteenMinutes();
