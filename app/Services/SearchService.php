@@ -505,10 +505,12 @@ class SearchService
             $query->where('name_en', session()->get('preferences')['destination_name']);
         })->first();
 
+        $sortKey = null;
+        $sortOrder = null;
         if (request()->sort) {
             $sort = explode('_', request()->sort);
-            $sortKey = $sort[0];
-            $sortOrder = $sort[1];
+            $sortKey = $sort[0] ?? null;
+            $sortOrder = $sort[1] ?? 'asc';
         }
 
         if ($hotels instanceof Collection) {
@@ -525,7 +527,7 @@ class SearchService
                 ->map(function ($hotel) use ($newRoom, $destination) {
                     $hotel['rooms'] = $newRoom[$hotel->code] ?? [];
                     $hotel['price'] = $newRoom[$hotel->code]['Price'];
-                    $hotel['distance'] = (new DistanceService)->calculateDistance(@$hotel->latitude, @$hotel->longitude, @$destination->latitude, @$destination->longitude);
+                    $hotel['distance'] = (new DistanceService)->calculateDistance($hotel->latitude ?? 0, $hotel->longitude ?? 0, $destination->latitude ?? 0, $destination->longitude ?? 0);
 
                     return $hotel;
                 });
@@ -535,7 +537,7 @@ class SearchService
                     ->where('price','<=',request()->max_budget)->values();
             }
 
-            if (request()->sort) {
+            if (request()->sort && $sortKey) {
                 $hotels = $hotels->sortBy(function ($hotel) use ($sortKey) {
                     return $hotel[$sortKey];
                 }, SORT_REGULAR, $sortOrder == 'desc')->values();
@@ -546,7 +548,7 @@ class SearchService
             $paginatedHotels->getCollection()->transform(function ($hotel) use ($newRoom, $destination) {
                 $hotel['rooms'] = $newRoom[$hotel->code] ?? [];
                 $hotel['price'] = $newRoom[$hotel->code]['Price'];
-                $hotel['distance'] = (new DistanceService)->calculateDistance(@$hotel->latitude, @$hotel->longitude, @$destination->latitude, @$destination->longitude);
+                $hotel['distance'] = (new DistanceService)->calculateDistance($hotel->latitude ?? 0, $hotel->longitude ?? 0, $destination->latitude ?? 0, $destination->longitude ?? 0);
 
                 return $hotel;
             });
@@ -567,10 +569,10 @@ class SearchService
                 ->map(function ($hotel) use ($newRoom, $destination) {
                     $hotel['rooms'] = $newRoom[is_array($hotel) ? $hotel['HotelCode'] : $hotel->code] ?? [];
                     $hotel['price'] = $newRoom[$hotel['HotelCode']]['Price'];
-                    $location = explode('|', $hotel['Map']);
-                    $latitude = @$location[0];
-                    $longitude = @$location[1];
-                    $hotel['distance'] = (new DistanceService)->calculateDistance($latitude, $longitude, @$destination->latitude ?: 0, @$destination->longitude ?: 0);
+                    $location = explode('|', $hotel['Map'] ?? '');
+                    $latitude = $location[0] ?? 0;
+                    $longitude = $location[1] ?? 0;
+                    $hotel['distance'] = (new DistanceService)->calculateDistance((float)$latitude, (float)$longitude, $destination->latitude ?? 0, $destination->longitude ?? 0);
 
                     return $hotel;
                 });
@@ -580,7 +582,7 @@ class SearchService
                     ->where('price','<=',request()->max_budget)->values();
             }
 
-                if (request()->sort) {
+                if (request()->sort && $sortKey) {
                     $hotels = $hotels->sortBy(function ($hotel) use ($sortKey) {
                         return $hotel[$sortKey];
                     }, SORT_REGULAR, $sortOrder == 'desc')->values();

@@ -270,16 +270,22 @@ class ReservationService
                 $segment_index=Session::get('inbound_flight')?0:1;
                 $outbound_id=!Session::get('inbound_flight')?$outbound_flight->id:0;
                 $inboundFlight=Session::get('inbound_flight')?:Session::get('outbound_flight');
+                // Use the dedicated inbound amount when a separate inbound flight was chosen;
+                // fall back to the outbound amount for round-trip tickets stored as Segments[1].
+                $inboundPriceBase = Session::get('inbound_flight')
+                    ? ($flight['inbound_flight_amount'] ?? $flight['flight_amount'] ?? 0)
+                    : ($flight['flight_amount'] ?? 0);
+
                 $first_tax_rate = $reservationType == 'inside' ? 15 : 0;
-                $first_tax_amount = Session::get('flight')['flight_amount'] * $first_tax_rate / 100;
+                $first_tax_amount = $inboundPriceBase * $first_tax_rate / 100;
 
                 $administrative_tax_rate = (int)$flight_commession;
-                $administrative_tax_amount = Session::get('flight')['flight_amount'] * $administrative_tax_rate / 100;
+                $administrative_tax_amount = $inboundPriceBase * $administrative_tax_rate / 100;
 
                 $second_tax_rate = 15;
                 $second_tax_amount = $administrative_tax_amount * $second_tax_rate / 100;
 
-                $price_without_tax = Session::get('flight')['flight_amount'];
+                $price_without_tax = $inboundPriceBase;
                 $tax_amount = $first_tax_amount + $administrative_tax_amount + $second_tax_amount;
 
                 $inbound_flight = $reservation->flight()->create([
@@ -289,7 +295,7 @@ class ReservationService
                     'is_lcc' => $inboundFlight['IsLCC'],
                     'is_refundable' => $inboundFlight['IsRefundable'],
                     'last_ticket_date' => $inboundFlight['LastTicketDate'],
-                    'total_price' => Session::get('flight')['flight_amount'],
+                    'total_price' => $inboundPriceBase,
                     'is_direct' => count(value: $inboundFlight['Segments'][$segment_index]) == 1 ? true : false,
                     'flight_class' => $inboundFlight['Segments'][$segment_index][0]['CabinClass'],
                     'pnr' => null,
@@ -325,7 +331,7 @@ class ReservationService
                         'trip_indicator' => $value['TripIndicator'],
                         'segment_indicator' => $value['SegmentIndicator'],
                         'duration' => $value['Duration'],
-                        'no_of_seat_available' => @$value['NoOfSeatAvailable']?:1,
+                        'no_of_seat_available' => $value['NoOfSeatAvailable'] ?? 1,
                     ]);
 
                     $segment->origin()->create([
