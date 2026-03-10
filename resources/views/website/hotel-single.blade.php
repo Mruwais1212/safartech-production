@@ -110,7 +110,7 @@
                                                             data-size="xs" disabled="">
                                                     </div>
                                                     <p class="hotel-note">
-                                                        {!! app()->getLocale() == 'ar' ? $hotel->description_ar : $hotel->description_en !!}
+                                                        {!! \App\Support\HtmlSanitizer::sanitizeLimitedHtml(app()->getLocale() == 'ar' ? $hotel->description_ar : $hotel->description_en) !!}
                                                     </p>
                                                     <div class="hotel-rate">
                                                         <span class="rate-box">{{ __('dashboard.hotel_rate') }}

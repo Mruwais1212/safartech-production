@@ -41,6 +41,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth' => \App\Http\Middleware\Authenticate::class,
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
             'check-guard' => \App\Http\Middleware\CheckGuard::class,
+            'correlation-id' => \App\Http\Middleware\CorrelationIdMiddleware::class,
+            'csp-report-only' => \App\Http\Middleware\ContentSecurityPolicyReportOnly::class,
+        ]);
+
+        $middleware->web(append: [
+            \App\Http\Middleware\CorrelationIdMiddleware::class,
+            \App\Http\Middleware\ContentSecurityPolicyReportOnly::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

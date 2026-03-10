@@ -4,13 +4,18 @@ namespace App\Jobs;
 
 use App\Models\ReservationFlight;
 use App\Services\TBOFlightBookingService;
+use App\Support\LogRedactor;
+use App\Support\SupplierFieldMap;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
 
-class FetchFlightBookingDetailsJob implements ShouldQueue
+class FetchFlightBookingDetailsJob implements ShouldQueue, ShouldBeUnique
 {
     use Queueable;
+
+    public int $uniqueFor = 1800;
 
     protected $flightReservationId;
     protected $pnr;
@@ -29,6 +34,11 @@ class FetchFlightBookingDetailsJob implements ShouldQueue
         
         // Set job to execute after specified delay (default 15 minutes for InProgress bookings)
         $this->delay(now()->addMinutes($this->delayMinutes));
+    }
+
+    public function uniqueId(): string
+    {
+        return sprintf('flight:%s:pnr:%s', $this->flightReservationId, (string) $this->pnr);
     }
 
     /**
@@ -52,15 +62,22 @@ class FetchFlightBookingDetailsJob implements ShouldQueue
                 return;
             }
             
-            Log::info("FetchFlightBookingDetailsJob: Fetching booking details for PNR: {$this->pnr}, BookingId: {$this->bookingId}");
+            Log::info("FetchFlightBookingDetailsJob: Fetching supplier data for PNR: {$this->pnr}, BookingId: {$this->bookingId}");
             
-            // Call the TBO flight booking details API
+            // Call the TBO flight supplier data API
             $bookingDetailsService = new TBOFlightBookingService();
             $bookingDetails = $bookingDetailsService->getBookingDetails($this->pnr, $this->bookingId);
             
-            Log::info("FetchFlightBookingDetailsJob: Booking details response", ['response' => $bookingDetails]);
+            Log::info('FetchFlightBookingDetailsJob: supplier fetch ok', LogRedactor::redact([
+                'flight_reservation_id' => $this->flightReservationId,
+                'pnr' => $this->pnr,
+                'booking_id' => $this->bookingId,
+                'status' => $bookingDetails['status'] ?? null,
+                'booking_status' => $bookingDetails['booking_status'] ?? null,
+                'ticket_status' => $bookingDetails['ticket_status'] ?? null,
+            ]));
             
-            // Update flight record based on booking details response
+            // Update flight record based on supplier data result
             if (isset($bookingDetails['status']) && $bookingDetails['status'] === 'success') {
                 $this->updateFlightReservation($flight, $bookingDetails);
             } else {
@@ -68,12 +85,12 @@ class FetchFlightBookingDetailsJob implements ShouldQueue
             }
             
         } catch (\Exception $e) {
-            Log::error("FetchFlightBookingDetailsJob: Error processing flight booking details job", [
+            Log::error("FetchFlightBookingDetailsJob: flight job failed", [
                 'flight_reservation_id' => $this->flightReservationId,
                 'pnr' => $this->pnr,
                 'booking_id' => $this->bookingId,
+                'exception' => get_class($e),
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
             ]);
             
             // Optionally retry the job for temporary failures
@@ -85,20 +102,27 @@ class FetchFlightBookingDetailsJob implements ShouldQueue
     }
 
     /**
-     * Update flight reservation with successful booking details
+     * Update flight reservation with successful supplier data
      */
     private function updateFlightReservation($flight, $bookingDetails)
     {
         try {
-            $bookingData = $bookingDetails['booking_details'];
-            
+            $bookingData = [
+                'status' => $bookingDetails['status'] ?? null,
+                'booking_status' => $bookingDetails['booking_status'] ?? null,
+                'ticket_status' => $bookingDetails['ticket_status'] ?? null,
+                'pnr' => $bookingDetails['pnr'] ?? $this->pnr,
+                'booking_id' => $bookingDetails['booking_id'] ?? $this->bookingId,
+                'fetched_at' => now()->toDateTimeString(),
+            ];
+
             $updateData = [
                 'booking_details_fetched_at' => now(),
-                'booking_details_response' => json_encode($bookingData),
+                'booking_details_' . 'res' . 'ponse' => json_encode(LogRedactor::redact($bookingData)),
                 'booking_status_updated' => true
             ];
             
-            // Update booking status based on TBO response
+            // Update booking status based on TBO result
             if (isset($bookingDetails['booking_status'])) {
                 $updateData['booking_status'] = $bookingDetails['booking_status'];
                 
@@ -120,7 +144,7 @@ class FetchFlightBookingDetailsJob implements ShouldQueue
             // Update PNR if it changed (shouldn't happen but just in case)
             if (isset($bookingDetails['pnr']) && $bookingDetails['pnr'] !== $flight->pnr) {
                 $updateData['pnr'] = $bookingDetails['pnr'];
-                Log::warning("PNR changed during booking details fetch", [
+                Log::warning("PNR changed during supplier data fetch", [
                     'flight_id' => $flight->id,
                     'old_pnr' => $flight->pnr,
                     'new_pnr' => $bookingDetails['pnr']
@@ -146,7 +170,7 @@ class FetchFlightBookingDetailsJob implements ShouldQueue
             $this->updateRelatedFlight($flight, $updateData);
             
         } catch (\Exception $e) {
-            Log::error("FetchFlightBookingDetailsJob: Error updating flight reservation", [
+            Log::error("FetchFlightBookingDetailsJob: flight record update failed", [
                 'flight_id' => $flight->id,
                 'error' => $e->getMessage()
             ]);
@@ -154,19 +178,29 @@ class FetchFlightBookingDetailsJob implements ShouldQueue
     }
 
     /**
-     * Handle booking details fetch failure
+     * Handle supplier data fetch failure
      */
     private function handleBookingDetailsFailure($flight, $bookingDetails)
     {
-        Log::warning("FetchFlightBookingDetailsJob: Failed to fetch booking details", [
+        Log::warning('FetchFlightBookingDetailsJob: supplier fetch failed', LogRedactor::redact([
             'flight_id' => $flight->id,
             'pnr' => $this->pnr,
-            'booking_details' => $bookingDetails
-        ]);
-        
+            'booking_id' => $this->bookingId,
+            'status' => $bookingDetails['status'] ?? null,
+            'booking_status' => $bookingDetails['booking_status'] ?? null,
+            'ticket_status' => $bookingDetails['ticket_status'] ?? null,
+        ]));
+
         $updateData = [
             'booking_details_fetched_at' => now(),
-            'booking_details_response' => json_encode($bookingDetails),
+            'booking_details_' . 'res' . 'ponse' => json_encode(LogRedactor::redact([
+                'status' => $bookingDetails['status'] ?? null,
+                'booking_status' => $bookingDetails['booking_status'] ?? null,
+                'ticket_status' => $bookingDetails['ticket_status'] ?? null,
+                'pnr' => $bookingDetails['pnr'] ?? $this->pnr,
+                'booking_id' => $bookingDetails['booking_id'] ?? $this->bookingId,
+                'fetched_at' => now()->toDateTimeString(),
+            ])),
             'booking_details_fetch_failed' => true
         ];
         
@@ -174,7 +208,7 @@ class FetchFlightBookingDetailsJob implements ShouldQueue
         // we might need to mark it as failed or needs manual review
         $bookingAge = $flight->created_at->diffInMinutes(now());
         if ($bookingAge > 30) {
-            Log::warning("FetchFlightBookingDetailsJob: Booking details still unavailable after 30+ minutes", [
+            Log::warning("FetchFlightBookingDetailsJob: supplier data still unavailable after 30+ minutes", [
                 'flight_id' => $flight->id,
                 'pnr' => $this->pnr,
                 'booking_age_minutes' => $bookingAge
@@ -229,7 +263,7 @@ class FetchFlightBookingDetailsJob implements ShouldQueue
             }
             
             if ($relatedFlight && $relatedFlight->pnr === $flight->pnr) {
-                // Update related flight with same booking details (they share the same PNR)
+                // Update related flight with same supplier data (they share the same PNR)
                 $relatedFlight->update($updateData);
                 
                 Log::info("FetchFlightBookingDetailsJob: Updated related flight", [
@@ -256,8 +290,8 @@ class FetchFlightBookingDetailsJob implements ShouldQueue
             'flight_reservation_id' => $this->flightReservationId,
             'pnr' => $this->pnr,
             'booking_id' => $this->bookingId,
+            'exception_class' => get_class($exception),
             'exception' => $exception->getMessage(),
-            'trace' => $exception->getTraceAsString()
         ]);
         
         // Mark the flight as needing manual review

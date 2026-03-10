@@ -143,8 +143,14 @@ class CriticalSecurityPatchesTest extends TestCase
             'errors' => [],
         ]);
 
-        $this->actingAs($user, 'web')->get('/moyasar-success?id=pay_1&nonce='.str_repeat('a', 48))->assertOk();
-        $this->actingAs($user, 'web')->get('/moyasar-success?id=pay_1&nonce='.str_repeat('a', 48))->assertOk();
+        $this->actingAs($user, 'web')->post('/moyasar-success', [
+            'id' => 'pay_1',
+            'nonce' => str_repeat('a', 48),
+        ])->assertOk();
+        $this->actingAs($user, 'web')->post('/moyasar-success', [
+            'id' => 'pay_1',
+            'nonce' => str_repeat('a', 48),
+        ])->assertOk();
 
         $this->assertDatabaseHas('reservations', [
             'id' => $reservation->id,
@@ -157,7 +163,9 @@ class CriticalSecurityPatchesTest extends TestCase
     public function test_moyasar_success_missing_or_invalid_nonce_is_rejected(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user, 'web')->get('/moyasar-success?id=pay_1')->assertStatus(400);
+        $this->actingAs($user, 'web')->post('/moyasar-success', [
+            'id' => 'pay_1',
+        ])->assertStatus(400);
 
         $reservation = Reservation::create([
             'user_id' => $user->id,
@@ -176,7 +184,10 @@ class CriticalSecurityPatchesTest extends TestCase
             'source' => ['company' => 'visa'],
         ]);
 
-        $this->actingAs($user, 'web')->get('/moyasar-success?id=pay_2&nonce='.str_repeat('c', 48))->assertStatus(403);
+        $this->actingAs($user, 'web')->post('/moyasar-success', [
+            'id' => 'pay_2',
+            'nonce' => str_repeat('c', 48),
+        ])->assertStatus(403);
 
         $this->assertDatabaseHas('reservations', [
             'id' => $reservation->id,

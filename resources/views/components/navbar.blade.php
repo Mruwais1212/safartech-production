@@ -37,8 +37,11 @@
                         </a>
                     </li>
                     <li>
-                        <a href="/{{ $guard }}-panel/logout"><i class="icon-switch2"></i>
+                        <a href="#" onclick="event.preventDefault(); document.getElementById('admin-logout-form').submit();"><i class="icon-switch2"></i>
                             {{ __('dashboard.logout') }}</a>
+                        <form id="admin-logout-form" action="/{{ $guard }}-panel/logout" method="POST" style="display: none;">
+                            @csrf
+                        </form>
                     </li>
                 </ul>
             </li>

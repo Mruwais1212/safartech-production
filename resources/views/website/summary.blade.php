@@ -767,7 +767,7 @@
 
                                         <div class="col-md-12 mt-5">
                                             @foreach (session('hotel.RateConditionsHotel') as $rateCondition)
-                                                {!! html_entity_decode($rateCondition) !!}
+                                                {!! \App\Support\HtmlSanitizer::sanitizeLimitedHtml(html_entity_decode($rateCondition)) !!}
                                                 <hr>
                                             @endforeach
                                         </div>

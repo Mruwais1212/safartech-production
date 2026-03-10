@@ -6,7 +6,7 @@
             <div class="row align-items-center">
                 <div class="{{ 'col-lg-12 col-md-12' }}">
                     <div class="story-wrap explore-content">
-                        {!! $data !!}
+                        {!! \App\Support\HtmlSanitizer::sanitizeLimitedHtml($data) !!}
                     </div>
                 </div>
             </div>

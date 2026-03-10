@@ -116,7 +116,7 @@
                                 </div>
                             </div>
                             <p class="hotel-desc">
-                                {!! app()->getLocale() == 'ar' ? $trip->description_ar : $trip->description_en !!}
+                                {!! \App\Support\HtmlSanitizer::sanitizeLimitedHtml(app()->getLocale() == 'ar' ? $trip->description_ar : $trip->description_en) !!}
                             </p>
                         </div>
                         <div class="px-4 py-2 d-flex justify-content-between align-items-center border-top hotel-bottom" style="position: absolute; bottom: 0; width: 100%;">

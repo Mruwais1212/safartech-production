@@ -24,8 +24,11 @@
             <td>{{ app()->getLocale()=='ar' ? $privilege->name_ar : $privilege->name_en }}</td>
             <td><i class="{{ $privilege->icon }}"></i></td>
             <td>{{ $privilege->subPrivilege->count() }}</td>
-            <td><a
-                    href="/admin-panel/privilege-change-status/{{ $privilege->id }}">{{ $privilege->status==1?__('dashboard.hide_privilege'):__('dashboard.show_privilege') }}</a>
+            <td>
+                <form method="POST" action="/admin-panel/privilege-change-status/{{ $privilege->id }}">
+                    @csrf
+                    <button type="submit" class="btn btn-link p-0">{{ $privilege->status==1?__('dashboard.hide_privilege'):__('dashboard.show_privilege') }}</button>
+                </form>
             </td>
             </a></td>
             <td align="center" class="center">

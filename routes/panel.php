@@ -5,7 +5,7 @@ use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 
 Route::group(['namespace' => 'Guest'], function () {
     Route::resource('login', 'LoginController')->only('index', 'store');
-    Route::get('logout', 'LoginController@logout');
+    Route::post('logout', 'LoginController@logout')->middleware(['auth:admin', 'throttle:admin-ops']);
 });
 
 Route::group(['namespace' => 'Auth'], function () {
@@ -18,7 +18,7 @@ Route::group(['namespace' => 'Auth'], function () {
     Route::resource('slider', 'SliderController');
     Route::resource('contact', 'ContactController');
     Route::post('privilege-change-sort', 'PrivilegeController@changeSort');
-    Route::get('privilege-change-status/{id}', 'PrivilegeController@changeStatus');
+    Route::post('privilege-change-status/{id}', 'PrivilegeController@changeStatus')->middleware(['auth:admin', 'permission', 'throttle:admin-ops']);
     Route::resource('privilege', 'PrivilegeController');
     Route::get('privilegeItems', 'PrivilegeController@privilegeItems');
     Route::resource('privilege-group', 'PrivilegeGroupController');
@@ -53,13 +53,13 @@ Route::group(['namespace' => 'Backend'], function () {
     Route::resource('destination', 'DestinationController');
     Route::resource('cache-destination', 'CacheDestinationController')->only('index', 'store');
     Route::get('reservations', 'ReservationController@index');
-    Route::get('delete-all-reservations', 'ReservationController@delete_all');
+    Route::post('delete-all-reservations', 'ReservationController@delete_all')->middleware(['auth:admin', 'permission', 'throttle:admin-ops']);
     Route::get('financial_reports', 'ReservationController@financial_reports');
 
     Route::get('hotel-reservations', 'ReservationController@hotel');
-    Route::get('cancel-hotel-reservations/{id}', 'ReservationController@cancel_hotel');
+    Route::post('cancel-hotel-reservations/{id}', 'ReservationController@cancel_hotel')->middleware(['auth:admin', 'permission', 'throttle:admin-ops']);
     Route::get('flight-reservations', 'ReservationController@flight');
-    Route::get('cancel-flight-reservations/{id}', 'ReservationController@cancel_flight');
+    Route::post('cancel-flight-reservations/{id}', 'ReservationController@cancel_flight')->middleware(['auth:admin', 'permission', 'throttle:admin-ops']);
     Route::get('hotel-and-flight-reservations', 'ReservationController@hotelAndFlight');
 
     Route::get('operations', 'OperationController@index');
@@ -74,4 +74,3 @@ Route::group(['namespace' => 'Backend'], function () {
     Route::post('delete-image-cached-hotels/{id}', 'CacheHotelController@deleteImage');
     Route::get('tbo-flight-balance',[\App\Http\Controllers\Panel\Auth\HomeController::class,'getTboFlightBalance']);
 });
-

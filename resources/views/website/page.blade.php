@@ -29,7 +29,7 @@
                         <abbr>{{$page}}</abbr>
                     </h3>
                     
-                    {!! $content !!}
+                    {!! \App\Support\HtmlSanitizer::sanitizeLimitedHtml($content) !!}
                 </div>
             </div>
         </div>

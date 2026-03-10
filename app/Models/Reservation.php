@@ -23,6 +23,9 @@ class Reservation extends Model
         'callback_nonce',
         'paid_at',
         'payment_processed_at',
+        'booking_in_progress',
+        'booking_processing_started_at',
+        'booking_completed_at',
         'to_id',
         'to_city',
         'from_id',
@@ -38,6 +41,12 @@ class Reservation extends Model
         'reconcile_attempt_count',
         'last_reconciled_at',
         'reconciliation_status'
+    ];
+
+    protected $casts = [
+        'booking_in_progress' => 'boolean',
+        'booking_processing_started_at' => 'datetime',
+        'booking_completed_at' => 'datetime',
     ];
 
     public function user()

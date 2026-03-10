@@ -35,7 +35,7 @@ class HotelController extends Controller
         ]);
 
         $validator->validate();
-        Log::info('Search Request Dataaa: ', $request->all());
+        Log::info('Search Request Dataaa', LogRedactor::redact(['request' => $request->all()]));
         SearchService::search($request, 2);
 
         return redirect('/hotels');
@@ -54,7 +54,7 @@ class HotelController extends Controller
         $validator->validate();
 
         SearchService::searchNew($request, 2);
-        Log::info("paxRooms mm", $request->all());
+        Log::info('paxRooms mm', LogRedactor::redact(['request' => $request->all()]));
         return redirect('/hotels');
     }
 

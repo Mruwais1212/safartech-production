@@ -36,7 +36,10 @@
                    <td class="text-center">
                        @include('admin.backend.refunds.reservation_details')
                        @include('admin.backend.refunds.refund_details',['type'=>$type])
-                       <a @if($type=="hotels") href="{{ url('admin-panel/cancel-hotel-reservations/'.$reservation->hotel->id) }}" @endif @if($type=="flights") href="{{ url('admin-panel/cancel-flight-reservations/'.$reservation->flight->id) }}" @endif class="btn btn-danger">{{ __('dashboard.refund') }}</a>
+                       <form method="POST" action="{{ $type=="hotels" ? url('admin-panel/cancel-hotel-reservations/'.$reservation->hotel->id) : url('admin-panel/cancel-flight-reservations/'.$reservation->flight->id) }}" class="d-inline">
+                           @csrf
+                           <button type="submit" class="btn btn-danger">{{ __('dashboard.refund') }}</button>
+                       </form>
                    </td>
                 </tr>
             @endforeach
