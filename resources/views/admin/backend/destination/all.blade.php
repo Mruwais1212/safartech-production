@@ -22,8 +22,8 @@
             @foreach ($destinations as $destination)
                 <tr parent_id="{{ $destination->id }}">
                     <td>{{ $destination->id }}</td>
-                    <td>{!! $destination->description_ar !!}</td>
-                    <td>{!! $destination->description_en !!}</td>
+                    <td>{!! \App\Support\HtmlSanitizer::sanitizeLimitedHtml($destination->description_ar) !!}</td>
+                    <td>{!! \App\Support\HtmlSanitizer::sanitizeLimitedHtml($destination->description_en) !!}</td>
                     <td>{{ app()->getLocale() == 'ar' ? @$destination->country->name_ar : @$destination->country->name_en }}
                     </td>
                     <td>{{ app()->getLocale() == 'ar' ? @$destination->city->name_ar : @$destination->city->name_en }}

@@ -355,6 +355,23 @@ class PaymentController extends Controller implements HasMiddleware
         return view('website.success');
     }
 
+    public function moyasarSuccessEntry(Request $request)
+    {
+        $validation = Validator::make($request->query(), [
+            'id' => ['required', 'string', 'max:191'],
+            'nonce' => ['required', 'string', 'size:48'],
+        ]);
+
+        if ($validation->fails()) {
+            return response('Invalid success parameters', 400);
+        }
+
+        return view('website.moyasar-success-bridge', [
+            'paymentId' => $request->query('id'),
+            'nonce' => $request->query('nonce'),
+        ]);
+    }
+
     public function moyasarCallback(Request $request)
     {
         $validation = Validator::make($request->query(), [
@@ -606,7 +623,7 @@ class PaymentController extends Controller implements HasMiddleware
     
     public function moyasarSuccess(Request $request)
     {
-        $validation = Validator::make($request->query(), [
+        $validation = Validator::make($request->post(), [
             'id' => ['required', 'string', 'max:191'],
             'nonce' => ['required', 'string', 'size:48'],
         ]);

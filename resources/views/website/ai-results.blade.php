@@ -154,7 +154,7 @@
                                                             ?>
                                                             <hr>
                                                             <div style="direction:{{ $direction }}" class="excerpt">
-                                                                {!! $text !!}
+                                                                {!! \App\Support\HtmlSanitizer::sanitizeLimitedHtml($text) !!}
                                                             </div>
                                                             <hr>
                                                             <div class="collection-sections">

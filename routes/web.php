@@ -29,7 +29,8 @@ Route::post('webhooks/moyasar', MoyasarWebhookController::class)->middleware('th
 
 Route::group(['middleware' => ['web']], function () {
     Route::get('/', 'HomeController@index');
-    Route::resource('ai-trip', 'AiTripController')->only('index', 'store');
+    Route::get('ai-trip', 'AiTripController@index');
+    Route::post('ai-trip', 'AiTripController@store')->middleware('throttle:ai-generation');
     Route::post('search-plans', 'AiTripController@searchPlans')->middleware('throttle:ai-generation');
     Route::post('search-plans-new', 'AiTripController@searchPlansNew')->middleware('throttle:ai-generation');
 
@@ -37,7 +38,7 @@ Route::group(['middleware' => ['web']], function () {
     Route::get('latest-ai-trip-planner', 'MyLatestAiTripController@index')->middleware('auth:web');
     Route::get('latest-ai-trip-planner/{id}', 'MyLatestAiTripController@show')->middleware('auth:web');
     Route::get('ai-trip-latest-planner/{id}', 'MyLatestAiTripController@data')->middleware('auth:web');
-    Route::post('ai-trip-results', 'AiTripPlannerController@show');
+    Route::post('ai-trip-results', 'AiTripPlannerController@show')->middleware('throttle:ai-generation');
     Route::post('ai-trip-planner', 'AiTripPlannerController@store')->middleware('throttle:ai-generation');
     Route::resource('trips', 'TripController')->only('index', 'show');
     Route::get('plan/{id}', 'TripController@plan');
@@ -67,7 +68,8 @@ Route::group(['middleware' => ['web']], function () {
     Route::post('payment', 'PaymentController@payment')->middleware('throttle:payment-init');
     Route::get('success', 'PaymentController@success');
     Route::get('moyasar-callback', 'PaymentController@moyasarCallback');
-    Route::get('moyasar-success', 'PaymentController@moyasarSuccess');
+    Route::get('moyasar-success', 'PaymentController@moyasarSuccessEntry');
+    Route::post('moyasar-success', 'PaymentController@moyasarSuccess')->middleware('throttle:payment-init');
     Route::get('booking-error', 'PaymentController@bookingError');
 
     Route::get('flights', 'FlightController@index');
@@ -152,6 +154,6 @@ Route::middleware('web')->group(function () {
 });
 
 // Manual trigger for InProgress flight booking details check
-Route::get('/admin/check-inprogress-flights/{pnr?}', [\App\Http\Controllers\AdminMaintenanceController::class, 'checkInprogressFlights'])
+Route::post('/admin/check-inprogress-flights/{pnr?}', [\App\Http\Controllers\AdminMaintenanceController::class, 'checkInprogressFlights'])
     ->middleware(['auth:admin', 'permission', 'throttle:admin-ops'])
     ->name('admin.check.inprogress.flights');

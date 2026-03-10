@@ -304,9 +304,9 @@ class TBOFlightBookingService
         
         Log::info('Two: REQUEST FareRules: ');
 
-        Log::info($requestBody);
+        Log::info('Two: REQUEST FareRules', LogRedactor::redact(['request' => $requestBody]));
 
-        Log::info('Two: RESPONSE FareRules: ', $response->json());
+        Log::info('Two: RESPONSE FareRules', LogRedactor::redact(['response' => $response->json()]));
         return $response->json();
     }
 
@@ -322,8 +322,8 @@ class TBOFlightBookingService
         ];
         $response = Http::timeout(1900)->post(config('services.tbo_flight.RC_TBOINDIA_URL').'/FareQuote/', $requestBody);
         Log::info('Three: REQUEST FareQuote: ');
-        Log::info($requestBody);
-        Log::info('Three: RESPONSE FareQuote: ', $response->json());
+        Log::info('Three: REQUEST FareQuote', LogRedactor::redact(['request' => $requestBody]));
+        Log::info('Three: RESPONSE FareQuote', LogRedactor::redact(['response' => $response->json()]));
 
         return $response->json();
     }

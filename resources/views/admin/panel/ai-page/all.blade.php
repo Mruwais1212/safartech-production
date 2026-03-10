@@ -64,7 +64,7 @@
                 <tr>
                     <td>{{ $item->id }}</td>
                     <td>{{ app()->getLocale() == 'ar' ? $item->name_ar : $item->name_en }}</td>
-                    <td><i class="{!! $item->icon !!}"></td>
+                    <td><i class="{{ $item->icon }}"></td>
                     <td align="center" class="center">
                         <ul class="icons-list">
                             @if (in_array('ai-planner-sections-delete', $my_permissions))

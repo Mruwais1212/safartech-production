@@ -68,7 +68,7 @@
                                         <h6 class="my-2">{{ __('dashboard.Traveling details') }}</h6>
                                     </div>
                                     <p class="details">
-                                        {!! app()->getLocale() == 'ar' ? $trip->description_ar : $trip->description_en !!}
+                                        {!! \App\Support\HtmlSanitizer::sanitizeLimitedHtml(app()->getLocale() == 'ar' ? $trip->description_ar : $trip->description_en) !!}
                                     </p>
                                 </div>
                             </div>
@@ -688,7 +688,7 @@
                             </div>
                             <div class="px-4 py-2 pb-0">
                                 <p class="hotel-desc">
-                                    {!! app()->getLocale() == 'ar' ? $relatedTrip->description_ar : $relatedTrip->description_en !!}
+                                    {!! \App\Support\HtmlSanitizer::sanitizeLimitedHtml(app()->getLocale() == 'ar' ? $relatedTrip->description_ar : $relatedTrip->description_en) !!}
                                 </p>
                             </div>
                             <div

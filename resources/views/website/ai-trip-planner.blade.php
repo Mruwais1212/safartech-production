@@ -156,7 +156,7 @@
                                                 data-wow-delay="{{ ($key + 1) / 3 }}s">
                                                 <div class="service-box">
                                                     <div class="svg-cont">
-                                                        <i class='{!! $item->icon !!}'></i>
+                                                        <i class='{{ $item->icon }}'></i>
                                                     </div>
                                                     <p>{{ $item['name_' . app()->getLocale()] }}</p>
                                                 </div>

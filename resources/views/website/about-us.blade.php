@@ -30,7 +30,7 @@
                                 {{ app()->getLocale() == 'en' ? $aboutUs->name_en : $aboutUs->name_ar }}
                             </h3>
                             <p>
-                                {!! app()->getLocale() == 'en' ? $aboutUs->content_en : $aboutUs->content_ar !!}
+                                {!! \App\Support\HtmlSanitizer::sanitizeLimitedHtml(app()->getLocale() == 'en' ? $aboutUs->content_en : $aboutUs->content_ar) !!}
                             </p>
                         </div>
                     </div>
@@ -74,7 +74,7 @@
                     <div class="col-md-6">
                         <h3 class="text-warning">{{ app()->getLocale() == 'en' ? $ourCompanyOverview->name_en : $ourCompanyOverview->name_ar }}</h3>
                         <p>
-                            {!! app()->getLocale() == 'en' ? $ourCompanyOverview->content_en : $ourCompanyOverview->content_ar !!}
+                            {!! \App\Support\HtmlSanitizer::sanitizeLimitedHtml(app()->getLocale() == 'en' ? $ourCompanyOverview->content_en : $ourCompanyOverview->content_ar) !!}
                         </p>
 
                         <div class="about-tabs">
@@ -93,7 +93,7 @@
                                 @foreach ($contents as $key => $content)
                                     <div class="tab-pane fade show {{$key == 0 ? 'active' : ''}}" id="home{{ $content->id }}" role="tabpanel"
                                         aria-labelledby="home-tab">
-                                        {!! app()->getLocale() == 'en' ? $content->content_en : $content->content_ar !!}
+                                        {!! \App\Support\HtmlSanitizer::sanitizeLimitedHtml(app()->getLocale() == 'en' ? $content->content_en : $content->content_ar) !!}
                                     </div>
                                 @endforeach
                             </div>

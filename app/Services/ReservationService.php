@@ -9,8 +9,12 @@ use App\Models\Airport;
 use App\Models\Panel\Setting;
 use App\Models\Reservation;
 use App\Models\ReservationFlight;
+use App\Support\LogRedactor;
+use App\Support\SupplierFieldMap;
+use Illuminate\Support\Facades\DB;
 use App\Traits\PriceCalculationTrait;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 
 class ReservationService
@@ -21,13 +25,16 @@ class ReservationService
 
         $hotel_commession = Setting::where('code', 'hotel_profit')->first() ? Setting::where('code', 'hotel_profit')->first()->value : 12;
         $flight_commession = Setting::where('code', 'flight_profit')->first() ? Setting::where('code', 'flight_profit')->first()->value : 7;
-        $airPortFrom = Airport::find(session('searchParams.origin'));
-        $airPortTo = Airport::find(session('searchParams.destination'));
-        $airPortToo = Airport::where('city_code', session('preferences.destination'))->first();
+        $airPortFrom = Airport::find(Session::get('searchParams.origin'));
+        $airPortTo = Airport::find(Session::get('searchParams.destination'));
+        $airPortToo = Airport::where('city_code', Session::get('preferences.destination'))->first();
 
-        $preferences = session('preferences');
-        $flight = session('flight');
-        $hotel = session('hotel');
+        $preferences = Session::get('preferences');
+        $flight = Session::get('flight');
+        $hotel = Session::get('hotel');
+        $paxRoomsSession = Session::get('paxRooms');
+        $selectedRoomSession = Session::get('hotel.selected_room');
+        $outboundFlightSession = Session::get('outbound_flight');
         $tripType = $preferences['trip_type'] ?? null;
         $reservationType = 'inside';
 
@@ -40,7 +47,7 @@ class ReservationService
 
         $flightAmount = $flight['flight_amount'] ?? 0;
         $flightAmount = PriceCalculationHelper::calculatePriceAmounts($flightAmount, $reservationType,'flight');
-        $inboundAmount = session()->has('flight.inbound_flightSegment') ? $flight['inbound_flight_amount'] ?? 0 : 0;
+        $inboundAmount = Session::has('flight.inbound_flightSegment') ? $flight['inbound_flight_amount'] ?? 0 : 0;
         $inboundAmount = PriceCalculationHelper::calculatePriceAmounts($inboundAmount, $reservationType,'flight');
 
         $hotelAmount = $hotel['TotalFareHotel'] ?? 0;
@@ -55,16 +62,16 @@ class ReservationService
 
         $price = $total_price_calculate['total_price'];
 
-//        if (session('preferences')['trip_type'] == 1) {
-//            $price = session('hotel.TotalFareHotel') + (session('flight.flight_amount') + session('flight.inbound_flight_amount'));
+//        if (Session::get('preferences')['trip_type'] == 1) {
+//            $price = Session::get('hotel.TotalFareHotel') + (Session::get('flight.flight_amount') + Session::get('flight.inbound_flight_amount'));
 //        }
 //
-//        if (session('preferences')['trip_type'] == 2) {
-//            $price = session('hotel.TotalFareHotel');
+//        if (Session::get('preferences')['trip_type'] == 2) {
+//            $price = Session::get('hotel.TotalFareHotel');
 //        }
 //
-//        if (session('preferences')['trip_type'] == 3) {
-//            $price = session('flight.flight_amount') + session('flight.inbound_flight_amount');
+//        if (Session::get('preferences')['trip_type'] == 3) {
+//            $price = Session::get('flight.flight_amount') + Session::get('flight.inbound_flight_amount');
 //        }
 
 
@@ -77,17 +84,17 @@ class ReservationService
         $bookingReferenceId = substr($bookingReferenceId, 0, 25);
         
         $reservationData = [
-            'type' => session('preferences.trip_type'),
-            'trip_id' => session('preferences.trip_id'),
+            'type' => Session::get('preferences.trip_type'),
+            'trip_id' => Session::get('preferences.trip_id'),
             'price' => number_format($price, 2, '.', '') ,
-            'currency' => session('hotel.CurrencyHotel') ?? 'SAR',
+            'currency' => Session::get('hotel.CurrencyHotel') ?? 'SAR',
             'unit_price' => $price,
             'uuid' => $integerId,
-            'search_request'=> json_encode(session('paxRooms')),
+            'search_request'=> json_encode($paxRoomsSession),
             'booking_reference_id' => $bookingReferenceId,
         ];
         if ($airPortTo && $airPortTo->city) {
-            $reservationData['to_id'] = session('searchParams.destination');
+            $reservationData['to_id'] = Session::get('searchParams.destination');
             $reservationData['to_city'] = $airPortTo->city;
 //            $reservationData['price'] = $total_price_calculate['total_price'] ?? $price;
             $reservationData['reservation_type'] = $reservationType;
@@ -99,7 +106,7 @@ class ReservationService
             $reservationData['reservation_type'] = $reservationType;
         }
         if ($airPortFrom && $airPortFrom->city) {
-            $reservationData['from_id'] = session('searchParams.origin');
+            $reservationData['from_id'] = Session::get('searchParams.origin');
             $reservationData['from_city'] = $airPortFrom->city;
         }
 
@@ -117,41 +124,41 @@ class ReservationService
         $reservation->passengers()->delete();
 
         if ($tripType == 1 || $tripType == 2) {
-            $selected_hotel = json_decode(session('hotel.selected_hotel'));
+            $selected_hotel = json_decode(Session::get('hotel.selected_hotel'));
 
             $first_tax_rate_hotel = $reservationType == 'inside' ? 15 : 0;
-            $first_tax_amount_hotel = session('hotel.TotalFareHotel') * $first_tax_rate_hotel / 100;
+            $first_tax_amount_hotel = Session::get('hotel.TotalFareHotel') * $first_tax_rate_hotel / 100;
 
             $administrative_tax_rate_hotel = (int)$hotel_commession;
-            $administrative_tax_amount_hotel = session('hotel.TotalFareHotel') * $administrative_tax_rate_hotel / 100;
+            $administrative_tax_amount_hotel = Session::get('hotel.TotalFareHotel') * $administrative_tax_rate_hotel / 100;
 
             $second_tax_rate_hotel = 15;
             $second_tax_amount_hotel = $administrative_tax_amount_hotel * $second_tax_rate_hotel / 100;
 
-            $price_without_tax_hotel = session('hotel.TotalFareHotel');
+            $price_without_tax_hotel = Session::get('hotel.TotalFareHotel');
             $tax_amount_hotel = $first_tax_amount_hotel + $administrative_tax_amount_hotel + $second_tax_amount_hotel;
 
             $reservation->hotel()->create([
                 'reservation_id' => $reservation->id,
                 'hotel_id' => $selected_hotel->code,
-                'check_in' => session('preferences')['start_date'],
-                'check_out' => session('preferences')['end_date'],
-                'rooms' => session('preferences')['rooms'],
-                'adults' => session('preferences')['adults'],
-                'children' => session('preferences')['children'],
-                'price' => session('hotel.TotalFareHotel'),
-                'currency' => session('hotel.CurrencyHotel'),
+                'check_in' => Session::get('preferences')['start_date'],
+                'check_out' => Session::get('preferences')['end_date'],
+                'rooms' => Session::get('preferences')['rooms'],
+                'adults' => Session::get('preferences')['adults'],
+                'children' => Session::get('preferences')['children'],
+                'price' => Session::get('hotel.TotalFareHotel'),
+                'currency' => Session::get('hotel.CurrencyHotel'),
                 'hotel_name' => $selected_hotel->name_en ?: $selected_hotel->name_ar,
                 'hotel_image' => isset($selected_hotel->images[0]) ? $selected_hotel->images[0] : null,
                 'hotel_address' => $selected_hotel->address,
                 'phone' => $selected_hotel->phone??'-',
                 'hotel_rate' => $selected_hotel->rating,
-                'booking_code' => session('hotel.BookingCodeHotel'),
+                'booking_code' => Session::get('hotel.BookingCodeHotel'),
                 'confirmation_number' => null,
                 'country_id' => @$selected_hotel->country_id,
                 'city_id' => @$selected_hotel->city_id,
-                'date_from' => session('preferences')['start_date'],
-                'date_to' => session('preferences')['end_date'],
+                'date_from' => Session::get('preferences')['start_date'],
+                'date_to' => Session::get('preferences')['end_date'],
 
 
                 'first_tax_rate' => $first_tax_rate_hotel ?? 0,
@@ -168,19 +175,17 @@ class ReservationService
                 'tax_amount' => $tax_amount_hotel ?? 0,
                 
                 // Save room details as JSON
-                'room_details' => session('hotel.selected_room') ? 
-                    (is_string(session('hotel.selected_room')) ? 
-                        session('hotel.selected_room') : 
-                        json_encode(session('hotel.selected_room'))
+                'room_details' => $selectedRoomSession ? 
+                    (is_string($selectedRoomSession) ? 
+                        $selectedRoomSession : 
+                        json_encode($selectedRoomSession)
                     ) : null,
             ]);
         }
 
-//        Log::info('outbound_flight '.json_encode(session('outbound_flight')));
-//        Log::info('inbound_flight '.json_encode(session('inbound_flight')));
 
         if ($tripType == 1 || $tripType == 3) {
-            if (session('outbound_flight')) {
+            if (Session::get('outbound_flight')) {
                 $first_tax_rate = $reservationType == 'inside' ? 15 : 0;
                 $first_tax_amount = $flight['flight_amount'] * $first_tax_rate / 100;
 
@@ -192,23 +197,22 @@ class ReservationService
 
                 $price_without_tax = $flight['flight_amount'];
                 $tax_amount = $first_tax_amount + $administrative_tax_amount + $second_tax_amount;
-                Log::alert(json_encode(session('outbound_flight')));
                 $outbound_flight = $reservation->flight()->create([
                     'reservation_id' => $reservation->id,
-                    'result_index' => session('outbound_flight')['ResultIndex'],
-                    'trace_id' => session('traceId'),
-                    'is_lcc' => session('outbound_flight')['IsLCC'],
-                    'is_refundable' => session('outbound_flight')['IsRefundable'],
-                    'last_ticket_date' => session('outbound_flight')['LastTicketDate'],
+                    'result_index' => Session::get('outbound_flight')['ResultIndex'],
+                    SupplierFieldMap::FLIGHT_TRACE_ATTR => Session::get(SupplierFieldMap::FLIGHT_TRACE_SESSION_KEY),
+                    'is_lcc' => Session::get('outbound_flight')['IsLCC'],
+                    'is_refundable' => Session::get('outbound_flight')['IsRefundable'],
+                    'last_ticket_date' => Session::get('outbound_flight')['LastTicketDate'],
                     'total_price' => $flight['flight_amount'],
-                    'is_direct' => count(session('outbound_flight')['Segments'][0]) == 1 ? true : false,
-                    'flight_class' => session('outbound_flight')['Segments'][0][0]['CabinClass'],
+                    'is_direct' => count(Session::get('outbound_flight')['Segments'][0]) == 1 ? true : false,
+                    'flight_class' => Session::get('outbound_flight')['Segments'][0][0]['CabinClass'],
                     'pnr' => null,
-                    'flight_json' => json_encode(session('outbound_flight')),
-                    'flight_from' => session('outbound_flight')['Segments'][0][0]['Origin']['Airport']['CityName'],
-                    'flight_to' => session('outbound_flight')['Segments'][0][count(session('outbound_flight')['Segments'][0]) - 1]['Destination']['Airport']['CityName'],
-                    'departure_time' => session('outbound_flight')['Segments'][0][0]['Origin']['DepTime'],
-                    'arrival_time' => session('outbound_flight')['Segments'][0][count(session('outbound_flight')['Segments'][0]) - 1]['Destination']['ArrTime'],
+                    'flight_json' => json_encode($outboundFlightSession),
+                    'flight_from' => Session::get('outbound_flight')['Segments'][0][0]['Origin']['Airport']['CityName'],
+                    'flight_to' => Session::get('outbound_flight')['Segments'][0][count(Session::get('outbound_flight')['Segments'][0]) - 1]['Destination']['Airport']['CityName'],
+                    'departure_time' => Session::get('outbound_flight')['Segments'][0][0]['Origin']['DepTime'],
+                    'arrival_time' => Session::get('outbound_flight')['Segments'][0][count(Session::get('outbound_flight')['Segments'][0]) - 1]['Destination']['ArrTime'],
 
                     'first_tax_rate' => $first_tax_rate ?? 0,
                     'first_tax_amount' => $first_tax_amount ?? 0,
@@ -224,7 +228,7 @@ class ReservationService
                     'tax_amount' => $tax_amount ?? 0,
                 ]);
 
-                foreach (session('outbound_flight')['Segments'][0] as $key => $value) {
+                foreach (Session::get('outbound_flight')['Segments'][0] as $key => $value) {
                     $segment = $outbound_flight->segments()->create([
                         'flight_id' => $outbound_flight->id,
                         'baggage' => $value['Baggage'] ?? '0 KG',
@@ -267,30 +271,30 @@ class ReservationService
                     ]);
                 }
             }
-            if (session('inbound_flight')||count(session('outbound_flight')['Segments']) > 1) {
-                $segment_index=session('inbound_flight')?0:1;
-                $outbound_id=!session('inbound_flight')?$outbound_flight->id:0;
-                $inboundFlight=session('inbound_flight')?:session('outbound_flight');
+            if (Session::get('inbound_flight')||count(Session::get('outbound_flight')['Segments']) > 1) {
+                $segment_index=Session::get('inbound_flight')?0:1;
+                $outbound_id=!Session::get('inbound_flight')?$outbound_flight->id:0;
+                $inboundFlight=Session::get('inbound_flight')?:Session::get('outbound_flight');
                 $first_tax_rate = $reservationType == 'inside' ? 15 : 0;
-                $first_tax_amount = session('flight')['flight_amount'] * $first_tax_rate / 100;
+                $first_tax_amount = Session::get('flight')['flight_amount'] * $first_tax_rate / 100;
 
                 $administrative_tax_rate = (int)$flight_commession;
-                $administrative_tax_amount = session('flight')['flight_amount'] * $administrative_tax_rate / 100;
+                $administrative_tax_amount = Session::get('flight')['flight_amount'] * $administrative_tax_rate / 100;
 
                 $second_tax_rate = 15;
                 $second_tax_amount = $administrative_tax_amount * $second_tax_rate / 100;
 
-                $price_without_tax = session('flight')['flight_amount'];
+                $price_without_tax = Session::get('flight')['flight_amount'];
                 $tax_amount = $first_tax_amount + $administrative_tax_amount + $second_tax_amount;
 
                 $inbound_flight = $reservation->flight()->create([
                     'reservation_id' => $reservation->id,
                     'result_index' => $inboundFlight['ResultIndex'],
-                    'trace_id' => session('traceId'),
+                    SupplierFieldMap::FLIGHT_TRACE_ATTR => Session::get(SupplierFieldMap::FLIGHT_TRACE_SESSION_KEY),
                     'is_lcc' => $inboundFlight['IsLCC'],
                     'is_refundable' => $inboundFlight['IsRefundable'],
                     'last_ticket_date' => $inboundFlight['LastTicketDate'],
-                    'total_price' => session('flight')['flight_amount'],
+                    'total_price' => Session::get('flight')['flight_amount'],
                     'is_direct' => count(value: $inboundFlight['Segments'][$segment_index]) == 1 ? true : false,
                     'flight_class' => $inboundFlight['Segments'][$segment_index][0]['CabinClass'],
                     'pnr' => null,
@@ -299,7 +303,7 @@ class ReservationService
                     'flight_to' => $inboundFlight['Segments'][$segment_index][count($inboundFlight['Segments'][$segment_index]) - 1]['Destination']['Airport']['CityName'],
 //                    'flight_to' => $inboundFlight['Segments'][$segment_index][0]['Destination']['Airport']['CityName'],
                     'departure_time' => $inboundFlight['Segments'][$segment_index][0]['Origin']['DepTime'],
-                    // 'arrival_time' => session('inbound_flight')['Segments'][0][count(session('outbound_flight')['Segments']) - 1]['Destination']['ArrTime'],
+                    // 'arrival_time' => Session::get('inbound_flight')['Segments'][0][count(Session::get('outbound_flight')['Segments']) - 1]['Destination']['ArrTime'],
                     'arrival_time' => $inboundFlight['Segments'][$segment_index][0]['Destination']['ArrTime'],
 
                     'first_tax_rate' => $first_tax_rate ?? 0,
@@ -363,7 +367,7 @@ class ReservationService
 
         }
 
-        foreach (session('passengers') as $passenger) {
+        foreach (Session::get('passengers') as $passenger) {
             $reservation->passengers()->create([
                 'first_name' => $passenger['first_name'],
                 'last_name' => $passenger['last_name'],
@@ -386,12 +390,85 @@ class ReservationService
     public static function completeBooking($id, ?string $correlationId = null)
     {
         $reservation = Reservation::where('id', $id)->first();
-        $correlationId = $correlationId ?: ('res-' . $id . '-pay-' . ($reservation->payment_id ?? Str::uuid()->toString()));
-        Log::info('completeBooking start', ['correlation_id' => $correlationId, 'reservation_id' => $id]);
+        if (! $reservation) {
+            return [
+                'success' => false,
+                'errors' => ['Reservation not found'],
+            ];
+        }
+
+        $lockState = DB::transaction(function () use ($id) {
+            $lockedReservation = Reservation::lockForUpdate()->find($id);
+
+            if (! $lockedReservation) {
+                return ['allowed' => false, 'error' => 'Reservation not found'];
+            }
+
+            if ($lockedReservation->booking_completed_at !== null) {
+                return ['allowed' => false, 'already_completed' => true];
+            }
+
+            $isFinalizedReservation = (int) $lockedReservation->status === 1
+                || ((int) $lockedReservation->status === 2 && ! self::hasPendingSupplierProcessing($lockedReservation));
+
+            if ($isFinalizedReservation) {
+                return [
+                    'allowed' => false,
+                    'finalized_status' => (int) $lockedReservation->status,
+                ];
+            }
+
+            $lockWindowIsActive = $lockedReservation->booking_in_progress
+                && $lockedReservation->booking_processing_started_at
+                && $lockedReservation->booking_processing_started_at->gt(now()->subMinutes(15));
+
+            if ($lockWindowIsActive) {
+                return ['allowed' => false, 'already_processing' => true];
+            }
+
+            $lockedReservation->update([
+                'booking_in_progress' => true,
+                'booking_processing_started_at' => now(),
+            ]);
+
+            return ['allowed' => true];
+        });
+
+        if (! ($lockState['allowed'] ?? false)) {
+            if ($lockState['already_completed'] ?? false) {
+                return ['success' => true, 'errors' => []];
+            }
+
+            if (array_key_exists('finalized_status', $lockState)) {
+                $isSucceeded = (int) $lockState['finalized_status'] === 1;
+
+                return [
+                    'success' => $isSucceeded,
+                    'errors' => $isSucceeded ? [] : ['Booking already finalized as failed'],
+                ];
+            }
+
+            if ($lockState['already_processing'] ?? false) {
+                return ['success' => false, 'errors' => ['Booking is already being processed']];
+            }
+
+            return ['success' => false, 'errors' => [$lockState['error'] ?? 'Booking lock failed']];
+        }
+
         $bookingSuccess = true; // Track overall booking success
         $errorMessages = []; // Collect error messages
 
-        if ($reservation->type == 1 || $reservation->type == 2) {
+        $correlationId = $correlationId ?: ('res-' . $id . '-pay-' . ($reservation->payment_id ?? Str::uuid()->toString()));
+        Log::info('completeBooking start', ['correlation_id' => $correlationId, 'reservation_id' => $id]);
+
+        try {
+            if ($reservation->type == 1 || $reservation->type == 2) {
+                if ($reservation->hotel && ($reservation->hotel->confirmation_number || in_array((int) $reservation->hotel->status, [1, 3], true))) {
+                Log::info('Skipping hotel supplier booking; reservation hotel already processed', [
+                    'reservation_id' => $reservation->id,
+                    'hotel_reservation_id' => $reservation->hotel->id,
+                ]);
+            } else {
             $passengers = $reservation->passengers->toArray();
             $paxRooms = $reservation->search_request
             ? json_decode($reservation->search_request, true)
@@ -456,7 +533,7 @@ class ReservationService
                     'status' => 1,
                 ]);
                 
-                // Dispatch job to fetch booking details after 120 seconds
+                // Dispatch job to fetch supplier data after 120 seconds
                 FetchBookingDetailsJob::dispatch($reservation->hotel->id, $bookingReferenceId);
                 
                 Log::info('FetchBookingDetailsJob dispatched for booking reference: ' . $bookingReferenceId . ', hotel ID: ' . $reservation->hotel->id);
@@ -473,106 +550,104 @@ class ReservationService
                 $bookingSuccess = false;
                 $errorMessages[] = $book['Status']['Description'] ?? 'Hotel booking failed';
             }
+            }
         }
 
-        if ($reservation->type == 1 || $reservation->type == 3) {
+            if ($reservation->type == 1 || $reservation->type == 3) {
             $flights = $reservation->flights()->where('outbound_id',0)->orderBy('id', 'desc')->get();
 
            
 
             foreach ($flights as $flight) {
+                if ($flight->pnr || in_array((int) $flight->status, [1, 5], true)) {
+                    Log::info('Skipping supplier booking for already-processed flight', [
+                        'reservation_id' => $reservation->id,
+                        'flight_id' => $flight->id,
+                        'status' => $flight->status,
+                    ]);
+
+                    continue;
+                }
+
                 // Parse flight JSON to get flight details
                 $flightData = json_decode($flight->flight_json, true);
                 
-                // Check if trace_id is still valid by calling FareQuote first
-                Log::info('Starting booking process for flight ID: ' . $flight->id . ' with trace_id: ' . $flight->trace_id);
+                // Check if flowref_id is still valid by calling FareQuote first
+                $supplierReference = $flight->{SupplierFieldMap::FLIGHT_TRACE_ATTR};
+                Log::info('Supplier flow start', LogRedactor::redact([
+                    'flight_id' => $flight->id,
+                    'supplier_ref' => $supplierReference,
+                ]));
                 
                 $fareRuleData = null;
                 $fareQuoteData = null;
-                $validTraceId = $flight->trace_id;
+                $validTraceId = $flight->{SupplierFieldMap::FLIGHT_TRACE_ATTR};
                 
                
                 // if (isset($sessionFlight['FareQuote']) && isset($sessionFlight['FareRules'])) {
-                //     Log::info('Using FareQuote and FareRules data from passenger page session for flight ID: ' . $flight->id);
                 //     $fareQuoteData = $sessionFlight['FareQuote'];
                 //     $fareRuleData = $sessionFlight['FareRules'];
                 // } else {
                    
-                    // First, try FareQuote with existing trace_id
+                    // First, try FareQuote with existing flowref_id
                
                 // if ($flight && $flight->is_lcc) {
                 //          try {
-                //         Log::info('Testing existing trace_id validity with FareQuote for flight ID: ' . $flight->id);
-                //         $fareQuoteResponse = (new TBOFlightBookingService)->fareQuote($flight->trace_id, $flight->result_index);
-                //         Log::info('fareQuoteResponse: '. json_encode($fareQuoteResponse));
+                //         $fareQuoteResponse = (new TBOFlightBookingService)->fareQuote($flight->flowref_id, $flight->result_index);
                 //         if ($fareQuoteResponse && $fareQuoteResponse['Response'] &&  isset($fareQuoteResponse['Response']['ResponseStatus']) && $fareQuoteResponse['Response']['ResponseStatus'] == 1) {
                 //             $fareQuoteData = $fareQuoteResponse['Response']['Results'];
-                //             //Log::info('Existing trace_id is valid - FareQuote successful for flight ID: ' . $flight->id);
                 //         } else {
-                //             Log::warning('Existing trace_id expired or invalid for flight ID: ' . $flight->id . '. Need to perform fresh search.');
                             
                 //             // If FareQuote fails, we need a fresh search
                 //             // Extract search parameters from flight data to perform new search
                 //             if (isset($flightData['Segments'][0][0])) {
                                
                                 
-                //                 // Try to get a fresh trace_id using TBOFlightBookingService
+                //                 // Try to get a fresh flowref_id using TBOFlightBookingService
                 //                 try {
                 //                     $tboService = new TBOFlightBookingService();
                 //                     $freshTraceId = $tboService->getFreshTraceId();
                                     
                 //                     if ($freshTraceId) {
-                //                         Log::info('Got fresh trace_id: ' . $freshTraceId . ' for flight ID: ' . $flight->id);
                 //                         $validTraceId = $freshTraceId;
                                         
-                //                         // Now try FareQuote again with fresh trace_id
+                //                         // Now try FareQuote again with fresh flowref_id
                 //                         $fareQuoteResponse = $tboService->fareQuote($freshTraceId, $flight->result_index);
                 //                         if ($fareQuoteResponse && $fareQuoteResponse['Response'] &&  isset($fareQuoteResponse['Response']['ResponseStatus']) && $fareQuoteResponse['Response']['ResponseStatus'] == 1) {
                 //                             $fareQuoteData = $fareQuoteResponse['Response']['Results'];
-                //                             Log::info('FareQuote successful with fresh trace_id for flight ID: ' . $flight->id);
                 //                         } else {
-                //                             Log::error('FareQuote still failed even with fresh trace_id for flight ID: ' . $flight->id);
                 //                             $bookingSuccess = false;
                 //                             $errorMessages[] = 'Flight booking failed - unable to get valid fare quote even with fresh search for flight ID: ' . $flight->id;
                 //                             continue;
                 //                         }
                 //                     } else {
-                //                         Log::error('Could not get fresh trace_id for flight ID: ' . $flight->id);
                 //                         $bookingSuccess = false;
-                //                         $errorMessages[] = 'Flight booking failed - trace_id expired and could not refresh for flight ID: ' . $flight->id;
+                //                         $errorMessages[] = 'Flight booking failed - flowref_id expired and could not refresh for flight ID: ' . $flight->id;
                 //                         continue;
                 //                     }
                 //                 } catch (\Exception $e) {
-                //                     Log::error('Exception while trying to refresh trace_id for flight ID: ' . $flight->id . ', Error: ' . $e->getMessage());
                 //                     $bookingSuccess = false;
-                //                     $errorMessages[] = 'Flight booking failed - trace_id refresh exception for flight ID: ' . $flight->id;
+                //                     $errorMessages[] = 'Flight booking failed - flowref_id refresh exception for flight ID: ' . $flight->id;
                 //                     continue;
                 //                 }
                 //             } else {
-                //                 Log::error('Cannot proceed with booking - no flight segment data available for flight ID: ' . $flight->id);
                 //                 $bookingSuccess = false;
                 //                 $errorMessages[] = 'Flight booking failed - no flight segment data available for flight ID: ' . $flight->id;
                 //                 continue;
                 //             }
                 //         }
                 //     } catch (\Exception $e) {
-                //         Log::error('FareQuote API exception for flight ID: ' . $flight->id . ', Error: ' . $e->getMessage());
                 //         continue; // Skip this flight
                 //     }
 
                 //     // If we reach here, we have valid FareQuote data, now get FareRule
                 //     try {
-                //         Log::info('Fetching FareRule for flight ID: ' . $flight->id . ', ResultIndex: ' . $flight->result_index);
                 //         $fareRuleResponse = (new TBOFlightBookingService)->fareRules($validTraceId, $flight->result_index);
-                //         Log::info('fareRuleResponse: '. json_encode($fareRuleResponse));
                 //         if ($fareRuleResponse  && $fareRuleResponse['Response']  && isset($fareRuleResponse['Response']['ResponseStatus']) && $fareRuleResponse['Response']['ResponseStatus'] == 1) {
                 //             $fareRuleData = $fareRuleResponse['Response']['FareRules'];
-                //             Log::info('FareRule API successful for flight ID: ' . $flight->id);
                 //         } else {
-                //             Log::warning('FareRule API failed for flight ID: ' . $flight->id, $fareRuleResponse ?: []);
                 //         }
                 //     } catch (\Exception $e) {
-                //         Log::error('FareRule API exception for flight ID: ' . $flight->id . ', Error: ' . $e->getMessage());
                 //     }
                 // //}
 
@@ -586,24 +661,19 @@ class ReservationService
                 // }
                 // if (!empty($updateData)) {
                 //     $flight->update($updateData);
-                //     Log::info('Updated flight ID: ' . $flight->id . ' with FareRule/FareQuote data');
                 // }
 
                 // // Proceed with booking only if we have valid FareQuote data
                 // if (!$fareQuoteData) {
-                //     Log::error('Cannot proceed with booking - no valid FareQuote data for flight ID: ' . $flight->id);
                 //     $bookingSuccess = false;
                 //     $errorMessages[] = 'Flight booking failed - no valid fare data for flight ID: ' . $flight->id;
                 //     continue;
                 // }
-                // Log::info('Flight Data: ' . json_encode($flight));
                 
 
-                //     Log::info('Processing LCC flight booking for flight ID: ' . $flight->id);
                 //     $inbound_flight_ticket = (new TBOFlightBookingService)->ticketLCC($validTraceId, $flightData, $fareRuleData, $fareQuoteData);
-                //     Log::info('LCC Ticket API Response for flight ID: ' . $flight->id, $inbound_flight_ticket ?: []);
                     
-                //     // Check for success using the correct response structure
+                //     // Check for success using the correct result structure
                 //     if ((isset($inbound_flight_ticket['IsSuccess']) && $inbound_flight_ticket['IsSuccess']) || 
                 //         (isset($inbound_flight_ticket['Status']) && $inbound_flight_ticket['Status'] == 5)) {
                 //         $pnr = $inbound_flight_ticket['PNR'] ?? $inbound_flight_ticket['Itinerary']['PNR'] ?? null;
@@ -611,29 +681,30 @@ class ReservationService
                 //         if($outbound_flight = ReservationFlight::where('outbound_id', $flight->id)->first()){
                 //             $outbound_flight->update(['pnr' => $pnr, 'booking_json' => json_encode($inbound_flight_ticket)]);
                 //         }
-                //         Log::info('LCC ticket booking successful for flight ID: ' . $flight->id . ', PNR: ' . $pnr);
                 //     } else {
                 //         $bookingSuccess = false;
                 //         $errorMessage = $inbound_flight_ticket['Errors'][0]['UserMessage'] ?? 'LCC ticket booking failed';
                 //         $errorMessages[] = $errorMessage . ' (Flight ID: ' . $flight->id . ')';
-                //         Log::error('LCC ticket booking failed for flight ID: ' . $flight->id, $inbound_flight_ticket ?: []);
                 //     }
                 //     $message = $inbound_flight_ticket['Errors'][0]['UserMessage'] ?? 'No error message';
-                //     Log::info('flight_lcc', ['message' => $message]);
                 // }
 
                  if ($flight && $flight->is_lcc) {
                     Log::info('Processing LCC flight booking for flight ID: ' . $flight->id);
                     $inbound_flight_ticket = (new TBOFlightBookingService)->bookAndTicket($validTraceId, $flightData);
-                    Log::info('LCC Booking API Response for flight ID: ' . $flight->id, $inbound_flight_ticket ?: []);
+                    $lccStatus = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['Status'] ?? null;
+                    $lccSuccess = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['IsSuccess'] ?? null;
+                    $lccPnr = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['PNR'] ?? null;
+                    $lccBookingId = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['BookingId'] ?? null;
+                    Log::info('LCC supplier call', LogRedactor::redact(['correlation_id' => $correlationId, 'reservation_id' => $reservation->id, 'flight_id' => $flight->id, 'status' => $lccStatus, 'is_success' => $lccSuccess, 'pnr' => $lccPnr, 'booking_id' => $lccBookingId]));
                     
                     $message = $inbound_flight_ticket['Errors'][0]['UserMessage'] ?? 'No error message';
                     Log::info('flight_lcc', ['message' => $message]);
                     
                     // Check for InProgress status (Status = 5) first
-                    if (isset($inbound_flight_ticket['responseTicketData']['Status']) && $inbound_flight_ticket['responseTicketData']['Status'] == 5) {
-                        $pnr = $inbound_flight_ticket['responseTicketData']['PNR'] ?? $inbound_flight_ticket['responseTicketData']['Itinerary']['PNR'] ?? null;
-                        $bookingId = $inbound_flight_ticket['responseTicketData']['BookingId'] ?? null;
+                    if (isset($inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['Status']) && $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['Status'] == 5) {
+                        $pnr = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['PNR'] ?? $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['Itinerary']['PNR'] ?? null;
+                        $bookingId = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['BookingId'] ?? null;
                         
                         Log::info('LCC flight booking is InProgress (Status = 5) for flight ID: ' . $flight->id . ', PNR: ' . $pnr);
                         
@@ -641,8 +712,8 @@ class ReservationService
                         $flight->update([
                             'pnr' => $pnr,
                             'status' => 5, // InProgress
-                            'booking_json' => json_encode($inbound_flight_ticket['responseTicketData']),
-                            'ticket_json' => json_encode($inbound_flight_ticket['responseTicketData']),
+                            'booking_json' => json_encode(self::minimizeFlightProviderPayload($inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA] ?? [])),
+                            'ticket_json' => json_encode(self::minimizeFlightProviderPayload($inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA] ?? [])),
                             'tbo_booking_id' => $bookingId,
                             'is_in_progress' => true
                         ]);
@@ -651,58 +722,63 @@ class ReservationService
                             $outbound_flight->update([
                                 'pnr' => $pnr,
                                 'status' => 5, // InProgress
-                                'booking_json' => json_encode($inbound_flight_ticket['responseTicketData']),
-                                'ticket_json' => json_encode($inbound_flight_ticket['responseTicketData']),
+                                'booking_json' => json_encode(self::minimizeFlightProviderPayload($inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA] ?? [])),
+                                'ticket_json' => json_encode(self::minimizeFlightProviderPayload($inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA] ?? [])),
                                 'tbo_booking_id' => $bookingId,
                                 'is_in_progress' => true
                             ]);
                         }
                         
-                        // Dispatch job to fetch booking details after 15 minutes (airlines usually update within 10-15 minutes)
+                        // Dispatch job to fetch supplier data after 15 minutes (airlines usually update within 10-15 minutes)
                         FetchFlightBookingDetailsJob::dispatch($flight->id, $pnr, $bookingId, 15);
                         
                         Log::info('FetchFlightBookingDetailsJob dispatched for LCC flight PNR: ' . $pnr . ', flight ID: ' . $flight->id);
                         
-                    } elseif ((isset($inbound_flight_ticket['responseTicketData']['IsSuccess']) && $inbound_flight_ticket['responseTicketData']['IsSuccess']) || 
-                            (isset($inbound_flight_ticket['responseTicketData']['Status']) && $inbound_flight_ticket['responseTicketData']['Status'] == 1)) {
+                    } elseif ((isset($inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['IsSuccess']) && $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['IsSuccess']) || 
+                            (isset($inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['Status']) && $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['Status'] == 1)) {
                         // Successful immediate confirmation
-                        $pnr = $inbound_flight_ticket['responseTicketData']['PNR'] ?? $inbound_flight_ticket['responseTicketData']['Itinerary']['PNR'] ?? null;
+                        $pnr = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['PNR'] ?? $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['Itinerary']['PNR'] ?? null;
 
                         $flight->update([
                             'pnr' => $pnr, 
                             'status' => 1, // Confirmed
-                            'ticket_json' => json_encode($inbound_flight_ticket['responseTicketData']),
-                            'booking_json' => json_encode($inbound_flight_ticket['responseTicketData'])
+                            'ticket_json' => json_encode(self::minimizeFlightProviderPayload($inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA] ?? [])),
+                            'booking_json' => json_encode(self::minimizeFlightProviderPayload($inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA] ?? []))
                         ]);
                         if($outbound_flight = ReservationFlight::where('outbound_id', $flight->id)->first()){
                             $outbound_flight->update([
                                 'pnr' => $pnr,
                                 'status' => 1, // Confirmed
-                                'ticket_json' => json_encode($inbound_flight_ticket['responseTicketData']),
-                                'booking_json' => json_encode($inbound_flight_ticket['responseTicketData'])
+                                'ticket_json' => json_encode(self::minimizeFlightProviderPayload($inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA] ?? [])),
+                                'booking_json' => json_encode(self::minimizeFlightProviderPayload($inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA] ?? []))
                             ]);
                         }
                         Log::info('LCC booking and ticketing completed successfully for flight ID: ' . $flight->id . ', PNR: ' . $pnr);
                     } else {
                         $bookingSuccess = false;
-                        $errorMessage = $inbound_flight_ticket['responseTicketData']['Errors'][0]['UserMessage'] ?? 'LCC flight ticketing failed';
+                        $errorMessage = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['Errors'][0]['UserMessage'] ?? 'LCC flight ticketing failed';
                         $errorMessages[] = $errorMessage . ' (Flight ID: ' . $flight->id . ')';
-                        Log::error('LCC ticketing failed for flight ID: ' . $flight->id, $inbound_flight_ticket ?: []);
+                        $lccFailureStatus = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['Status'] ?? null;
+                        Log::error('LCC ticketing failed', LogRedactor::redact(['correlation_id' => $correlationId, 'reservation_id' => $reservation->id, 'flight_id' => $flight->id, 'status' => $lccFailureStatus, 'error' => $errorMessage]));
                     }
                 }
 
                 if ($flight && !$flight->is_lcc) {
                     Log::info('Processing Non-LCC flight booking for flight ID: ' . $flight->id);
                     $inbound_flight_ticket = (new TBOFlightBookingService)->bookAndTicket($validTraceId, $flightData);
-                    Log::info('Non-LCC Booking API Response for flight ID: ' . $flight->id, $inbound_flight_ticket ?: []);
+                    $nonLccBookingStatus = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_BOOKING_DATA]['Status'] ?? null;
+                    $nonLccTicketStatus = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['Status'] ?? null;
+                    $nonLccPnr = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['PNR'] ?? $inbound_flight_ticket[SupplierFieldMap::FLIGHT_BOOKING_DATA]['PNR'] ?? null;
+                    $nonLccBookingId = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['BookingId'] ?? $inbound_flight_ticket[SupplierFieldMap::FLIGHT_BOOKING_DATA]['BookingId'] ?? null;
+                    Log::info('Non-LCC supplier call', LogRedactor::redact(['correlation_id' => $correlationId, 'reservation_id' => $reservation->id, 'flight_id' => $flight->id, 'booking_status' => $nonLccBookingStatus, 'ticket_status' => $nonLccTicketStatus, 'pnr' => $nonLccPnr, 'booking_id' => $nonLccBookingId]));
                     
                     $message = $inbound_flight_ticket['Errors'][0]['UserMessage'] ?? 'No error message';
                     Log::info('flight_non_lcc', ['message' => $message]);
                     
-                    // Check for InProgress status in booking response first (Status = 5)
-                    if (isset($inbound_flight_ticket['responseBookingData']['Status']) && $inbound_flight_ticket['responseBookingData']['Status'] == 5) {
-                        $pnr = $inbound_flight_ticket['responseBookingData']['PNR'] ?? $inbound_flight_ticket['responseBookingData']['Itinerary']['PNR'] ?? null;
-                        $bookingId = $inbound_flight_ticket['responseBookingData']['BookingId'] ?? null;
+                    // Check for InProgress status in booking result first (Status = 5)
+                    if (isset($inbound_flight_ticket[SupplierFieldMap::FLIGHT_BOOKING_DATA]['Status']) && $inbound_flight_ticket[SupplierFieldMap::FLIGHT_BOOKING_DATA]['Status'] == 5) {
+                        $pnr = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_BOOKING_DATA]['PNR'] ?? $inbound_flight_ticket[SupplierFieldMap::FLIGHT_BOOKING_DATA]['Itinerary']['PNR'] ?? null;
+                        $bookingId = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_BOOKING_DATA]['BookingId'] ?? null;
                         
                         Log::info('Non-LCC flight booking is InProgress (Status = 5) for flight ID: ' . $flight->id . ', PNR: ' . $pnr);
                         
@@ -710,7 +786,7 @@ class ReservationService
                         $flight->update([
                             'pnr' => $pnr,
                             'status' => 5, // InProgress
-                            'booking_json' => json_encode($inbound_flight_ticket['responseBookingData']),
+                            'booking_json' => json_encode(self::minimizeFlightProviderPayload($inbound_flight_ticket[SupplierFieldMap::FLIGHT_BOOKING_DATA] ?? [])),
                             'tbo_booking_id' => $bookingId,
                             'is_in_progress' => true
                         ]);
@@ -719,21 +795,21 @@ class ReservationService
                             $outbound_flight->update([
                                 'pnr' => $pnr,
                                 'status' => 5, // InProgress
-                                'booking_json' => json_encode($inbound_flight_ticket['responseBookingData']),
+                                'booking_json' => json_encode(self::minimizeFlightProviderPayload($inbound_flight_ticket[SupplierFieldMap::FLIGHT_BOOKING_DATA] ?? [])),
                                 'tbo_booking_id' => $bookingId,
                                 'is_in_progress' => true
                             ]);
                         }
                         
-                        // Dispatch job to fetch booking details after 15 minutes
+                        // Dispatch job to fetch supplier data after 15 minutes
                         FetchFlightBookingDetailsJob::dispatch($flight->id, $pnr, $bookingId, 15);
                         
                         Log::info('FetchFlightBookingDetailsJob dispatched for Non-LCC flight PNR: ' . $pnr . ', flight ID: ' . $flight->id);
                         
-                    } elseif (isset($inbound_flight_ticket['responseTicketData']['Status']) && $inbound_flight_ticket['responseTicketData']['Status'] == 5) {
-                        // Check for InProgress status in ticket response (Status = 5)
-                        $pnr = $inbound_flight_ticket['responseTicketData']['PNR'] ?? $inbound_flight_ticket['responseTicketData']['Itinerary']['PNR'] ?? null;
-                        $bookingId = $inbound_flight_ticket['responseTicketData']['BookingId'] ?? null;
+                    } elseif (isset($inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['Status']) && $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['Status'] == 5) {
+                        // Check for InProgress status in ticket result (Status = 5)
+                        $pnr = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['PNR'] ?? $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['Itinerary']['PNR'] ?? null;
+                        $bookingId = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['BookingId'] ?? null;
                         
                         Log::info('Non-LCC flight ticketing is InProgress (Status = 5) for flight ID: ' . $flight->id . ', PNR: ' . $pnr);
                         
@@ -741,8 +817,8 @@ class ReservationService
                         $flight->update([
                             'pnr' => $pnr,
                             'status' => 5, // InProgress
-                            'ticket_json' => json_encode($inbound_flight_ticket['responseTicketData']),
-                            'booking_json' => json_encode($inbound_flight_ticket['responseBookingData'] ?? $inbound_flight_ticket['responseTicketData']),
+                            'ticket_json' => json_encode(self::minimizeFlightProviderPayload($inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA] ?? [])),
+                            'booking_json' => json_encode(self::minimizeFlightProviderPayload($inbound_flight_ticket[SupplierFieldMap::FLIGHT_BOOKING_DATA] ?? $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA] ?? [])),
                             'tbo_booking_id' => $bookingId,
                             'is_in_progress' => true
                         ]);
@@ -751,68 +827,123 @@ class ReservationService
                             $outbound_flight->update([
                                 'pnr' => $pnr,
                                 'status' => 5, // InProgress
-                                'ticket_json' => json_encode($inbound_flight_ticket['responseTicketData']),
-                                'booking_json' => json_encode($inbound_flight_ticket['responseBookingData'] ?? $inbound_flight_ticket['responseTicketData']),
+                                'ticket_json' => json_encode(self::minimizeFlightProviderPayload($inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA] ?? [])),
+                                'booking_json' => json_encode(self::minimizeFlightProviderPayload($inbound_flight_ticket[SupplierFieldMap::FLIGHT_BOOKING_DATA] ?? $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA] ?? [])),
                                 'tbo_booking_id' => $bookingId,
                                 'is_in_progress' => true
                             ]);
                         }
                         
-                        // Dispatch job to fetch booking details after 15 minutes
+                        // Dispatch job to fetch supplier data after 15 minutes
                         FetchFlightBookingDetailsJob::dispatch($flight->id, $pnr, $bookingId, 15);
                         
                         Log::info('FetchFlightBookingDetailsJob dispatched for Non-LCC flight ticketing PNR: ' . $pnr . ', flight ID: ' . $flight->id);
                         
-                    } elseif ((isset($inbound_flight_ticket['responseTicketData']['IsSuccess']) && $inbound_flight_ticket['responseTicketData']['IsSuccess']) || 
-                            (isset($inbound_flight_ticket['responseTicketData']['Status']) && $inbound_flight_ticket['responseTicketData']['Status'] == 1)) {
+                    } elseif ((isset($inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['IsSuccess']) && $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['IsSuccess']) || 
+                            (isset($inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['Status']) && $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['Status'] == 1)) {
                         // Successful immediate confirmation
-                        $pnr = $inbound_flight_ticket['responseTicketData']['PNR'] ?? $inbound_flight_ticket['responseTicketData']['Itinerary']['PNR'] ?? null;
+                        $pnr = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['PNR'] ?? $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['Itinerary']['PNR'] ?? null;
 
                         $flight->update([
                             'pnr' => $pnr, 
                             'status' => 1, // Confirmed
-                            'ticket_json' => json_encode($inbound_flight_ticket['responseTicketData']),
-                            'booking_json' => json_encode($inbound_flight_ticket['responseBookingData'])
+                            'ticket_json' => json_encode(self::minimizeFlightProviderPayload($inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA] ?? [])),
+                            'booking_json' => json_encode(self::minimizeFlightProviderPayload($inbound_flight_ticket[SupplierFieldMap::FLIGHT_BOOKING_DATA] ?? []))
                         ]);
                         if($outbound_flight = ReservationFlight::where('outbound_id', $flight->id)->first()){
                             $outbound_flight->update([
                                 'pnr' => $pnr,
                                 'status' => 1, // Confirmed
-                                'ticket_json' => json_encode($inbound_flight_ticket['responseTicketData']),
-                                'booking_json' => json_encode($inbound_flight_ticket['responseBookingData'])
+                                'ticket_json' => json_encode(self::minimizeFlightProviderPayload($inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA] ?? [])),
+                                'booking_json' => json_encode(self::minimizeFlightProviderPayload($inbound_flight_ticket[SupplierFieldMap::FLIGHT_BOOKING_DATA] ?? []))
                             ]);
                         }
                         Log::info('Non-LCC booking and ticketing completed successfully for flight ID: ' . $flight->id . ', PNR: ' . $pnr);
                     } else {
                         $bookingSuccess = false;
-                        $errorMessage = $inbound_flight_ticket['responseTicketData']['Errors'][0]['UserMessage'] ?? 'Non-LCC flight ticketing failed';
+                        $errorMessage = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['Errors'][0]['UserMessage'] ?? 'Non-LCC flight ticketing failed';
                         $errorMessages[] = $errorMessage . ' (Flight ID: ' . $flight->id . ')';
-                        Log::error('Non-LCC ticketing failed for flight ID: ' . $flight->id, $inbound_flight_ticket ?: []);
+                        $nonLccFailureStatus = $inbound_flight_ticket[SupplierFieldMap::FLIGHT_TICKET_DATA]['Status'] ?? null;
+                        Log::error('Non-LCC ticketing failed', LogRedactor::redact(['correlation_id' => $correlationId, 'reservation_id' => $reservation->id, 'flight_id' => $flight->id, 'status' => $nonLccFailureStatus, 'error' => $errorMessage]));
                     }
                 }
             }
-        }
+            }
 
-        // Log the overall booking result
-        if (!$bookingSuccess) {
-            Log::error('Booking/Ticketing failed for reservation ID: ' . $reservation->id, [
+            // Log the overall booking result
+            if (! $bookingSuccess) {
+                Log::error('Supplier flow failed', LogRedactor::redact([
+                    'reservation_id' => $reservation->id,
+                    'errors_count' => count($errorMessages),
+                    'first_error' => isset($errorMessages[0]) ? Str::limit((string) $errorMessages[0], 160) : null,
+                ]));
+            } else {
+                Log::info('Booking/Ticketing completed successfully for reservation ID: ' . $reservation->id);
+            }
+
+            Session::put(['flight' => null, 'hotel' => null, 'passengers' => null, 'preferences' => null, SupplierFieldMap::FLIGHT_TRACE_SESSION_KEY => null, 'outbound_flight' => null, 'inbound_flight' => null]);
+
+            return [
+                'success' => $bookingSuccess,
                 'errors' => $errorMessages,
-                'reservation_id' => $reservation->id
+            ];
+        } catch (\Throwable $exception) {
+            $bookingSuccess = false;
+
+            Log::error('completeBooking exception', [
+                'correlation_id' => $correlationId,
+                'reservation_id' => $id,
+                'error' => $exception->getMessage(),
             ]);
-        } else {
-            Log::info('Booking/Ticketing completed successfully for reservation ID: ' . $reservation->id);
+
+            return [
+                'success' => false,
+                'errors' => ['Booking processing exception'],
+            ];
+        } finally {
+            Reservation::where('id', $id)->update([
+                'booking_in_progress' => false,
+                'booking_completed_at' => $bookingSuccess ? now() : null,
+            ]);
+
+            Log::info('completeBooking end', ['correlation_id' => $correlationId, 'reservation_id' => $id, 'success' => $bookingSuccess, 'errors_count' => count($errorMessages)]);
+        }
+    }
+
+
+    private static function minimizeFlightProviderPayload(array $payload): array
+    {
+        return LogRedactor::redact([
+            'status' => $payload['Status'] ?? null,
+            'is_success' => $payload['IsSuccess'] ?? null,
+            'pnr' => $payload['PNR'] ?? ($payload['Itinerary']['PNR'] ?? null),
+            'booking_id' => $payload['BookingId'] ?? null,
+            'error_code' => $payload['Error']['ErrorCode'] ?? ($payload['Errors'][0]['ErrorCode'] ?? null),
+            'user_message' => isset($payload['Error']['ErrorMessage'])
+                ? Str::limit((string) $payload['Error']['ErrorMessage'], 160)
+                : (isset($payload['Errors'][0]['UserMessage']) ? Str::limit((string) $payload['Errors'][0]['UserMessage'], 160) : null),
+        ]);
+    }
+
+    private static function hasPendingSupplierProcessing(Reservation $reservation): bool
+    {
+        $reservation->loadMissing(['hotel', 'flights']);
+
+        $hotelPending = false;
+        if (in_array((int) $reservation->type, [1, 2], true)) {
+            $hotel = $reservation->hotel;
+            $hotelPending = $hotel && ! ($hotel->confirmation_number || in_array((int) $hotel->status, [1, 3], true));
         }
 
-        session(['flight' => null, 'hotel' => null, 'passengers' => null, 'preferences' => null, 'traceId' => null, 'outbound_flight' => null, 'inbound_flight' => null]);
-        
-        Log::info('completeBooking end', ['correlation_id' => $correlationId, 'reservation_id' => $id, 'success' => $bookingSuccess, 'errors_count' => count($errorMessages)]);
+        $flightPending = false;
+        if (in_array((int) $reservation->type, [1, 3], true)) {
+            $flightPending = $reservation->flights
+                ->where('outbound_id', 0)
+                ->contains(function ($flight) {
+                    return ! ($flight->pnr || in_array((int) $flight->status, [1, 3, 5], true));
+                });
+        }
 
-        return [
-            'success' => $bookingSuccess,
-            'errors' => $errorMessages
-        ];
+        return $hotelPending || $flightPending;
     }
 }
-
-
-

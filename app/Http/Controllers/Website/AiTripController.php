@@ -34,6 +34,12 @@ class AiTripController extends Controller
 
     public function store(Request $request)
     {
+        $request->validate([
+            'destination' => ['nullable', 'string', 'max:120'],
+            'destination_code' => ['nullable', 'string', 'max:10'],
+            'trip_id' => ['nullable', 'integer'],
+        ]);
+
         SearchService::searchNew($request, 1);
 
         return CacheDestinationService::getDestinations($request);
@@ -41,14 +47,22 @@ class AiTripController extends Controller
 
     public function searchPlans(Request $request)
     {
+        $request->validate([
+            'trip_id' => ['required', 'integer', 'exists:destinations,id'],
+        ]);
+
         SearchService::search($request, 1);
 
         $trip = Destination::find($request->trip_id);
 
         return redirect('/choose/' . $trip->id);
     }
-     public function searchPlansNew(Request $request)
+    public function searchPlansNew(Request $request)
     {
+        $request->validate([
+            'trip_id' => ['required', 'integer', 'exists:destinations,id'],
+        ]);
+
         SearchService::searchNew($request, 1);
 
         $trip = Destination::find($request->trip_id);
