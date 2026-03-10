@@ -1,58 +1,31 @@
-# #!/bin/bash
-
-# # Set error handling
-# set -e
-
-# # Change to application directory
-# cd /var/www/html
-
-# # Install/update composer dependencies if needed
-# echo "Installing composer dependencies..."
-# composer install --no-dev --optimize-autoloader --no-interaction
-
-# # Wait for database to be ready
-# echo "Waiting for database..."
-# while ! php artisan migrate:status > /dev/null 2>&1; do
-#     echo "Database not ready, waiting..."
-#     sleep 2
-# done
-
-# # Run migrations
-# echo "Running database migrations..."
-# php artisan migrate --force
-
-# # Run any other setup commands
-# echo "Optimizing application..."
-# php artisan config:cache
-# php artisan route:cache
-# php artisan view:cache
-
-# # Start php-fpm
-# echo "Starting PHP-FPM..."
-# exec php-fpm
-
 #!/bin/sh
+set -e
 
-# Wait for database to be ready (if using MySQL)
+# Wait for database to be ready
 if [ -n "$DB_HOST" ]; then
-  echo "Waiting for database..."
-  while ! nc -z $DB_HOST $DB_PORT; do
-    sleep 0.5
-  done
-  echo "Database ready!"
+    echo "Waiting for database at $DB_HOST:${DB_PORT:-3306}..."
+    while ! nc -z "$DB_HOST" "${DB_PORT:-3306}"; do
+        sleep 0.5
+    done
+    echo "Database is ready."
 fi
 
-# Generate Laravel key if not set
-if [ ! -f ".env" ]; then
-  cp .env.example .env
-  php artisan key:generate
+# Bootstrap .env from example if missing (first-run convenience only)
+if [ ! -f "/var/www/html/.env" ]; then
+    echo "No .env found — copying .env.example as .env"
+    cp /var/www/html/.env.example /var/www/html/.env
+    php artisan key:generate --force
 fi
 
 # Run database migrations
+echo "Running database migrations..."
 php artisan migrate --force
 
-# Start PHP-FPM in background
-php-fpm -D
+# Cache Laravel configuration, routes, and views for production performance
+echo "Caching application..."
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
 
-# Start Nginx in foreground
-nginx -g "daemon off;"
+echo "Starting supervisord..."
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
