@@ -63,6 +63,10 @@ return [
         'api_key' => env('AGODA_HOTEL_API_KEY'),
     ],
 
+    'firebase' => [
+        'credentials' => env('FIREBASE_CREDENTIALS', 'firebase-credentials.json'),
+    ],
+
     'tbo_flight' => [
         'username' => env('TBO_FLIGHT_USERNAME'),
         'password' => env('TBO_FLIGHT_PASSWORD'),

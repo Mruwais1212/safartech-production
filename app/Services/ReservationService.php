@@ -519,8 +519,8 @@ class ReservationService
                 'client_reference_id' => auth('web')->id(),
                 'booking_reference_id' => $bookingReferenceId,
                 'total_fare' => $reservation->hotel->price,
-                'email' => $reservation->passengers()->first()->email,
-                'phone_number' => $reservation->passengers()->first()->phone,
+                'email' => $reservation->passengers()->first()?->email ?? '',
+                'phone_number' => $reservation->passengers()->first()?->phone ?? '',
             ]);
 
             $book = (new TBOHotelBookingService)->bookingRoom(request());

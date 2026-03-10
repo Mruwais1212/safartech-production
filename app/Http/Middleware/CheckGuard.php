@@ -15,7 +15,11 @@ class CheckGuard
             return response()->json(['message' => __('messages.You can\'t access this action')], 400);
         }
 
-        $userType = Str::lower(UserType::getKey(auth('api')->user()->user_type_id));
+        $apiUser = auth('api')->user();
+        if (! $apiUser) {
+            return response()->json(['message' => __('messages.You can\'t access this action')], 401);
+        }
+        $userType = Str::lower(UserType::getKey($apiUser->user_type_id));
 
         if (! in_array($userType, $guards)) {
             return response()->json(['message' => __('messages.You can\'t access this action')], 400);

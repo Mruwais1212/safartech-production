@@ -199,10 +199,14 @@ class SearchService
             'country_id' => $request->country_id,
             "paxRooms" => $paxRooms,
         ]);
+        $originAirport = Airport::find($request->origin);
+        $fallbackDestination = $destination
+            ?? Airport::where('city', $request->destination)->first();
+
         Log::info('Preparing search data afterr', ['$request->destination'=>$request->destination,'destinationVal'=> $destination ,
-            'destination' => $destination ? @$destination->city_code : @Airport::where('city',$request->destination)->first()->city_code,
-            'destination_name' => @$destination ? @$destination->city : $request->destination,
-            'destination_code' => @$destination ? @$destination->country_code :  @Airport::where('city',$request->destination)->first()->country_code,]);
+            'destination' => $fallbackDestination?->city_code,
+            'destination_name' => $fallbackDestination?->city ?? $request->destination,
+            'destination_code' => $fallbackDestination?->country_code,]);
         return [
             'adults' => $totalAdults ?: 1,
             'children' => $totalChildren ?: 0,
@@ -212,12 +216,12 @@ class SearchService
             'one_stop' => $request->one_stop == 'on' ? true : false,
             'direct' => $request->direct == 'on' ? true : false,
             'journey_type' => $request->journey_type ?: 1,
-            'currency' => session('currency') == 'SAR' ? 'SAR' : 'SAR',
-            'origin' => @Airport::find($request->origin)->city_code,
-            'origin_name' => @Airport::find($request->origin)->city,
-            'destination' => $destination ? @$destination->city_code : @Airport::where('city',$request->destination)->first()->city_code,
-            'destination_name' => @$destination ? @$destination->city : $request->destination,
-            'destination_code' => @$destination ? @$destination->country_code :  @Airport::where('city',$request->destination)->first()->country_code,
+            'currency' => session('currency') ?: 'SAR',
+            'origin' => $originAirport?->city_code,
+            'origin_name' => $originAirport?->city,
+            'destination' => $fallbackDestination?->city_code,
+            'destination_name' => $fallbackDestination?->city ?? $request->destination,
+            'destination_code' => $fallbackDestination?->country_code,
             'flight_class' => $request->flight_class ?: 1,
             'start_date' => $start_date,
             'end_date' => $request->journey_type == 1 ? \Carbon\Carbon::parse($start_date)->addDay() :$end_date,
