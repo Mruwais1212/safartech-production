@@ -62,6 +62,19 @@ class ReservationService
 
         $price = $total_price_calculate['total_price'];
 
+//        if (Session::get('preferences')['trip_type'] == 1) {
+//            $price = Session::get('hotel.TotalFareHotel') + (Session::get('flight.flight_amount') + Session::get('flight.inbound_flight_amount'));
+//        }
+//
+//        if (Session::get('preferences')['trip_type'] == 2) {
+//            $price = Session::get('hotel.TotalFareHotel');
+//        }
+//
+//        if (Session::get('preferences')['trip_type'] == 3) {
+//            $price = Session::get('flight.flight_amount') + Session::get('flight.inbound_flight_amount');
+//        }
+
+
         do {
             $integerId = rand(1, 9999999999);
         } while (Reservation::where('uuid', $integerId)->exists());
@@ -111,15 +124,7 @@ class ReservationService
         $reservation->passengers()->delete();
 
         if ($tripType == 1 || $tripType == 2) {
-            $selectedHotelJson = Session::get('hotel.selected_hotel');
-            $selected_hotel = $selectedHotelJson ? json_decode($selectedHotelJson) : null;
-
-            if (! $selected_hotel) {
-                Log::warning('ReservationService: hotel.selected_hotel is missing or invalid JSON', [
-                    'user_id' => auth('web')->id(),
-                ]);
-                return null;
-            }
+            $selected_hotel = json_decode(Session::get('hotel.selected_hotel'));
 
             $first_tax_rate_hotel = $reservationType == 'inside' ? 15 : 0;
             $first_tax_amount_hotel = Session::get('hotel.TotalFareHotel') * $first_tax_rate_hotel / 100;
@@ -150,8 +155,8 @@ class ReservationService
                 'hotel_rate' => $selected_hotel->rating,
                 'booking_code' => Session::get('hotel.BookingCodeHotel'),
                 'confirmation_number' => null,
-                'country_id' => $selected_hotel->country_id ?? null,
-                'city_id' => $selected_hotel->city_id ?? null,
+                'country_id' => @$selected_hotel->country_id,
+                'city_id' => @$selected_hotel->city_id,
                 'date_from' => Session::get('preferences')['start_date'],
                 'date_to' => Session::get('preferences')['end_date'],
 
@@ -270,22 +275,16 @@ class ReservationService
                 $segment_index=Session::get('inbound_flight')?0:1;
                 $outbound_id=!Session::get('inbound_flight')?$outbound_flight->id:0;
                 $inboundFlight=Session::get('inbound_flight')?:Session::get('outbound_flight');
-                // Use the dedicated inbound amount when a separate inbound flight was chosen;
-                // fall back to the outbound amount for round-trip tickets stored as Segments[1].
-                $inboundPriceBase = Session::get('inbound_flight')
-                    ? ($flight['inbound_flight_amount'] ?? $flight['flight_amount'] ?? 0)
-                    : ($flight['flight_amount'] ?? 0);
-
                 $first_tax_rate = $reservationType == 'inside' ? 15 : 0;
-                $first_tax_amount = $inboundPriceBase * $first_tax_rate / 100;
+                $first_tax_amount = Session::get('flight')['flight_amount'] * $first_tax_rate / 100;
 
                 $administrative_tax_rate = (int)$flight_commession;
-                $administrative_tax_amount = $inboundPriceBase * $administrative_tax_rate / 100;
+                $administrative_tax_amount = Session::get('flight')['flight_amount'] * $administrative_tax_rate / 100;
 
                 $second_tax_rate = 15;
                 $second_tax_amount = $administrative_tax_amount * $second_tax_rate / 100;
 
-                $price_without_tax = $inboundPriceBase;
+                $price_without_tax = Session::get('flight')['flight_amount'];
                 $tax_amount = $first_tax_amount + $administrative_tax_amount + $second_tax_amount;
 
                 $inbound_flight = $reservation->flight()->create([
@@ -295,7 +294,7 @@ class ReservationService
                     'is_lcc' => $inboundFlight['IsLCC'],
                     'is_refundable' => $inboundFlight['IsRefundable'],
                     'last_ticket_date' => $inboundFlight['LastTicketDate'],
-                    'total_price' => $inboundPriceBase,
+                    'total_price' => Session::get('flight')['flight_amount'],
                     'is_direct' => count(value: $inboundFlight['Segments'][$segment_index]) == 1 ? true : false,
                     'flight_class' => $inboundFlight['Segments'][$segment_index][0]['CabinClass'],
                     'pnr' => null,
@@ -331,7 +330,7 @@ class ReservationService
                         'trip_indicator' => $value['TripIndicator'],
                         'segment_indicator' => $value['SegmentIndicator'],
                         'duration' => $value['Duration'],
-                        'no_of_seat_available' => $value['NoOfSeatAvailable'] ?? 1,
+                        'no_of_seat_available' => @$value['NoOfSeatAvailable']?:1,
                     ]);
 
                     $segment->origin()->create([
@@ -368,20 +367,20 @@ class ReservationService
 
         }
 
-        foreach (Session::get('passengers', []) as $passenger) {
+        foreach (Session::get('passengers') as $passenger) {
             $reservation->passengers()->create([
-                'first_name'          => $passenger['first_name'] ?? '',
-                'last_name'           => $passenger['last_name'] ?? '',
-                'pax_type'            => $passenger['pax_type'] ?? 1,
-                'birth_date'          => $passenger['birth_date'] ?? null,
-                'email'               => $passenger['email'] ?? null,
-                'phone'               => $passenger['phone'] ?? null,
-                'nationality'         => $passenger['nationality'] ?? null,
-                'gender'              => $passenger['gender'] ?? null,
-                'address'             => $passenger['address'] ?? null,
-                'passport_number'     => $passenger['passport_number'] ?? '',
-                'passport_expiry_date' => $passenger['passport_expiry_date'] ?? '1900-01-01',
-                'title'               => $passenger['title'] ?? null,
+                'first_name' => $passenger['first_name'],
+                'last_name' => $passenger['last_name'],
+                'pax_type' => $passenger['pax_type'],
+                'birth_date' => $passenger['birth_date'],
+                'email' => $passenger['email'],
+                'phone' => $passenger['phone'],
+                'nationality' => $passenger['nationality'],
+                'gender' => $passenger['gender'],
+                'address' => $passenger['address'],
+                'passport_number' => isset($passenger['passport_number']) ? $passenger['passport_number'] : '',
+                'passport_expiry_date' => isset($passenger['passport_expiry_date']) ? $passenger['passport_expiry_date'] : '1900-01-01',
+                'title' => @$passenger['title'],
             ]);
         }
 
@@ -519,8 +518,8 @@ class ReservationService
                 'client_reference_id' => auth('web')->id(),
                 'booking_reference_id' => $bookingReferenceId,
                 'total_fare' => $reservation->hotel->price,
-                'email' => $reservation->passengers()->first()?->email ?? '',
-                'phone_number' => $reservation->passengers()->first()?->phone ?? '',
+                'email' => $reservation->passengers()->first()->email,
+                'phone_number' => $reservation->passengers()->first()->phone,
             ]);
 
             $book = (new TBOHotelBookingService)->bookingRoom(request());

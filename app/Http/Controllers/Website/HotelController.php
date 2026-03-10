@@ -291,15 +291,11 @@ class HotelController extends Controller
             return back()->with('error', 'Sorry, No Hotels Found');
         } Log::info('Hotels: '.json_encode($hotels));
 
-        $tripAirport = Airport::where('city', 'like', '%'.Str::limit($trip->city->name_en, 4, '').'%')
-            ->where('country', $trip->country->name_en)
-            ->first();
-
         session([
-            'preferences.destination_code' => $tripAirport?->country_code,
-            'preferences.destination_name' => $tripAirport?->city,
-            'preferences.destination'      => $tripAirport?->city_code,
-            'preferences.trip_id'          => $trip->id,
+            'preferences.destination_code' => @Airport::where('city', 'like', '%'.Str::limit($trip->city->name_en, 4, '').'%')->where('country', $trip->country->name_en)->first()->country_code,
+            'preferences.destination_name' => @Airport::where('city', 'like', '%'.Str::limit($trip->city->name_en, 4, '').'%')->where('country', $trip->country->name_en)->first()->city,
+            'preferences.destination' => @Airport::where('city', 'like', '%'.Str::limit($trip->city->name_en, 4, '').'%')->where('country', $trip->country->name_en)->first()->city_code,
+            'preferences.trip_id' => $trip->id,
         ]);
 
         $hotels->{'hotels'} = TBOHotelResource::collection($hotels);

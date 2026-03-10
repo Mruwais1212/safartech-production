@@ -178,7 +178,7 @@ class SearchService
             }
         } else {
             // Case 2: destination is a city name - try trip city first, then request destination
-            $destination = Airport::where('city', $trip?->city?->name_en)->first();
+            $destination = Airport::where('city', @$trip->city->name_en)->first();
             if (!$destination && $request->destination) {
                 $destination = Airport::where('city', $request->destination)->first();
             }
@@ -199,14 +199,10 @@ class SearchService
             'country_id' => $request->country_id,
             "paxRooms" => $paxRooms,
         ]);
-        $originAirport = Airport::find($request->origin);
-        $fallbackDestination = $destination
-            ?? Airport::where('city', $request->destination)->first();
-
         Log::info('Preparing search data afterr', ['$request->destination'=>$request->destination,'destinationVal'=> $destination ,
-            'destination' => $fallbackDestination?->city_code,
-            'destination_name' => $fallbackDestination?->city ?? $request->destination,
-            'destination_code' => $fallbackDestination?->country_code,]);
+            'destination' => $destination ? @$destination->city_code : @Airport::where('city',$request->destination)->first()->city_code,
+            'destination_name' => @$destination ? @$destination->city : $request->destination,
+            'destination_code' => @$destination ? @$destination->country_code :  @Airport::where('city',$request->destination)->first()->country_code,]);
         return [
             'adults' => $totalAdults ?: 1,
             'children' => $totalChildren ?: 0,
@@ -216,12 +212,12 @@ class SearchService
             'one_stop' => $request->one_stop == 'on' ? true : false,
             'direct' => $request->direct == 'on' ? true : false,
             'journey_type' => $request->journey_type ?: 1,
-            'currency' => session('currency') ?: 'SAR',
-            'origin' => $originAirport?->city_code,
-            'origin_name' => $originAirport?->city,
-            'destination' => $fallbackDestination?->city_code,
-            'destination_name' => $fallbackDestination?->city ?? $request->destination,
-            'destination_code' => $fallbackDestination?->country_code,
+            'currency' => session('currency') == 'SAR' ? 'SAR' : 'SAR',
+            'origin' => @Airport::find($request->origin)->city_code,
+            'origin_name' => @Airport::find($request->origin)->city,
+            'destination' => $destination ? @$destination->city_code : @Airport::where('city',$request->destination)->first()->city_code,
+            'destination_name' => @$destination ? @$destination->city : $request->destination,
+            'destination_code' => @$destination ? @$destination->country_code :  @Airport::where('city',$request->destination)->first()->country_code,
             'flight_class' => $request->flight_class ?: 1,
             'start_date' => $start_date,
             'end_date' => $request->journey_type == 1 ? \Carbon\Carbon::parse($start_date)->addDay() :$end_date,
@@ -259,7 +255,7 @@ class SearchService
             }
         } else {
             // Case 2: destination is a city name - try trip city first, then request destination
-            $destination = Airport::where('city', $trip?->city?->name_en)->first();
+            $destination = Airport::where('city', @$trip->city->name_en)->first();
             if (!$destination && $request->destination) {
                 $destination = Airport::where('city', $request->destination)->first();
             }
@@ -420,13 +416,11 @@ class SearchService
         //     'limited_hotels_sent' => count($limitedHotelCodes),
         //     'request_data' => $request->all()
         // ]);
-        if (! isset($request['paxRooms']) || empty($request['paxRooms'])) {
-            // ChildrenAges must be an array of ages — use age 1 as a proxy for infants
-            $infantCount  = max(0, (int) ($request['infants'] ?? 0));
-            $paxRooms[] = (object) [
-                'Adults'       => (int) ($request['adults'] ?? 1),
-                'Children'     => (int) ($request['children'] ?? 0),
-                'ChildrenAges' => $infantCount > 0 ? array_fill(0, $infantCount, 1) : [],
+        if(!isset($request['paxRooms']) || empty($request['paxRooms'])) {
+           $paxRooms[] = (object)[
+                'Adults' => (int) $request['adults'],
+                'Children' =>  (int) $request['children'],
+                'ChildrenAges' => (int) $request['infants']
             ];
         } else {
             $paxRooms = $request['paxRooms'];
@@ -509,12 +503,10 @@ class SearchService
             $query->where('name_en', session()->get('preferences')['destination_name']);
         })->first();
 
-        $sortKey = null;
-        $sortOrder = null;
         if (request()->sort) {
             $sort = explode('_', request()->sort);
-            $sortKey = $sort[0] ?? null;
-            $sortOrder = $sort[1] ?? 'asc';
+            $sortKey = $sort[0];
+            $sortOrder = $sort[1];
         }
 
         if ($hotels instanceof Collection) {
@@ -531,7 +523,7 @@ class SearchService
                 ->map(function ($hotel) use ($newRoom, $destination) {
                     $hotel['rooms'] = $newRoom[$hotel->code] ?? [];
                     $hotel['price'] = $newRoom[$hotel->code]['Price'];
-                    $hotel['distance'] = (new DistanceService)->calculateDistance($hotel->latitude ?? 0, $hotel->longitude ?? 0, $destination->latitude ?? 0, $destination->longitude ?? 0);
+                    $hotel['distance'] = (new DistanceService)->calculateDistance(@$hotel->latitude, @$hotel->longitude, @$destination->latitude, @$destination->longitude);
 
                     return $hotel;
                 });
@@ -541,7 +533,7 @@ class SearchService
                     ->where('price','<=',request()->max_budget)->values();
             }
 
-            if (request()->sort && $sortKey) {
+            if (request()->sort) {
                 $hotels = $hotels->sortBy(function ($hotel) use ($sortKey) {
                     return $hotel[$sortKey];
                 }, SORT_REGULAR, $sortOrder == 'desc')->values();
@@ -552,7 +544,7 @@ class SearchService
             $paginatedHotels->getCollection()->transform(function ($hotel) use ($newRoom, $destination) {
                 $hotel['rooms'] = $newRoom[$hotel->code] ?? [];
                 $hotel['price'] = $newRoom[$hotel->code]['Price'];
-                $hotel['distance'] = (new DistanceService)->calculateDistance($hotel->latitude ?? 0, $hotel->longitude ?? 0, $destination->latitude ?? 0, $destination->longitude ?? 0);
+                $hotel['distance'] = (new DistanceService)->calculateDistance(@$hotel->latitude, @$hotel->longitude, @$destination->latitude, @$destination->longitude);
 
                 return $hotel;
             });
@@ -573,10 +565,10 @@ class SearchService
                 ->map(function ($hotel) use ($newRoom, $destination) {
                     $hotel['rooms'] = $newRoom[is_array($hotel) ? $hotel['HotelCode'] : $hotel->code] ?? [];
                     $hotel['price'] = $newRoom[$hotel['HotelCode']]['Price'];
-                    $location = explode('|', $hotel['Map'] ?? '');
-                    $latitude = $location[0] ?? 0;
-                    $longitude = $location[1] ?? 0;
-                    $hotel['distance'] = (new DistanceService)->calculateDistance((float)$latitude, (float)$longitude, $destination->latitude ?? 0, $destination->longitude ?? 0);
+                    $location = explode('|', $hotel['Map']);
+                    $latitude = @$location[0];
+                    $longitude = @$location[1];
+                    $hotel['distance'] = (new DistanceService)->calculateDistance($latitude, $longitude, @$destination->latitude ?: 0, @$destination->longitude ?: 0);
 
                     return $hotel;
                 });
@@ -586,7 +578,7 @@ class SearchService
                     ->where('price','<=',request()->max_budget)->values();
             }
 
-                if (request()->sort && $sortKey) {
+                if (request()->sort) {
                     $hotels = $hotels->sortBy(function ($hotel) use ($sortKey) {
                         return $hotel[$sortKey];
                     }, SORT_REGULAR, $sortOrder == 'desc')->values();

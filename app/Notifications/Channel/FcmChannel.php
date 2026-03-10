@@ -33,7 +33,7 @@ class FcmChannel
     protected function sendToFcm($data, $tokens)
     {
         try {
-            $factory = (new Factory)->withServiceAccount(base_path(config('services.firebase.credentials')));
+            $factory = (new Factory)->withServiceAccount(base_path(env('FIREBASE_CREDENTIALS')));
             $auth = $factory->createAuth();
             $cloudMessaging = $factory->createMessaging();
             $notification = FcmNotification::create($data['title'], $data['message']);

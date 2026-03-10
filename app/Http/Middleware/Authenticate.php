@@ -44,7 +44,7 @@ class Authenticate
             }
         }
 
-        if (($guards[0] ?? null) === 'web') {
+        if (@$guards[0] == 'web') {
             throw new AuthenticationException('Unauthenticated.', $guards, '/sign-in');
         }
 

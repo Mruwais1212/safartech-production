@@ -1,17 +1,11 @@
 <?php
 
-/**
- * Locale-namespaced website routes.
- * This file is loaded TWICE by bootstrap/app.php:
- *   1. Via web: key  — without prefix/namespace (provides non-locale URLs)
- *   2. Via then: callback — with locale prefix + App\Http\Controllers\Website namespace
- *
- * Rules:
- *   - ONLY use string-based controller references ('HomeController@index').
- *   - Do NOT use FQCN (ClassName::class) here — those belong in routes/standalone.php.
- */
 
+use App\Http\Controllers\Website\TripController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\Website\SessionController;
+use App\Http\Controllers\Webhooks\MoyasarWebhookController;
 
 Route::get('page/{page}', function ($page) {
     return view("website.$page");
@@ -30,6 +24,9 @@ Route::group(['middleware' => ['auth:web']], function () {
     Route::resource('edit-profile', 'EditProfileController')->only('index', 'store');
 });
 
+
+Route::post('webhooks/moyasar', MoyasarWebhookController::class)->middleware('throttle:moyasar-webhook');
+
 Route::group(['middleware' => ['web']], function () {
     Route::get('/', 'HomeController@index');
     Route::get('ai-trip', 'AiTripController@index');
@@ -45,11 +42,15 @@ Route::group(['middleware' => ['web']], function () {
     Route::post('ai-trip-planner', 'AiTripPlannerController@store')->middleware('throttle:ai-generation');
     Route::resource('trips', 'TripController')->only('index', 'show');
     Route::get('plan/{id}', 'TripController@plan');
+    Route::get('/search-results', [TripController::class, 'showResults'])->name('search.results');
+
 
     Route::get('saved-trips', 'HomeController@savedTrips');
     Route::get('trip-details/{id}', 'HomeController@tripDetails');
 
     Route::resource('passenger-information', 'PassengerInformationController');
+    
+    // SSR API endpoint for AJAX calls
     Route::get('passenger-information/ssr-data', 'PassengerInformationController@getSSRData')->name('passenger.ssr-data');
     Route::post('passenger-information/update-ssr', 'PassengerInformationController@updateSSRData')->name('passenger.update-ssr');
 
@@ -84,9 +85,75 @@ Route::group(['middleware' => ['web']], function () {
     Route::get('select-room/{id}', 'HotelController@selectRoom');
     Route::get('choose/{id}', 'HotelController@choose');
     Route::get('search-airport', 'HotelController@searchAirport');
+
     Route::get('search-city', 'HotelController@searchCity');
     Route::get('search-airport-city', 'HotelController@searchAirportCity');
     Route::post('cancel-hotel/{booking_code}', 'HotelController@cancel_hotel')->middleware(['auth:web', 'throttle:cancel']);
 
     Route::post('tbo-hotel', 'TBOHotelDetailsController@hotelDetails');
+
+    Route::get('/generate-invoice/{id}', [InvoiceController::class, 'generateInvoice'])->middleware('auth:web');
+
+    Route::get('/flight-details',[\App\Http\Controllers\Website\MyTripController::class,'flight_test']);
+
+    // Booking Details Health Check Routes
+    Route::middleware(['auth:web'])->group(function () {
+        Route::get('/health/booking-system', [\App\Http\Controllers\BookingHealthController::class, 'systemHealth']);
+        Route::get('/health/booking-details/{id}', [\App\Http\Controllers\BookingHealthController::class, 'bookingDetails']);
+        Route::get('/health/recent-bookings', [\App\Http\Controllers\BookingHealthController::class, 'recentBookingsStatus']);
+    });
 });
+
+
+Route::get('/health/status', function () {
+    return response()->json(['status' => 'ok']);
+});
+
+Route::middleware('web')->group(function () {
+    if (app()->environment('local')) {
+        Route::get('/session-data', [SessionController::class, 'showSessionData']);
+
+        // Test SSR data structure
+        Route::get('/test-ssr', function () {
+            $ssrData = session('ssr_data', []);
+            $passengers = session('passengers', []);
+
+            return response()->json([
+                'ssr_data' => $ssrData,
+                'passengers' => $passengers,
+                'session_keys' => array_keys(session()->all())
+            ]);
+        });
+
+        // Test passenger data with SSR
+        Route::get('/test-passengers', function () {
+            $passengers = session('passengers', []);
+
+            return response()->json([
+                'passengers' => $passengers,
+                'count' => count($passengers),
+                'first_passenger' => $passengers[0] ?? null,
+                'ssr_data_summary' => array_map(function($passenger, $index) {
+                    return [
+                        'index' => $index,
+                        'name' => ($passenger['first_name'] ?? '') . ' ' . ($passenger['last_name'] ?? ''),
+                        'selected_meal' => $passenger['selected_meal'] ?? 'none',
+                        'meal_price' => $passenger['meal_price'] ?? 0,
+                        'selected_baggage' => $passenger['selected_baggage'] ?? 'none',
+                        'baggage_price' => $passenger['baggage_price'] ?? 0,
+                    ];
+                }, $passengers, array_keys($passengers))
+            ]);
+        });
+
+        // Test booking error page
+        Route::get('/test-booking-error', function () {
+            return redirect('/booking-error')->with('error_message', 'This is a test booking error message. Payment was successful but booking failed.');
+        });
+    }
+});
+
+// Manual trigger for InProgress flight booking details check
+Route::post('/admin/check-inprogress-flights/{pnr?}', [\App\Http\Controllers\AdminMaintenanceController::class, 'checkInprogressFlights'])
+    ->middleware(['auth:admin', 'permission', 'throttle:admin-ops'])
+    ->name('admin.check.inprogress.flights');
