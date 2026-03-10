@@ -89,4 +89,10 @@ class MyTripController extends Controller
         
         return $pdf->download('trip-details-' . $reservation->id . '.pdf');
     }
+    public function flight_test(){
+        $reservation=Reservation::whereId(59)->first();
+        $flight=$reservation->flights->first();
+        dd(json_decode($flight->booking_json)->Itinerary);
+
+    }
 }

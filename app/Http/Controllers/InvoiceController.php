@@ -32,26 +32,20 @@ class InvoiceController extends Controller
         
         $total_price_calculate = PriceCalculationTrait::newCalculatePriceAmounts($reservation);
 
-        // Load all needed settings in a single query
-        $settings = Setting::whereIn('code', [
-            'phone','email','whatsapp','address','twitter','facebook',
-            'instagram','youtube','linkedin','snapchat','company_name','commercial_registration',
-        ])->pluck('value', 'code');
-
         $data = [
             'image' => public_path('site/img/logo.png'),
-            'phone' => $settings['phone'] ?? '',
-            'email' => $settings['email'] ?? '',
-            'whatsapp' => $settings['whatsapp'] ?? '',
-            'address' => $settings['address'] ?? '',
-            'twitter' => $settings['twitter'] ?? '',
-            'facebook' => $settings['facebook'] ?? '',
-            'instagram' => $settings['instagram'] ?? '',
-            'youtube' => $settings['youtube'] ?? '',
-            'linkedin' => $settings['linkedin'] ?? '',
-            'snapchat' => $settings['snapchat'] ?? '',
-            'company_name' => $settings['company_name'] ?? 'سفر تك',
-            'commercial_registration' => $settings['commercial_registration'] ?? '112233445566778',
+            'phone' => Setting::where('code', 'phone')->first()->value,
+            'email' => Setting::where('code', 'email')->first()->value,
+            'whatsapp' => Setting::where('code', 'whatsapp')->first()->value,
+            'address' => Setting::where('code', 'address')->first()->value,
+            'twitter' => Setting::where('code', 'twitter')->first()->value,
+            'facebook' => Setting::where('code', 'facebook')->first()->value,
+            'instagram' => Setting::where('code', 'instagram')->first()->value,
+            'youtube' => Setting::where('code', 'youtube')->first()->value,
+            'linkedin' => Setting::where('code', 'linkedin')->first()->value,
+            'snapchat' => Setting::where('code', 'snapchat')->first()->value,
+            'company_name' => Setting::where('code', 'company_name')->first() ? Setting::where('code', 'company_name')->first()->value : 'سفر تك',
+            'commercial_registration' => Setting::where('code', 'commercial_registration')->first() ? Setting::where('code', 'commercial_registration')->first()->value : '112233445566778',
             'from' => $reservation->from_city,
             'to' => $reservation->to_city,
 

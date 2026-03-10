@@ -8,15 +8,17 @@ trait PriceCalculationTrait
 {
     public static function calculatePriceAmounts(float $price, string $reservationType,string $bookingType='flight'): array
     {
-        $settingCode = $bookingType === 'flight' ? 'flight_profit' : 'hotel_profit';
-        $defaultFee  = $bookingType === 'flight' ? 7 : 12;
-        $service_fees_percent = (float) (Setting::where('code', $settingCode)->value('value') ?? $defaultFee);
+        $service_fees_percent=0;
+        if($bookingType=='flight'){
+            $service_fees_percent = Setting::where('code', 'flight_profit')->first() ? Setting::where('code', 'flight_profit')->first()->value : 7;
+        }else{
+            $service_fees_percent = Setting::where('code', 'hotel_profit')->first() ? Setting::where('code', 'hotel_profit')->first()->value : 12;
+        }
 
         $total_price = $price;
         $tax1_amount = $reservationType === 'inside' ? 0.15 : 0;
-        $tax1_amount = $tax1_amount * $total_price;
-        // Use the DB-driven fee percentage (same logic as PriceCalculationHelper)
-        $unit_administrative_fees = $service_fees_percent * $price / 100;
+        $tax1_amount=$tax1_amount*$total_price;
+        $unit_administrative_fees = 0.07 * $price;
         $tax2_amount = 0.15 * $unit_administrative_fees;
         $total_taxes2 = $tax2_amount + $unit_administrative_fees;
         $total_price = $tax1_amount + $price + $total_taxes2;

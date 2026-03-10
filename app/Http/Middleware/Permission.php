@@ -11,29 +11,13 @@ class Permission
 {
     public function handle(Request $request, Closure $next, $guard = 'admin')
     {
-        $actionName = $request->route()->getActionName();
+        $get_method_name = $request->route()->getActionMethod();
+        $explode_method_name = explode('@', $request->route()->getActionName())[0];
+        $explode_controller_path = explode("App\Http\Controllers\\", $explode_method_name)[1];
 
-        // Guard against closures and invokable controllers (no '@' separator)
-        if (! str_contains($actionName, '@')) {
-            return $next($request);
-        }
-
-        $get_method_name  = $request->route()->getActionMethod();
-        $controllerClass  = explode('@', $actionName)[0];
-        $parts            = explode("App\Http\Controllers\\", $controllerClass);
-
-        if (! isset($parts[1])) {
-            return $next($request);
-        }
-
-        $explode_controller_path = $parts[1];
         $currentUser = User::find(auth($guard)->id());
 
-        if (! $currentUser) {
-            return abort(403, __('dashboard.You do not have permission to access this page'));
-        }
-
-        $privilege      = Privilege::where('method', $get_method_name)->where('controller', $explode_controller_path)->first();
+        $privilege = Privilege::where('method', $get_method_name)->where('controller', $explode_controller_path)->first();
         $checkPrivilege = ! $currentUser->privileges()->where('method', $get_method_name)->where('controller', $explode_controller_path)->first();
 
         if ($privilege && $checkPrivilege) {
