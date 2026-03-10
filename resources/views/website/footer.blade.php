@@ -75,11 +75,11 @@
                         Copyright © {{ date('Y') }} SaferTech | All Rights Reserved
                     @endif
                     <br>
-                    {{ __('trans.Trade_name'). ': ' . $setting['company_name'] }}
+                    {{ __('trans.Trade_name'). ': ' . ($setting['company_name'] ?? '') }}
                      .
                     {{ __('trans.License_category'). ': ' .__('trans.an_agency') }}
                      .
-                    {{ __('trans.License_number'). ': ' . $setting['commercial_registration'] }}
+                    {{ __('trans.License_number'). ': ' . ($setting['commercial_registration'] ?? '') }}
                 </div>
             </div>
         </div>

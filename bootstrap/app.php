@@ -11,15 +11,21 @@ use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
         then: function () {
+            // Standalone routes: FQCN controllers, no locale prefix, no namespace override.
+            Route::middleware(['web'])
+                ->group(base_path('routes/standalone.php'));
+
+            // Admin panel routes with locale prefix.
             Route::middleware(['web', 'localeSessionRedirect', 'localizationRedirect', 'localeViewPath'])
                 ->prefix(LaravelLocalization::setLocale().'/admin-panel')
                 ->name('panel.')
                 ->namespace('App\Http\Controllers\Panel')
                 ->group(base_path('routes/panel.php'));
+
+            // Website routes with locale prefix + Website namespace.
             Route::middleware(['web', 'localeSessionRedirect', 'localizationRedirect', 'localeViewPath'])
                 ->prefix(LaravelLocalization::setLocale().'/')
                 ->namespace('App\Http\Controllers\Website')
@@ -76,6 +82,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule) {
         $schedule->command('app:cache-t-b-o-hotel-in-database-command')->dailyAt('01:00');
         $schedule->command('queue:work --stop-when-empty --tries=3 --timeout=720')->everyMinute()->withoutOverlapping();
-        $schedule->command('reservations:reconcile-failed-paid')->everyMinutes(max(1, (int) config('payment.reconciliation_interval_minutes', 10)))->withoutOverlapping();
+        $reconcileInterval = max(1, (int) config('payment.reconciliation_interval_minutes', 10));
+        $schedule->command('reservations:reconcile-failed-paid')
+            ->cron('*/'.$reconcileInterval.' * * * *')
+            ->withoutOverlapping();
     })
     ->create();

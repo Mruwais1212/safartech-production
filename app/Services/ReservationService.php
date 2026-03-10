@@ -62,19 +62,6 @@ class ReservationService
 
         $price = $total_price_calculate['total_price'];
 
-//        if (Session::get('preferences')['trip_type'] == 1) {
-//            $price = Session::get('hotel.TotalFareHotel') + (Session::get('flight.flight_amount') + Session::get('flight.inbound_flight_amount'));
-//        }
-//
-//        if (Session::get('preferences')['trip_type'] == 2) {
-//            $price = Session::get('hotel.TotalFareHotel');
-//        }
-//
-//        if (Session::get('preferences')['trip_type'] == 3) {
-//            $price = Session::get('flight.flight_amount') + Session::get('flight.inbound_flight_amount');
-//        }
-
-
         do {
             $integerId = rand(1, 9999999999);
         } while (Reservation::where('uuid', $integerId)->exists());
@@ -124,7 +111,15 @@ class ReservationService
         $reservation->passengers()->delete();
 
         if ($tripType == 1 || $tripType == 2) {
-            $selected_hotel = json_decode(Session::get('hotel.selected_hotel'));
+            $selectedHotelJson = Session::get('hotel.selected_hotel');
+            $selected_hotel = $selectedHotelJson ? json_decode($selectedHotelJson) : null;
+
+            if (! $selected_hotel) {
+                Log::warning('ReservationService: hotel.selected_hotel is missing or invalid JSON', [
+                    'user_id' => auth('web')->id(),
+                ]);
+                return null;
+            }
 
             $first_tax_rate_hotel = $reservationType == 'inside' ? 15 : 0;
             $first_tax_amount_hotel = Session::get('hotel.TotalFareHotel') * $first_tax_rate_hotel / 100;
@@ -155,8 +150,8 @@ class ReservationService
                 'hotel_rate' => $selected_hotel->rating,
                 'booking_code' => Session::get('hotel.BookingCodeHotel'),
                 'confirmation_number' => null,
-                'country_id' => @$selected_hotel->country_id,
-                'city_id' => @$selected_hotel->city_id,
+                'country_id' => $selected_hotel->country_id ?? null,
+                'city_id' => $selected_hotel->city_id ?? null,
                 'date_from' => Session::get('preferences')['start_date'],
                 'date_to' => Session::get('preferences')['end_date'],
 

@@ -31,7 +31,6 @@ class Reservation extends Model
         'from_id',
         'from_city',
         'uuid',
-        'to_id',
         'reservation_type',
         'unit_price',
         'payment_type',
@@ -40,7 +39,7 @@ class Reservation extends Model
         'booking_error',
         'reconcile_attempt_count',
         'last_reconciled_at',
-        'reconciliation_status'
+        'reconciliation_status',
     ];
 
     protected $casts = [
@@ -96,17 +95,15 @@ class Reservation extends Model
     public function scopeFilterDate($query)
     {
         return $query
-
             ->when(request()->date == 'today', function ($q) {
-                $q->whereDate('created_at', now());
+                $q->whereDate('created_at', now()->toDateString());
             })
-
             ->when(request()->date == 'month', function ($q) {
-                $q->whereDate('created_at', now()->month);
+                $q->whereMonth('created_at', now()->month)
+                  ->whereYear('created_at', now()->year);
             })
-
             ->when(request()->date == 'year', function ($q) {
-                $q->whereDate('created_at', now()->year);
+                $q->whereYear('created_at', now()->year);
             });
     }
 }

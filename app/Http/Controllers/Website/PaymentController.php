@@ -85,33 +85,33 @@ class PaymentController extends Controller implements HasMiddleware
         };
 
         $price = $totalBasePrice;
-//Log::info($price);
 
         // Fetch real SSR data from session (stored by PassengerInformationController)
         $ssrData = [];
         if (in_array($tripType, [1, 3]) && $flight) {
-            
             // Call SSR API to get available meal and baggage options
-        $this->callFlightAPIs();
-        
+            $this->callFlightAPIs();
+
+            // Re-read flight session after API call (callFlightAPIs may have updated it)
+            $flight = session('flight');
+
             // Get SSR data from session instead of making new API calls
             $ssrData = [
                 'outbound' => $flight['SSRDetails'] ?? [],
                 'inbound' => $flight['InboundSSRDetails'] ?? []
             ];
-            
+
             // Check if SSR data is empty (could be due to expired session)
             $hasSSRData = !empty($ssrData['outbound']) || !empty($ssrData['inbound']);
-            
+            $traceId = session('traceId');
+
             Log::info('SSR data retrieved from session for summary page', [
                 'has_outbound' => !empty($ssrData['outbound']),
                 'has_inbound' => !empty($ssrData['inbound']),
                 'has_any_ssr_data' => $hasSSRData,
-                'session_expired_detected' => !$hasSSRData && !empty($traceId)
+                'session_expired_detected' => !$hasSSRData && !empty($traceId),
             ]);
-            
-            // If no SSR data available (possibly due to expired session), 
-            // we'll rely on fallback data in the view
+
             if (!$hasSSRData) {
                 Log::warning('No SSR data available - possibly due to expired TraceId session');
             }
@@ -319,7 +319,7 @@ class PaymentController extends Controller implements HasMiddleware
         $invoice = MoyasarPaymentService::createInvoice([
             'amount' => $price,
             'currency' => $currency,
-            'description' => 'test invoice',
+            'description' => 'SafarTech Booking #'.$reservation->uuid,
             'callback_url' => url('moyasar-callback').'?nonce='.$callbackNonce,
             'success_url' => url('moyasar-success').'?nonce='.$callbackNonce,
             'metadata' => collect([
@@ -411,101 +411,6 @@ class PaymentController extends Controller implements HasMiddleware
         return view('website.error');
     }
 
-
-    //  private function callSSR()
-    // {
-    //     try {
-    //         $tboService = new TBOFlightBookingService();
-            
-    //         // Get current flight session data
-    //         $traceId = session('outbound_flight.TraceId') ? session('outbound_flight.TraceId') : session('inbound_flight.TraceId');
-    //         $outboundResultIndex = session('flight.flightResult');
-    //         $inboundResultIndex = session('flight.inbound_flightResult');
-            
-    //         if (!$traceId) {
-    //             Log::warning('No traceId found in session for SSR API calls');
-    //             return;
-    //         }
-    //         Log::info('Starting SSR API calls', ['traceId' => $traceId, 'outboundResultIndex' => $outboundResultIndex, 'inboundResultIndex' => $inboundResultIndex]);
-    //         // Call SSR API for outbound flight
-    //         if ($outboundResultIndex) {
-    //             Log::info('Calling SSR API for outbound flight', [
-    //                 'traceId' => $traceId,
-    //                 'resultIndex' => $outboundResultIndex
-    //             ]);
-
-    //             $ssrResponse = $tboService->ssr($traceId, $outboundResultIndex);
-    //             Log::info('SSR API response for outbound flight', $ssrResponse);
-                
-    //             // Check for expired session or other errors
-    //             if (isset($ssrResponse['Response']['ResponseStatus']) && $ssrResponse['Response']['ResponseStatus'] == 4) {
-    //                 Log::warning('TraceId expired for outbound SSR call', [
-    //                     'error' => $ssrResponse['Response']['Error'] ?? 'Unknown error'
-    //                 ]);
-    //                 // Set empty SSR data but don't fail completely
-    //                 $flight = session('flight', []);
-    //                 $flight['SSRDetails'] = [];
-    //                 session(['flight' => $flight]);
-    //             } elseif (isset($ssrResponse['Response'])) {
-    //                 $flight = session('flight', []);
-    //                 $flight['SSRDetails'] = $ssrResponse['Response'];
-    //                 session(['flight' => $flight]);
-    //                 Log::info('Successfully stored outbound SSR details in flight session');
-    //             } else {
-    //                 Log::warning('No SSR data returned for outbound flight', $ssrResponse);
-    //                 // Set empty SSR data as fallback
-    //                 $flight = session('flight', []);
-    //                 $flight['SSRDetails'] = [];
-    //                 session(['flight' => $flight]);
-    //             }
-    //         }
-
-    //         // Call SSR API for inbound flight if exists
-    //         if ($inboundResultIndex) {
-    //             Log::info('Calling SSR API for inbound flight', [
-    //                 'traceId' => $traceId,
-    //                 'resultIndex' => $inboundResultIndex
-    //             ]);
-
-    //             $inboundSSRResponse = $tboService->ssr($traceId, $inboundResultIndex);
-    //             Log::info('SSR API response for inbound flight', $inboundSSRResponse);
-                
-    //             // Check for expired session or other errors
-    //             if (isset($inboundSSRResponse['Response']['ResponseStatus']) && $inboundSSRResponse['Response']['ResponseStatus'] == 4) {
-    //                 Log::warning('TraceId expired for inbound SSR call', [
-    //                     'error' => $inboundSSRResponse['Response']['Error'] ?? 'Unknown error'
-    //                 ]);
-    //                 // Set empty SSR data but don't fail completely
-    //                 $flight = session('flight', []);
-    //                 $flight['InboundSSRDetails'] = [];
-    //                 session(['flight' => $flight]);
-    //             } elseif (isset($inboundSSRResponse['Response'])) {
-    //                 $flight = session('flight', []);
-    //                 $flight['InboundSSRDetails'] = $inboundSSRResponse['Response'];
-    //                 session(['flight' => $flight]);
-    //                 Log::info('Successfully stored inbound SSR details in flight session');
-    //             } else {
-    //                 Log::warning('No SSR data returned for inbound flight', $inboundSSRResponse);
-    //                 // Set empty SSR data as fallback
-    //                 $flight = session('flight', []);
-    //                 $flight['InboundSSRDetails'] = [];
-    //                 session(['flight' => $flight]);
-    //             }
-    //         }
-
-    //     } catch (\Exception $e) {
-    //         Log::error('Error calling SSR API from passenger page', [
-    //             'error' => $e->getMessage(),
-    //             'trace' => $e->getTraceAsString()
-    //         ]);
-            
-    //         // Set empty SSR data as fallback to prevent page crashes
-    //         $flight = session('flight', []);
-    //         $flight['SSRDetails'] = [];
-    //         $flight['InboundSSRDetails'] = [];
-    //         session(['flight' => $flight]);
-    //     }
-    // }
 
     private function callSSR()
     {

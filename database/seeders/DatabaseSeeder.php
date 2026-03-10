@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             User::create([
                 'name' => 'SuperAdmin', 'phone' => '0123456789', 'email' => 'superadmin@gmail.com',
                 'password' => bcrypt('password'), 'user_type_id' => UserType::SUPER_ADMIN, 'group_privilege_id' => 1,
+                'gender' => 'male',
             ]);
         }
 
@@ -26,6 +27,7 @@ class DatabaseSeeder extends Seeder
             User::create([
                 'name' => 'Admin', 'phone' => '0123456788', 'email' => 'admin@gmail.com',
                 'password' => bcrypt('password'), 'user_type_id' => UserType::ADMIN, 'group_privilege_id' => 2,
+                'gender' => 'male',
             ]);
         }
 
