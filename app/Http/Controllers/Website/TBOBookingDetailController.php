@@ -96,7 +96,7 @@ class TBOBookingDetailController extends Controller
             ], $response->status());
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::error('TBO Booking Detail Connection Exception: '.$e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
+                'exception_class' => get_class($e),
             ]);
 
             return response()->json([
@@ -106,7 +106,7 @@ class TBOBookingDetailController extends Controller
             ], 504);
         } catch (\Exception $e) {
             Log::error('TBO Booking Detail Unexpected Exception: '.$e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
+                'exception_class' => get_class($e),
             ]);
 
             return response()->json([

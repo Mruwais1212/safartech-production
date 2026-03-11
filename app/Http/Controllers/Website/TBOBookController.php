@@ -100,7 +100,7 @@ class TBOBookController extends Controller
             ], $response->status());
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::error('TBO Booking Connection Exception: '.$e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
+                'exception_class' => get_class($e),
                 'request' => $request->except(['PaymentInfo']),
             ]);
 
@@ -110,7 +110,7 @@ class TBOBookController extends Controller
             ], 504);
         } catch (\Exception $e) {
             Log::error('TBO Booking Unexpected Exception: '.$e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
+                'exception_class' => get_class($e),
                 'request' => $request->except(['PaymentInfo']),
             ]);
 

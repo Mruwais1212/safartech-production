@@ -3,18 +3,20 @@
 namespace Tests\Feature;
 
 use App\Support\LogRedactor as SupportLogRedactor;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
 /**
  * Tests covering each issue from the production hardening audit.
  *
- * NOTE: RefreshDatabase is intentionally omitted here. Several migrations use
- * MySQL-specific UPDATE...JOIN syntax that is incompatible with the SQLite test
- * driver. Tests that require DB state use a real DB or are marked @group db.
+ * RefreshDatabase is now safe to use because the MySQL-specific UPDATE...JOIN
+ * migration (2025_08_05_012527) has been rewritten using a correlated subquery
+ * that is compatible with both MySQL and the SQLite test driver.
  */
 class ProductionHardeningTest extends TestCase
 {
+    use RefreshDatabase;
 
     // -------------------------------------------------------------------------
     // Issue 1 — page/{page} arbitrary view disclosure

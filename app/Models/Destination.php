@@ -50,7 +50,7 @@ class Destination extends Model
     public function getPriceAttribute()
     {
         $exchange_rates = Cache::remember('exchange_rates', 60 * 60 * 24, function () {
-            $api_key = env('EXCHANGE_RATE_API_KEY');
+            $api_key = config('services.exchange_rate.api_key');
 
             return @Http::get("https://v6.exchangerate-api.com/v6/$api_key/latest/USD")->json('conversion_rates')['SAR'] ?? 3.75;
         });

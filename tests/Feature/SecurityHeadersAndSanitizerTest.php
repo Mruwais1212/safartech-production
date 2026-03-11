@@ -7,7 +7,7 @@ use Tests\TestCase;
 
 class SecurityHeadersAndSanitizerTest extends TestCase
 {
-    public function test_web_responses_include_correlation_and_csp_report_only_headers(): void
+    public function test_web_responses_include_correlation_and_csp_headers(): void
     {
         $response = $this->withHeaders([
             'X-Correlation-Id' => 'corr-test-1234',
@@ -15,7 +15,9 @@ class SecurityHeadersAndSanitizerTest extends TestCase
 
         $response->assertOk();
         $response->assertHeader('X-Correlation-Id', 'corr-test-1234');
-        $response->assertHeader('Content-Security-Policy-Report-Only');
+        // CSP is now enforced (Content-Security-Policy), not report-only.
+        // The middleware was intentionally upgraded from report-only to enforced.
+        $response->assertHeader('Content-Security-Policy');
     }
 
     public function test_html_sanitizer_strips_scripts_attributes_and_disallowed_tags(): void

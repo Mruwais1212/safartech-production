@@ -2659,7 +2659,7 @@ class TBOFlightBookingService
                 'pnr' => $pnr,
                 'booking_id' => $bookingId,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'exception_class' => get_class($e)
             ]);
 
             return [

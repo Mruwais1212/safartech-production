@@ -12,12 +12,24 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Update existing reservation hotels with phone numbers from TBOHotel table
+        // Update existing reservation hotels with phone numbers from TBOHotel table.
+        // Uses a correlated subquery instead of UPDATE...JOIN so it works on both
+        // MySQL and SQLite (the test driver).
         DB::statement("
-            UPDATE reservation_hotels rh
-            JOIN t_b_o_hotels th ON rh.hotel_id = th.code
-            SET rh.phone = th.phone
-            WHERE rh.phone IS NULL AND th.phone IS NOT NULL
+            UPDATE reservation_hotels
+            SET phone = (
+                SELECT t_b_o_hotels.phone
+                FROM t_b_o_hotels
+                WHERE t_b_o_hotels.code = reservation_hotels.hotel_id
+                  AND t_b_o_hotels.phone IS NOT NULL
+                LIMIT 1
+            )
+            WHERE reservation_hotels.phone IS NULL
+              AND EXISTS (
+                SELECT 1 FROM t_b_o_hotels
+                WHERE t_b_o_hotels.code = reservation_hotels.hotel_id
+                  AND t_b_o_hotels.phone IS NOT NULL
+              )
         ");
     }
 

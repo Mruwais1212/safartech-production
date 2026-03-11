@@ -11,21 +11,21 @@ class GooglePlaceService
         $response = Http::get('https://maps.googleapis.com/maps/api/place/textsearch/json', [
             'query' => $query,
             'location' => $latitude.','.$longitude,
-            'key' => env('GOOGLE_MAPS_API_KEY'),
+            'key' => config('services.google.maps_api_key'),
         ]);
 
         if ($response->json()['status'] != 'OK') {
             return null;
         }
 
-        return 'https://maps.googleapis.com/maps/api/place/photo?maxwidth=940&photoreference='.$response->json()['results'][0]['photos'][0]['photo_reference'].'&key='.env('GOOGLE_MAPS_API_KEY');
+        return 'https://maps.googleapis.com/maps/api/place/photo?maxwidth=940&photoreference='.$response->json()['results'][0]['photos'][0]['photo_reference'].'&key='.config('services.google.maps_api_key');
     }
 
     public function getPlaceDetails($placeId)
     {
         $response = Http::get('https://maps.googleapis.com/maps/api/place/details/json', [
             'place_id' => $placeId,
-            'key' => env('GOOGLE_MAPS_API_KEY'),
+            'key' => config('services.google.maps_api_key'),
         ]);
 
         return $response->json();
@@ -36,7 +36,7 @@ class GooglePlaceService
         $response = Http::get('https://maps.googleapis.com/maps/api/place/photo', [
             'maxwidth' => 400,
             'photoreference' => $photoReference,
-            'key' => env('GOOGLE_MAPS_API_KEY'),
+            'key' => config('services.google.maps_api_key'),
         ]);
 
         return $response->body();

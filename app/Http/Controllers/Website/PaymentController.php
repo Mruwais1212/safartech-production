@@ -236,7 +236,7 @@ class PaymentController extends Controller implements HasMiddleware
         } catch (\Exception $e) {
             Log::error('Error calling TBO Flight APIs from passenger page', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'exception_class' => get_class($e)
             ]);
         }
     }
@@ -496,7 +496,7 @@ class PaymentController extends Controller implements HasMiddleware
     //     } catch (\Exception $e) {
     //         Log::error('Error calling SSR API from passenger page', [
     //             'error' => $e->getMessage(),
-    //             'trace' => $e->getTraceAsString()
+    //             'exception_class' => get_class($e)
     //         ]);
             
     //         // Set empty SSR data as fallback to prevent page crashes
@@ -587,7 +587,7 @@ class PaymentController extends Controller implements HasMiddleware
         } catch (\Exception $e) {
             Log::error('Error calling SSR API from passenger page', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'exception_class' => get_class($e)
             ]);
             
             // Set empty SSR data as fallback to prevent page crashes

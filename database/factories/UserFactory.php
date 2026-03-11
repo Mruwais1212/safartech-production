@@ -42,7 +42,7 @@ class UserFactory extends Factory
             'last_login' => now(),
             'group_privilege_id' => null,
             'block' => 0,
-            'player_position' => rand(1, 4),
+            'gender' => fake()->randomElement(['male', 'female']),
             'created_at' => now(),
             'updated_at' => now(),
         ];
