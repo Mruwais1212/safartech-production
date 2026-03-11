@@ -54,6 +54,12 @@ return [
         'api_key' => env('AGODA_HOTEL_API_KEY'),
     ],
 
+    'moyasar' => [
+        'secret_key' => env('MOYASAR_SECRET_KEY'),
+        'base_url'   => env('MOYASAR_BASE_URL', 'https://api.moyasar.com'),
+        'webhook_secret' => env('MOYASAR_WEBHOOK_SECRET'),
+    ],
+
     'tbo_flight' => [
         'username' => env('TBO_FLIGHT_USERNAME'),
         'password' => env('TBO_FLIGHT_PASSWORD'),

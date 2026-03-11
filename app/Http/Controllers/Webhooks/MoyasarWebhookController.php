@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Webhooks;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Website\Controller;
 use App\Models\Reservation;
 use App\Services\MoyasarPaymentService;
 use App\Services\ReservationService;
@@ -15,6 +15,30 @@ class MoyasarWebhookController extends Controller
 {
     public function __invoke(Request $request)
     {
+        // --- HMAC signature verification ---
+        $webhookSecret = config('services.moyasar.webhook_secret');
+
+        if (! empty($webhookSecret)) {
+            $signature = $request->header('X-Moyasar-Signature');
+
+            if (empty($signature)) {
+                Log::warning('Moyasar webhook missing signature header');
+
+                return response()->json(['message' => 'Forbidden'], 403);
+            }
+
+            $expectedSignature = hash_hmac('sha256', $request->getContent(), $webhookSecret);
+
+            if (! hash_equals($expectedSignature, $signature)) {
+                Log::warning('Moyasar webhook HMAC mismatch', [
+                    'ip' => $request->ip(),
+                ]);
+
+                return response()->json(['message' => 'Forbidden'], 403);
+            }
+        }
+
+        // --- Payload validation ---
         $validation = Validator::make($request->all(), [
             'id' => ['required', 'string', 'max:191'],
         ]);

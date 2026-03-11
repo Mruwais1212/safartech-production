@@ -12,11 +12,18 @@ class LogRedactor
         'passport',
         'email',
         'phone',
-        'number',
+        // 'number' removed — substring match masked flight_number, confirmation_number,
+        //   booking_reference_number which are operational identifiers needed in logs.
+        //   Use the explicit keys below instead.
+        'card_number',
+        'credit_card',
         'cvv',
-        'name',
-        'last_name',
+        // 'name' removed — too broad; masked airline_name, country_name, city_name etc.
+        //   Explicit PII keys below replace it.
         'first_name',
+        'last_name',
+        'full_name',
+        'passenger_name',
     ];
 
     public static function redact(array $data): array

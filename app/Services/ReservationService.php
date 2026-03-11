@@ -62,6 +62,14 @@ class ReservationService
 
         $price = $total_price_calculate['total_price'];
 
+        // Include SSR ancillary cost (meals, baggage) — computed server-side in PaymentController
+        // and stored in session before add() is called. Without this the stored price omits SSR
+        // while Moyasar is charged the full amount.
+        $ssrCost = (float) Session::get('total_ssr_cost', 0);
+        if ($ssrCost > 0) {
+            $price += $ssrCost;
+        }
+
 //        if (Session::get('preferences')['trip_type'] == 1) {
 //            $price = Session::get('hotel.TotalFareHotel') + (Session::get('flight.flight_amount') + Session::get('flight.inbound_flight_amount'));
 //        }
@@ -512,7 +520,7 @@ class ReservationService
                 $reservation->update(['booking_reference_id' => $bookingReferenceId]);
             }
 
-            request()->merge([
+            $bookingPayload = new \Illuminate\Support\Fluent([
                 'booking_code' => $reservation->hotel->booking_code,
                 'customer_details' => $customer_details,
                 'client_reference_id' => auth('web')->id(),
@@ -522,7 +530,7 @@ class ReservationService
                 'phone_number' => $reservation->passengers()->first()->phone,
             ]);
 
-            $book = (new TBOHotelBookingService)->bookingRoom(request());
+            $book = (new TBOHotelBookingService)->bookingRoom($bookingPayload);
 
             if ($book['Status']['Code'] == 200) {
                 $details = (new TBOHotelBookingService)->bookingDetails($reservation->hotel);
