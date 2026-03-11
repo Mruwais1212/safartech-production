@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Website\Controller;
 use App\Jobs\FetchFlightBookingDetailsJob;
 use App\Models\ReservationFlight;
 use Illuminate\Http\JsonResponse;

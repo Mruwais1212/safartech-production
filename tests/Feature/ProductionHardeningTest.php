@@ -266,6 +266,32 @@ class ProductionHardeningTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // Issue — Moyasar refund amount must be converted to halala (×100)
+    // createInvoice does `$amount * 100`; refund must do the same.
+    // Bug: was (int)($amount) — would send 500 instead of 50000 for 500 SAR.
+    // -------------------------------------------------------------------------
+
+    public function test_moyasar_refund_sends_amount_in_halala(): void
+    {
+        \Illuminate\Support\Facades\Http::fake([
+            'api.moyasar.com/v1/payments/*/refund' => \Illuminate\Support\Facades\Http::response(['status' => 'refunded'], 200),
+        ]);
+
+        Config::set('services.moyasar.secret_key', 'test-key');
+        Config::set('services.moyasar.base_url', 'https://api.moyasar.com');
+
+        // Pass 500.75 SAR — expect 50075 halala to be sent
+        \App\Services\MoyasarPaymentService::refund('pay_amt_test', 500.75);
+
+        \Illuminate\Support\Facades\Http::assertSent(function (\Illuminate\Http\Client\Request $request) {
+            $body = $request->data();
+            return str_contains($request->url(), '/v1/payments/pay_amt_test/refund')
+                && isset($body['amount'])
+                && $body['amount'] === 50075;
+        });
+    }
+
+    // -------------------------------------------------------------------------
     // Issue: Client-trusted SSR pricing — price must come from session catalog
     // -------------------------------------------------------------------------
 
