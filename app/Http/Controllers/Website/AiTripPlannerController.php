@@ -40,8 +40,8 @@ class AiTripPlannerController extends Controller
         $food = $request->food;
 
         $city = $request->destination;
-        $apiKey = env('OPEN_AI_API_KEY');
-        $apiUrl = env('OPEN_AI_URL');
+        $apiKey = config('services.openai.api_key');
+        $apiUrl = config('services.openai.url');
 
         $startDate = Carbon::parse($datastart_date);
         $endDate = Carbon::parse($end_date);
@@ -115,8 +115,8 @@ class AiTripPlannerController extends Controller
         $travelInterests = $request->interests;
         $groupType = $request->come_with;
         $food = $request->food;
-        $apiKey = env('OPEN_AI_API_KEY');
-        $apiUrl = env('OPEN_AI_URL');
+        $apiKey = config('services.openai.api_key');
+        $apiUrl = config('services.openai.url');
 
         $startDate = Carbon::parse($start_date);
         $endDate = Carbon::parse($end_date);
@@ -327,12 +327,12 @@ class AiTripPlannerController extends Controller
         foreach ($itinerary['itinerary'] as &$day) {
             foreach (['morning', 'afternoon', 'evening'] as $time) {
                 foreach ($day[$time] as &$attraction) {
-                    $attraction['photo'] = $this->getGooglePhoto($attraction['name'], env('GOOGLE_MAPS_API_KEY'));
+                    $attraction['photo'] = $this->getGooglePhoto($attraction['name'], config('services.google.maps_api_key'));
                 }
             }
 
             foreach (['breakfast', 'lunch', 'dinner'] as $meal) {
-                $day[$meal]['photo'] = $this->getGooglePhoto($day[$meal]['name'], env('GOOGLE_MAPS_API_KEY'));
+                $day[$meal]['photo'] = $this->getGooglePhoto($day[$meal]['name'], config('services.google.maps_api_key'));
             }
         }
         return $itinerary;
@@ -425,7 +425,7 @@ class AiTripPlannerController extends Controller
             $city_data = json_decode($content, true);
 
             if (isset($city_data['city_name'])) {
-                $city_data['photos'] = $this->getCityPhotos($city_data['city_name'], env('GOOGLE_MAPS_API_KEY'));
+                $city_data['photos'] = $this->getCityPhotos($city_data['city_name'], config('services.google.maps_api_key'));
             } else {
                 Log::warning('City data does not contain city_name');
             }

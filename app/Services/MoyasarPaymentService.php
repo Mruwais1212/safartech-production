@@ -66,7 +66,10 @@ class MoyasarPaymentService
                 ->post(
                     config('services.moyasar.base_url').'/v1/payments/'.$id.'/refund',
                     [
-                        'amount' => (int) ($amount),
+                        // Moyasar expects amount in smallest currency unit (halala for SAR).
+                        // $amount is in SAR (decimal), so multiply by 100 — same conversion
+                        // used in createInvoice().
+                        'amount' => (int) (number_format($amount * 100, 2, '.', '')),
                     ]
                 );
 

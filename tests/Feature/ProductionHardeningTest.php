@@ -3,18 +3,20 @@
 namespace Tests\Feature;
 
 use App\Support\LogRedactor as SupportLogRedactor;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
 /**
  * Tests covering each issue from the production hardening audit.
  *
- * NOTE: RefreshDatabase is intentionally omitted here. Several migrations use
- * MySQL-specific UPDATE...JOIN syntax that is incompatible with the SQLite test
- * driver. Tests that require DB state use a real DB or are marked @group db.
+ * RefreshDatabase is now safe to use because the MySQL-specific UPDATE...JOIN
+ * migration (2025_08_05_012527) has been rewritten using a correlated subquery
+ * that is compatible with both MySQL and the SQLite test driver.
  */
 class ProductionHardeningTest extends TestCase
 {
+    use RefreshDatabase;
 
     // -------------------------------------------------------------------------
     // Issue 1 — page/{page} arbitrary view disclosure
@@ -260,6 +262,32 @@ class ProductionHardeningTest extends TestCase
         \Illuminate\Support\Facades\Http::assertSent(function (\Illuminate\Http\Client\Request $request) {
             return $request->method() === 'POST'
                 && str_contains($request->url(), '/v1/payments/pay_123/refund');
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Issue — Moyasar refund amount must be converted to halala (×100)
+    // createInvoice does `$amount * 100`; refund must do the same.
+    // Bug: was (int)($amount) — would send 500 instead of 50000 for 500 SAR.
+    // -------------------------------------------------------------------------
+
+    public function test_moyasar_refund_sends_amount_in_halala(): void
+    {
+        \Illuminate\Support\Facades\Http::fake([
+            'api.moyasar.com/v1/payments/*/refund' => \Illuminate\Support\Facades\Http::response(['status' => 'refunded'], 200),
+        ]);
+
+        Config::set('services.moyasar.secret_key', 'test-key');
+        Config::set('services.moyasar.base_url', 'https://api.moyasar.com');
+
+        // Pass 500.75 SAR — expect 50075 halala to be sent
+        \App\Services\MoyasarPaymentService::refund('pay_amt_test', 500.75);
+
+        \Illuminate\Support\Facades\Http::assertSent(function (\Illuminate\Http\Client\Request $request) {
+            $body = $request->data();
+            return str_contains($request->url(), '/v1/payments/pay_amt_test/refund')
+                && isset($body['amount'])
+                && $body['amount'] === 50075;
         });
     }
 

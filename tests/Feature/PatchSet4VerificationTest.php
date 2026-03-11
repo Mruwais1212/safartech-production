@@ -9,13 +9,15 @@ use App\Models\ReservationHotel;
 use App\Models\ReservationPassenger;
 use App\Models\User;
 use App\Services\ReservationService;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Route;
-use Mockery;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class PatchSet4VerificationTest extends TestCase
 {
+    use RefreshDatabase;
     public function test_state_changing_routes_are_post_only_for_target_endpoints(): void
     {
         $routes = collect(Route::getRoutes()->getRoutes());
@@ -66,9 +68,20 @@ class PatchSet4VerificationTest extends TestCase
 
         ReservationHotel::create([
             'reservation_id' => $reservation->id,
-            'booking_code' => 'HCODE123',
-            'price' => 150,
-            'status' => 0,
+            'hotel_id'       => 'HOTEL-001',
+            'booking_code'   => 'HCODE123',
+            'price'          => 150,
+            'currency'       => 'SAR',
+            'status'         => 0,
+            'check_in'       => now()->addDays(7)->toDateString(),
+            'check_out'      => now()->addDays(10)->toDateString(),
+            'rooms'          => 1,
+            'adults'         => 1,
+            'children'       => 0,
+            'hotel_name'     => 'Test Hotel',
+            'hotel_image'    => 'test.jpg',
+            'hotel_address'  => 'Riyadh',
+            'hotel_rate'     => '4',
         ]);
 
         ReservationPassenger::create([
@@ -89,14 +102,15 @@ class PatchSet4VerificationTest extends TestCase
 
         Queue::fake();
 
-        $hotelService = Mockery::mock('overload:App\\Services\\TBOHotelBookingService');
-        $hotelService->shouldReceive('bookingRoom')->once()->andReturn([
-            'Status' => ['Code' => 200],
-            'ConfirmationNumber' => 'CN-123',
-        ]);
-        $hotelService->shouldReceive('bookingDetails')->once()->andReturn([
-            'Rooms' => [['IsRefundable' => true]],
-            'Status' => ['Code' => 200],
+        // Set a fake TBO URL so Http::fake patterns resolve correctly.
+        \Illuminate\Support\Facades\Config::set('services.tbo.url', 'https://tbo-test.local');
+        \Illuminate\Support\Facades\Config::set('services.tbo.username', 'test');
+        \Illuminate\Support\Facades\Config::set('services.tbo.password', 'test');
+
+        // Use Http::fake to intercept TBO API calls (more reliable than Mockery overload).
+        Http::fake([
+            'tbo-test.local/Book'          => Http::response(['Status' => ['Code' => 200], 'ConfirmationNumber' => 'CN-123'], 200),
+            'tbo-test.local/BookingDetail' => Http::response(['Status' => ['Code' => 200], 'Rooms' => [['IsRefundable' => true]]], 200),
         ]);
 
         $first = ReservationService::completeBooking($reservation->id, 'test-corr-1');
@@ -140,9 +154,20 @@ class PatchSet4VerificationTest extends TestCase
 
         ReservationHotel::create([
             'reservation_id' => $reservation->id,
-            'booking_code' => 'HCODE500',
-            'price' => 150,
-            'status' => 0,
+            'hotel_id'       => 'HOTEL-002',
+            'booking_code'   => 'HCODE500',
+            'price'          => 150,
+            'currency'       => 'SAR',
+            'status'         => 0,
+            'check_in'       => now()->addDays(7)->toDateString(),
+            'check_out'      => now()->addDays(10)->toDateString(),
+            'rooms'          => 1,
+            'adults'         => 1,
+            'children'       => 0,
+            'hotel_name'     => 'Test Hotel B',
+            'hotel_image'    => 'test.jpg',
+            'hotel_address'  => 'Riyadh',
+            'hotel_rate'     => '4',
         ]);
 
         ReservationPassenger::create([
@@ -161,8 +186,14 @@ class PatchSet4VerificationTest extends TestCase
             'title' => 'Ms',
         ]);
 
-        $hotelService = Mockery::mock('overload:App\\Services\\TBOHotelBookingService');
-        $hotelService->shouldReceive('bookingRoom')->once()->andThrow(new \RuntimeException('supplier timeout'));
+        // Set a fake TBO URL and simulate supplier failure.
+        \Illuminate\Support\Facades\Config::set('services.tbo.url', 'https://tbo-test.local');
+        \Illuminate\Support\Facades\Config::set('services.tbo.username', 'test');
+        \Illuminate\Support\Facades\Config::set('services.tbo.password', 'test');
+
+        Http::fake([
+            'tbo-test.local/Book' => Http::response(['Status' => ['Code' => 500, 'Description' => 'supplier timeout']], 500),
+        ]);
 
         $result = ReservationService::completeBooking($reservation->id, 'test-corr-ex');
         $reservation->refresh();

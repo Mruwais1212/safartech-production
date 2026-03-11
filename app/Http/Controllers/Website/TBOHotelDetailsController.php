@@ -83,7 +83,7 @@ class TBOHotelDetailsController extends Controller
             ], $response->status());
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::error('TBO Hotel Details Connection Exception: '.$e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
+                'exception_class' => get_class($e),
             ]);
 
             return response()->json([
@@ -92,7 +92,7 @@ class TBOHotelDetailsController extends Controller
             ], 504);
         } catch (\Exception $e) {
             Log::error('TBO Hotel Details Unexpected Exception: '.$e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
+                'exception_class' => get_class($e),
             ]);
 
             return response()->json([

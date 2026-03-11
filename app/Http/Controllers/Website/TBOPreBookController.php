@@ -74,7 +74,7 @@ class TBOPreBookController extends Controller
             ], $response->status());
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::error('TBO PreBook Connection Exception: '.$e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
+                'exception_class' => get_class($e),
             ]);
 
             return response()->json([
@@ -83,7 +83,7 @@ class TBOPreBookController extends Controller
             ], 504);
         } catch (\Exception $e) {
             Log::error('TBO PreBook Unexpected Exception: '.$e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
+                'exception_class' => get_class($e),
             ]);
 
             return response()->json([

@@ -99,7 +99,7 @@ class TBOHotelSearchController extends Controller
             ], $response->status());
         } catch (\Exception $e) {
             Log::error('TBO Hotel Search Exception: '.$e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
+                'exception_class' => get_class($e),
             ]);
 
             return response()->json([

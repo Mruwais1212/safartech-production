@@ -69,4 +69,16 @@ return [
         'RC_TBOINDIA_URL'=>env('RC_TBOINDIA_URL','https://api-stage.tboair.com/InternalAirService.svc/rest'),
         'search_url'=>env('TBO_FLIGHT_SEARCH_URL','https://apistaging.tboair.com/InternalAirService.svc/rest/Search/')
     ],
+
+    'google' => [
+        'maps_api_key' => env('GOOGLE_MAPS_API_KEY'),
+    ],
+
+    'firebase' => [
+        'credentials' => env('FIREBASE_CREDENTIALS'),
+    ],
+
+    'exchange_rate' => [
+        'api_key' => env('EXCHANGE_RATE_API_KEY'),
+    ],
 ];

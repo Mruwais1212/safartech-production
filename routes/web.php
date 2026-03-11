@@ -76,9 +76,9 @@ Route::group(['middleware' => ['web']], function () {
     Route::get('privacy-policy', 'FixedPageController@privacyPolicy');
     Route::get('terms-and-conditions', 'FixedPageController@termsAndConditions');
 
-    Route::get('my-trips', 'MyTripController@index');
-    Route::get('my-trips/{id}', 'MyTripController@show');
-    Route::get('flight-tickets/{id}', 'MyTripController@flightTickets');
+    Route::get('my-trips', 'MyTripController@index')->middleware('auth:web');
+    Route::get('my-trips/{id}', 'MyTripController@show')->middleware('auth:web');
+    Route::get('flight-tickets/{id}', 'MyTripController@flightTickets')->middleware('auth:web');
     Route::get('export-trip/{id}', 'MyTripController@exportTripDetails')->middleware('auth:web');
 
     Route::get('summary', 'PaymentController@summary');
