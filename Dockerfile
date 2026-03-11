@@ -15,6 +15,7 @@ RUN docker-php-ext-install \
     xml \
     zip \
     gd \
+    calendar \
     opcache
 
 RUN pecl install redis && docker-php-ext-enable redis
