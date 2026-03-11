@@ -10,11 +10,11 @@ class MoyasarPaymentService
     public static function createInvoice($data)
     {
         try {
-            $response = Http::withBasicAuth(env('MOYASAR_SECRET_KEY'), '')
+            $response = Http::withBasicAuth(config('services.moyasar.secret_key'), '')
                 ->timeout(10)
                 ->retry(2, 200)
                 ->post(
-                    env('MOYASAR_BASE_URL').'/v1/invoices',
+                    config('services.moyasar.base_url').'/v1/invoices',
                     [
                         'amount' => (int) (number_format($data['amount'] * 100, 2, '.', '')),
                         'currency' => $data['currency'],
@@ -40,10 +40,10 @@ class MoyasarPaymentService
     public static function getInvoice($id, ?string $correlationId = null, $reservationId = null)
     {
         try {
-            $response = Http::withBasicAuth(env('MOYASAR_SECRET_KEY'), '')
+            $response = Http::withBasicAuth(config('services.moyasar.secret_key'), '')
                 ->timeout(10)
                 ->retry(2, 200)
-                ->get(env('MOYASAR_BASE_URL').'/v1/payments/'.$id);
+                ->get(config('services.moyasar.base_url').'/v1/payments/'.$id);
 
             return $response->json();
         } catch (\Throwable $th) {
@@ -60,11 +60,11 @@ class MoyasarPaymentService
     public static function refund($id, $amount, ?string $correlationId = null, $reservationId = null)
     {
         try {
-            $response = Http::withBasicAuth(env('MOYASAR_SECRET_KEY'), '')
+            $response = Http::withBasicAuth(config('services.moyasar.secret_key'), '')
                 ->timeout(10)
                 ->retry(2, 200)
-                ->get(
-                    env('MOYASAR_BASE_URL').'/v1/payments/'.$id.'/refund',
+                ->post(
+                    config('services.moyasar.base_url').'/v1/payments/'.$id.'/refund',
                     [
                         'amount' => (int) ($amount),
                     ]

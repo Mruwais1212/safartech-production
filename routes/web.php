@@ -8,6 +8,21 @@ use App\Http\Controllers\Website\SessionController;
 use App\Http\Controllers\Webhooks\MoyasarWebhookController;
 
 Route::get('page/{page}', function ($page) {
+    // Whitelist prevents arbitrary view disclosure. Only explicitly allowed slug names
+    // that map to real, public-facing static content pages may be rendered here.
+    $allowed = [
+        'about-us',
+        'contact-us',
+        'privacy-policy',
+        'terms-and-conditions',
+        'visit-saudi-arabia',
+        'not-found',
+    ];
+
+    if (! in_array($page, $allowed, true)) {
+        abort(404);
+    }
+
     return view("website.$page");
 });
 
@@ -25,7 +40,9 @@ Route::group(['middleware' => ['auth:web']], function () {
 });
 
 
-Route::post('webhooks/moyasar', MoyasarWebhookController::class)->middleware('throttle:moyasar-webhook');
+// Backslash prefix prevents the Website namespace group (applied by bootstrap/app.php) from
+// being prepended to this already-fully-qualified class name.
+Route::post('webhooks/moyasar', '\\'.MoyasarWebhookController::class)->middleware('throttle:moyasar-webhook');
 
 Route::group(['middleware' => ['web']], function () {
     Route::get('/', 'HomeController@index');

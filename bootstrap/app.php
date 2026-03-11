@@ -75,7 +75,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withCommands([])
     ->withSchedule(function (Schedule $schedule) {
         $schedule->command('app:cache-t-b-o-hotel-in-database-command')->dailyAt('01:00');
-        $schedule->command('queue:work --stop-when-empty --tries=3 --timeout=720')->everyMinute()->withoutOverlapping();
-        $schedule->command('reservations:reconcile-failed-paid')->everyMinutes(max(1, (int) config('payment.reconciliation_interval_minutes', 10)))->withoutOverlapping();
+        // queue:work intentionally removed from scheduler — it is not a daemon and exits after
+        // draining the queue. Worker management is done by supervisord (docker/supervisord.conf).
+        $schedule->command('reservations:reconcile-failed-paid')->everyTenMinutes()->withoutOverlapping();
     })
     ->create();

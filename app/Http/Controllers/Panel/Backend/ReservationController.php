@@ -7,22 +7,51 @@ use App\Models\Reservation;
 use App\Exports\ReservationsExport;
 use App\Models\ReservationFlight;
 use App\Models\ReservationHotel;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ReservationController extends Controller
 {
     public function index()
     {
-
         $reservations = Reservation::with('hotel', 'flight')
             ->filterDate()
-            ->get();
+            ->latest()
+            ->paginate(50);
         return view('admin.backend.reservation.index', compact('reservations'));
     }
 
-    public function delete_all()
+    /**
+     * Permanently delete ALL reservation data.
+     *
+     * Requires an explicit confirmation token supplied as POST body:
+     *   confirm_token = "DELETE_ALL_RESERVATIONS"
+     *
+     * This prevents accidental or CSRF-driven destruction of production data.
+     * The route is already protected by auth:admin + permission middleware.
+     */
+    public function delete_all(Request $request)
     {
+        $requiredToken = 'DELETE_ALL_RESERVATIONS';
+
+        if ($request->input('confirm_token') !== $requiredToken) {
+            Log::warning('delete_all attempted without correct confirmation token', [
+                'admin_id' => auth('admin')->id(),
+                'ip'       => $request->ip(),
+            ]);
+
+            return response()->json([
+                'error' => 'Missing or incorrect confirm_token. Send confirm_token=DELETE_ALL_RESERVATIONS to proceed.',
+            ], 422);
+        }
+
+        Log::warning('delete_all executed by admin', [
+            'admin_id' => auth('admin')->id(),
+            'ip'       => $request->ip(),
+        ]);
+
         DB::table('reservation_flights')->truncate();
         DB::table('reservation_hotels')->truncate();
         DB::table('reservation_passengers')->truncate();
@@ -31,7 +60,8 @@ class ReservationController extends Controller
         DB::table('flight_segment_destinations')->truncate();
         DB::table('flight_segment_origins')->truncate();
         DB::table('reservations')->truncate();
-        return 'done';
+
+        return response()->json(['message' => 'All reservation data deleted.']);
     }
 
     public function financial_reports()
