@@ -27,50 +27,52 @@ class FlightController extends Controller
         $prefs = session('preferences', []);
 
         $data = [
-            'adults'            => (int) ($request->adults ?: ($prefs['adults'] ?? 1)),
-            'children'          => (int) ($request->children ?: ($prefs['children'] ?? 0)),
-            'infants'           => (int) ($request->infants ?: ($prefs['infants'] ?? 0)),
-            'is_domestic'       => $request->is_domestic ?: false,
-            'one_stop'          => $request->one_stop == 'on',
-            'direct'            => $request->direct == 'on',
-            'journey_type'      => (int) ($request->journey_type ?: ($prefs['journey_type'] ?? 2)),
-            'currency'          => session('currency') == 'SAR' ? 'SAR' : 'USD',
-            'origin'            => $request->origin ?: ($prefs['origin'] ?? null),
-            'destination'       => $request->destination ?: ($prefs['destination'] ?? null),
-            'flight_class'      => (int) ($request->flight_class ?: ($prefs['flight_class'] ?? 1)),
-            'start_date'        => $request->start_date ?: ($prefs['start_date'] ?? null),
-            'end_date'          => $request->end_date ?: ($prefs['end_date'] ?? null),
-            'flight_time'       => $request->flight_time ?: '00:00:00',
+            'adults' => (int) ($request->adults ?: ($prefs['adults'] ?? 1)),
+            'children' => (int) ($request->children ?: ($prefs['children'] ?? 0)),
+            'infants' => (int) ($request->infants ?: ($prefs['infants'] ?? 0)),
+            'is_domestic' => $request->is_domestic ?: false,
+            'one_stop' => $request->one_stop == 'on',
+            'direct' => $request->direct == 'on',
+            'journey_type' => (int) ($request->journey_type ?: ($prefs['journey_type'] ?? 2)),
+            'currency' => session('currency') == 'SAR' ? 'SAR' : 'USD',
+            'origin' => $request->origin ?: ($prefs['origin'] ?? null),
+            'destination' => $request->destination ?: ($prefs['destination'] ?? null),
+            'flight_class' => (int) ($request->flight_class ?: ($prefs['flight_class'] ?? 1)),
+            'start_date' => $request->start_date ?: ($prefs['start_date'] ?? null),
+            'end_date' => $request->end_date ?: ($prefs['end_date'] ?? null),
+            'flight_time' => $request->flight_time ?: '00:00:00',
             'flight_time_return' => $request->flight_time_return ?: '00:00:00',
-            'sort'              => $request->sort ?: 'price_from_low_to_high',
-            'type'              => $request->type,
+            'sort' => $request->sort ?: 'price_from_low_to_high',
+            'type' => $request->type,
         ];
 
         $flightSession = session('flight', []);
         if (session()->has('flight') && ($flightSession['flight_expired_time'] ?? null) < now()) {
             session(['flight' => null, 'passengers' => null, 'traceId' => null,
-                      'outbound_flight' => null, 'inbound_flight' => null]);
-            Cache::forget('flights' . md5(json_encode($data)));
+                'outbound_flight' => null, 'inbound_flight' => null]);
+            Cache::forget('flights'.md5(json_encode($data)));
             session(['current_flight_cache_key' => null]);
         }
 
         request()->merge($data);
 
-        $cacheKey = 'flights' . md5(json_encode($data));
+        $cacheKey = 'flights'.md5(json_encode($data));
         session(['current_flight_cache_key' => $cacheKey]);
 
         try {
             $flights = Cache::remember(key: $cacheKey, ttl: 60 * 15, callback: function () {
                 session(['flight' => null]);
+
                 return (new TBOFlightBookingService)->search(request());
             });
         } catch (\Exception $e) {
-            Log::error($e->getMessage() . ' on line ' . $e->getLine() . ' in ' . $e->getFile());
+            Log::error($e->getMessage().' on line '.$e->getLine().' in '.$e->getFile());
+
             return back()->with('error', 'Something went wrong, please try again later.');
         }
 
-        $response  = $flights['Response'] ?? [];
-        $TraceId   = $response['TraceId'] ?? null;
+        $response = $flights['Response'] ?? [];
+        $TraceId = $response['TraceId'] ?? null;
 
         session(['traceId' => $TraceId]);
 
@@ -79,9 +81,9 @@ class FlightController extends Controller
         }
 
         $outbound_flights = $response['Results'][0] ?? [];
-        $inbound_flights  = $response['Results'][1] ?? [];
+        $inbound_flights = $response['Results'][1] ?? [];
 
-        $sort         = $request->sort == 'price_from_high_to_low' ? 'sortByDesc' : 'sortBy';
+        $sort = $request->sort == 'price_from_high_to_low' ? 'sortByDesc' : 'sortBy';
         $directFilter = $request->direct == 'on';
         $oneStopFilter = $request->one_stop == 'on';
 
@@ -103,12 +105,14 @@ class FlightController extends Controller
     public function search(Request $request)
     {
         SearchService::search($request, 3);
+
         return redirect('/flights');
     }
 
     public function searchNew(Request $request)
     {
         SearchService::searchNew($request, 3);
+
         return redirect('/flights');
     }
 
@@ -117,30 +121,30 @@ class FlightController extends Controller
         $prefs = session('preferences', []);
 
         $data = [
-            'adults'            => (int) ($prefs['adults'] ?? 1),
-            'children'          => (int) ($prefs['children'] ?? 0),
-            'infants'           => (int) ($prefs['infants'] ?? 0),
-            'is_domestic'       => $prefs['is_domestic'] ?? false,
-            'one_stop'          => ($prefs['one_stop'] ?? null) == 'on',
-            'direct'            => ($prefs['direct'] ?? null) == 'on',
-            'journey_type'      => (int) ($prefs['journey_type'] ?? 2),
-            'currency'          => session('currency') == 'SAR' ? 'SAR' : 'USD',
-            'origin'            => $prefs['origin'] ?? null,
-            'destination'       => $prefs['destination'] ?? null,
-            'flight_class'      => (int) ($prefs['flight_class'] ?? 1),
-            'start_date'        => $prefs['start_date'] ?? null,
-            'end_date'          => $prefs['end_date'] ?? null,
-            'flight_time'       => $prefs['flight_time'] ?? '00:00:00',
+            'adults' => (int) ($prefs['adults'] ?? 1),
+            'children' => (int) ($prefs['children'] ?? 0),
+            'infants' => (int) ($prefs['infants'] ?? 0),
+            'is_domestic' => $prefs['is_domestic'] ?? false,
+            'one_stop' => ($prefs['one_stop'] ?? null) == 'on',
+            'direct' => ($prefs['direct'] ?? null) == 'on',
+            'journey_type' => (int) ($prefs['journey_type'] ?? 2),
+            'currency' => session('currency') == 'SAR' ? 'SAR' : 'USD',
+            'origin' => $prefs['origin'] ?? null,
+            'destination' => $prefs['destination'] ?? null,
+            'flight_class' => (int) ($prefs['flight_class'] ?? 1),
+            'start_date' => $prefs['start_date'] ?? null,
+            'end_date' => $prefs['end_date'] ?? null,
+            'flight_time' => $prefs['flight_time'] ?? '00:00:00',
             'flight_time_return' => $prefs['flight_time_return'] ?? '00:00:00',
-            'sort'              => 'price_from_low_to_high',
-            'type'              => null,
+            'sort' => 'price_from_low_to_high',
+            'type' => null,
         ];
 
         $cacheKey = session('current_flight_cache_key');
-        $flights  = $cacheKey ? Cache::get($cacheKey) : null;
+        $flights = $cacheKey ? Cache::get($cacheKey) : null;
 
         if (! $flights) {
-            $flights = Cache::get('flights' . md5(json_encode($data)));
+            $flights = Cache::get('flights'.md5(json_encode($data)));
         }
 
         if (! $flights) {
@@ -148,12 +152,11 @@ class FlightController extends Controller
         }
 
         $response = $flights['Response'] ?? [];
-        $TraceId  = $response['TraceId'] ?? null;
+        $TraceId = $response['TraceId'] ?? null;
 
         if (str_starts_with(request()->result, 'OB')) {
             $flightList = $response['Results'][0] ?? [];
-            $flight = collect($flightList)->first(fn ($q) =>
-                str_contains($q['ResultIndex'], Str::limit(request()->result, 10, ''))
+            $flight = collect($flightList)->first(fn ($q) => str_contains($q['ResultIndex'], Str::limit(request()->result, 10, ''))
             );
 
             if ($flight) {
@@ -173,12 +176,12 @@ class FlightController extends Controller
 
             if (session('flight.inbound_flight')) {
                 session(['flight.outbound_flight_selected' => true]);
+
                 return redirect('/flights');
             }
         } else {
             $flightList = $response['Results'][1] ?? [];
-            $flight = collect($flightList)->first(fn ($q) =>
-                str_contains($q['ResultIndex'], Str::limit(request()->result, 10, ''))
+            $flight = collect($flightList)->first(fn ($q) => str_contains($q['ResultIndex'], Str::limit(request()->result, 10, ''))
             );
 
             if ($flight) {
@@ -250,13 +253,13 @@ class FlightController extends Controller
                 + ($fare['AdditionalTxnFeepub'] ?? 0));
 
             $flight['Published_Fare'] = $published;
-            $flight['Offered_Fare']   = $offered;
+            $flight['Offered_Fare'] = $offered;
             $flight['Invoice_Amount'] = $offered
                 + ($fare['TdsOnCommission'] ?? 0)
                 + ($fare['TdsOnIncentive'] ?? 0)
                 + ($fare['TdsOnPLB'] ?? 0);
-            $flight['Currency']  = $fare['Currency'] ?? null;
-            $flight['TraceId']   = $traceId;
+            $flight['Currency'] = $fare['Currency'] ?? null;
+            $flight['TraceId'] = $traceId;
 
             return $flight;
         });
@@ -273,6 +276,7 @@ class FlightController extends Controller
             if ($direct && $oneStop) {
                 return $segments == 1 || $segments == 2;
             }
+
             return $direct ? $segments == 1 : $segments == 2;
         });
     }
@@ -289,12 +293,13 @@ class FlightController extends Controller
                 return true;
             }
             $hour = \Carbon\Carbon::parse($depTime)->hour;
+
             return match ($timeFilter) {
-                '08:00:00' => $hour >= 6  && $hour < 12,
+                '08:00:00' => $hour >= 6 && $hour < 12,
                 '14:00:00' => $hour >= 12 && $hour < 18,
                 '19:00:00' => $hour >= 18 && $hour <= 23,
-                '01:00:00' => $hour >= 0  && $hour < 6,
-                default    => true,
+                '01:00:00' => $hour >= 0 && $hour < 6,
+                default => true,
             };
         });
     }

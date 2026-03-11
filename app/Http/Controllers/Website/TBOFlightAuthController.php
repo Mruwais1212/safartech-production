@@ -45,6 +45,7 @@ class TBOFlightAuthController extends Controller
                 // Store the token in cache (valid until end of day)
                 Cache::put($cacheKey, $result['TokenId'], now()->endOfDay());
                 session(['traceId' => $result['TrackingId']]);
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Authentication successful',

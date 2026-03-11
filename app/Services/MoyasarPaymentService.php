@@ -16,12 +16,12 @@ class MoyasarPaymentService
                 ->post(
                     config('services.moyasar.base_url').'/v1/invoices',
                     [
-                        'amount'       => (int) (number_format($data['amount'] * 100, 2, '.', '')),
-                        'currency'     => $data['currency'],
-                        'description'  => $data['description'],
+                        'amount' => (int) (number_format($data['amount'] * 100, 2, '.', '')),
+                        'currency' => $data['currency'],
+                        'description' => $data['description'],
                         'callback_url' => $data['callback_url'],
-                        'metadata'     => $data['metadata'],
-                        'success_url'  => $data['success_url'],
+                        'metadata' => $data['metadata'],
+                        'success_url' => $data['success_url'],
                     ]
                 );
 
@@ -49,7 +49,7 @@ class MoyasarPaymentService
             Log::error('Moyasar getInvoice request failed', [
                 'correlation_id' => $correlationId,
                 'reservation_id' => $reservationId,
-                'payment_id'     => $id,
+                'payment_id' => $id,
             ]);
 
             return ['error' => $th->getMessage(), 'status' => 400, 'message' => 'Error'];
@@ -79,7 +79,7 @@ class MoyasarPaymentService
             Log::error('Moyasar refund request failed', [
                 'correlation_id' => $correlationId,
                 'reservation_id' => $reservationId,
-                'payment_id'     => $id,
+                'payment_id' => $id,
             ]);
 
             return ['error' => $th->getMessage(), 'status' => 400, 'message' => 'Error'];

@@ -16,4 +16,3 @@ class HtmlSanitizer
         return preg_replace('/<(p|br|b|i|ul|ol|li)\b[^>]*>/i', '<$1>', $sanitized) ?? '';
     }
 }
-

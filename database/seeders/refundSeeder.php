@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Panel\Setting;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class refundSeeder extends Seeder
@@ -15,7 +14,7 @@ class refundSeeder extends Seeder
     {
         Setting::updateOrCreate([
             'name_ar' => 'مراجعة الطلب الملغي قبل الاسترداد',
-            'name_en' => 'Review cancelled order before refund',     
+            'name_en' => 'Review cancelled order before refund',
             'code' => 'Review_cancelled',
             'setting_type_id' => 3,
             'value' => '0',

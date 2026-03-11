@@ -25,7 +25,6 @@ class SafeMediaDownloadService
             return null;
         }
 
-
         $contentLength = (int) ($response->header('Content-Length') ?? 0);
         if ($contentLength > 0 && $contentLength > $maxSize) {
             return null;
@@ -48,7 +47,7 @@ class SafeMediaDownloadService
             default => 'jpg',
         };
 
-        $filename = $directory . '/destination-' . bin2hex(random_bytes(12)) . '.' . $extension;
+        $filename = $directory.'/destination-'.bin2hex(random_bytes(12)).'.'.$extension;
         Storage::disk('public')->put($filename, $body);
 
         return basename($filename);

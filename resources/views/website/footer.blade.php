@@ -24,15 +24,15 @@
                     <strong>{{ __('dashboard.Explore the World with Us') }}</strong>
                 </p>
                 <div class="d-flex pt-2">
-                    <a class="btn btn-outline-light btn-social" href="{{ $setting['facebook'] }}"><i
+                    <a class="btn btn-outline-light btn-social" href="{{ $setting['facebook'] ?? '#' }}"><i
                             class="fab fa-facebook-f"></i></a>
-                    <a class="btn btn-outline-light btn-social" href=" {{ $setting['twitter'] }}"><i
+                    <a class="btn btn-outline-light btn-social" href=" {{ $setting['twitter'] ?? '#' }}"><i
                             class="fab fa-twitter"></i></a>
-                    <a class="btn btn-outline-light btn-social" href=" {{ $setting['instagram'] }}"><i
+                    <a class="btn btn-outline-light btn-social" href=" {{ $setting['instagram'] ?? '#' }}"><i
                             class="fab fa-instagram"></i></a>
-                    <a class="btn btn-outline-light btn-social" href=" {{ $setting['linkedin'] }}"><i
+                    <a class="btn btn-outline-light btn-social" href=" {{ $setting['linkedin'] ?? '#' }}"><i
                             class="fab fa-linkedin-in"></i></a>
-                    <a class="btn btn-outline-light btn-social" href=" {{ $setting['youtube'] }}"><i
+                    <a class="btn btn-outline-light btn-social" href=" {{ $setting['youtube'] ?? '#' }}"><i
                             class="fab fa-youtube"></i></a>
                 </div>
             </div>
@@ -54,13 +54,13 @@
             </div>
             <div class="col-lg-2 col-md-6 links contact-footer">
                 <p class="text-warning list-title mb-3">{{ __('dashboard.Contact us') }}</p>
-                <a class="btn btn-link text-white" href="mailto:{{ $setting['email'] }}">
+                <a class="btn btn-link text-white" href="mailto:{{ $setting['email'] ?? '' }}">
                     <i class="far fa-envelope"></i>
-                    {{ $setting['email'] }}
+                    {{ $setting['email'] ?? '' }}
                 </a>
-                <a class="btn btn-link text-white" href="tel:+{{ $setting['phone'] }}" target="_blank">
+                <a class="btn btn-link text-white" href="tel:+{{ $setting['phone'] ?? '' }}" target="_blank">
                     <i class="bi bi-telephone"></i>
-                    {{ $setting['phone'] }}
+                    {{ $setting['phone'] ?? '' }}
                 </a>
             </div>
         </div>

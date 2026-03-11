@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -90,7 +90,7 @@ return new class extends Migration
         $driver = DB::getDriverName();
 
         if (in_array($driver, ['mysql', 'mariadb'], true)) {
-            $result = DB::select('SHOW INDEX FROM `' . $table . '` WHERE Key_name = ?', [$index]);
+            $result = DB::select('SHOW INDEX FROM `'.$table.'` WHERE Key_name = ?', [$index]);
 
             return ! empty($result);
         }

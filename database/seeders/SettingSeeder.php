@@ -19,7 +19,7 @@ class SettingSeeder extends Seeder
         SettingType::updateOrCreate(['name_ar' => 'روابط التواصل الاجتماعي', 'name_en' => 'Social links']);
         SettingType::updateOrCreate(['name_ar' => 'الخدمات', 'name_en' => 'Services']);
 
-        ////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////
 
         Setting::updateOrCreate([
             'name_ar' => 'رقم الهاتف',
@@ -73,7 +73,7 @@ class SettingSeeder extends Seeder
             'status' => 1,
         ]);
 
-        ////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////
         Setting::updateOrCreate([
             'name_ar' => 'لوجو الموقع',
             'name_en' => 'Logo Website',
@@ -201,7 +201,7 @@ class SettingSeeder extends Seeder
             'status' => 1,
         ]);
 
-        /////////////////////////////////////////////////////////
+        // ///////////////////////////////////////////////////////
         Setting::updateOrCreate([
             'name_ar' => 'لينك الفيس بوك ',
             'name_en' => 'Facebook Url',
@@ -306,7 +306,7 @@ class SettingSeeder extends Seeder
             'status' => 1,
         ]);
 
-        ///////////////////////////////////////////////////////// AI Planner Static Section
+        // /////////////////////////////////////////////////////// AI Planner Static Section
         Setting::updateOrCreate([
             'name_ar' => '  عنوان السكشن الرئيسي في صفحة دليله باللغة العربية',
             'name_en' => 'Title Of Main Section In Dalelah Page In Arabic',

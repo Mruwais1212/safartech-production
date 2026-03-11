@@ -130,5 +130,5 @@ return [
     // 'aliases' => [
     //     'Excel' => Maatwebsite\Excel\Facades\Excel::class,
     // ],
-'flight_version'=>'v1'
+    'flight_version' => 'v1',
 ];

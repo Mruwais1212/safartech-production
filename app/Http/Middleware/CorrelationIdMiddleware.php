@@ -25,4 +25,3 @@ class CorrelationIdMiddleware
         return $response;
     }
 }
-

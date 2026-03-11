@@ -27,6 +27,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->timestamp('last_login')->nullable();
             $table->string('password');
+            $table->integer('player_position')->nullable();
             $table->rememberToken();
             $table->softDeletes();
             $table->timestamps();

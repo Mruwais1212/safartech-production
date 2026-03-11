@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Website;
 
 use App\Models\Reservation;
-use Illuminate\Http\Request;
-use Barryvdh\DomPDF\Facade\Pdf; // Make sure this is imported
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request; // Make sure this is imported
 
 class MyTripController extends Controller
 {
@@ -15,7 +15,7 @@ class MyTripController extends Controller
 
     public function index()
     {
-        $reservations = Reservation::with('hotel', 'flight')->where('user_id', auth('web')->id())->where('payment_method', '!=', 0)->orderBy('id','desc')->get();
+        $reservations = Reservation::with('hotel', 'flight')->where('user_id', auth('web')->id())->where('payment_method', '!=', 0)->orderBy('id', 'desc')->get();
 
         return view('website.my-trips', compact('reservations'));
     }
@@ -23,21 +23,19 @@ class MyTripController extends Controller
     public function show($id)
     {
         $reservation = Reservation::with([
-            'hotel', 
-            'flights', 
-            'passengers', 
-            'flights.segments.origin', 
-            'flights.segments.destination', 
+            'hotel',
+            'flights',
+            'passengers',
+            'flights.segments.origin',
+            'flights.segments.destination',
             'flights.segments.airline',
             'user',
-            'trip'
+            'trip',
         ])
             ->where('user_id', auth('web')->id())
             ->where('payment_method', '!=', 0)
             ->where('id', $id)
             ->first();
-
-
 
         if (! $reservation) {
             return redirect()->back()->with('error', 'This Reservation Does not exist');
@@ -45,22 +43,22 @@ class MyTripController extends Controller
 
         return view('website.my-trip-details', compact('reservation'));
     }
+
     public function flightTickets($id)
     {
         $reservation = Reservation::with(['passengers', 'flights'])->find($id);
-        if(!$reservation || $reservation->user_id != auth('web')->id()){
+        if (! $reservation || $reservation->user_id != auth('web')->id()) {
             return redirect()->back()->with('error', 'This Reservation Does not exist');
         }
-//        $htmlContent= view('flight-tickets',compact('reservation'))->render();
-//return view('exports.flight-tickets',[
-//    'reservation' => $reservation
-//]);
+        //        $htmlContent= view('flight-tickets',compact('reservation'))->render();
+        // return view('exports.flight-tickets',[
+        //    'reservation' => $reservation
+        // ]);
         $pdf = Pdf::loadView('exports.flight-tickets', [
-            'reservation' => $reservation
+            'reservation' => $reservation,
         ]);
 
         return $pdf->download('exported-file.pdf');
-
 
     }
 
@@ -74,19 +72,19 @@ class MyTripController extends Controller
             'flights.segments.origin',
             'flights.segments.destination',
             'flights.segments.airline',
-            'trip'
+            'trip',
         ])
-        ->where('user_id', auth('web')->id())
-        ->where('payment_method', '!=', 0)
-        ->where('id', $id)
-        ->first();
+            ->where('user_id', auth('web')->id())
+            ->where('payment_method', '!=', 0)
+            ->where('id', $id)
+            ->first();
 
-        if (!$reservation) {
+        if (! $reservation) {
             return redirect()->back()->with('error', 'This Reservation Does not exist');
         }
 
         $pdf = Pdf::loadView('trip-details', compact('reservation'));
-        
-        return $pdf->download('trip-details-' . $reservation->id . '.pdf');
+
+        return $pdf->download('trip-details-'.$reservation->id.'.pdf');
     }
 }

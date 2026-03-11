@@ -100,7 +100,7 @@ class Reservation extends Model
             })
             ->when(request()->date == 'month', function ($q) {
                 $q->whereMonth('created_at', now()->month)
-                  ->whereYear('created_at', now()->year);
+                    ->whereYear('created_at', now()->year);
             })
             ->when(request()->date == 'year', function ($q) {
                 $q->whereYear('created_at', now()->year);

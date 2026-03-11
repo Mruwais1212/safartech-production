@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Jobs\CacheTBOHotelInDatabase;
-use App\Models\TBOHotel;
 use App\Models\Panel\Setting;
+use App\Models\TBOHotel;
 use Illuminate\Console\Command;
 
 class CacheTBOHotelInDatabaseCommand extends Command

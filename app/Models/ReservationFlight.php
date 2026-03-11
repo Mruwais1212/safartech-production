@@ -53,23 +53,23 @@ class ReservationFlight extends Model
         'is_in_progress',
         'tbo_booking_id',
         'status',
-        
+
         // Booking details fetching tracking
         'booking_details_fetched',
         'booking_details_fetched_at',
         'booking_details_response',
         'booking_details_fetch_failed',
         'last_fetch_error',
-        
+
         // Status tracking
         'booking_status',
         'ticket_status',
         'booking_status_updated',
         'is_ticketed',
         'ticketed_at',
-        
+
         // Manual review flag
-        'needs_manual_review'
+        'needs_manual_review',
     ];
 
     protected $casts = [
@@ -80,7 +80,7 @@ class ReservationFlight extends Model
         'booking_status_updated' => 'boolean',
         'is_ticketed' => 'boolean',
         'ticketed_at' => 'datetime',
-        'needs_manual_review' => 'boolean'
+        'needs_manual_review' => 'boolean',
     ];
 
     public function reservation()

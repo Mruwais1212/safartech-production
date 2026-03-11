@@ -6,10 +6,10 @@ use App\Models\Panel\Setting;
 
 trait PriceCalculationTrait
 {
-    public static function calculatePriceAmounts(float $price, string $reservationType,string $bookingType='flight'): array
+    public static function calculatePriceAmounts(float $price, string $reservationType, string $bookingType = 'flight'): array
     {
         $settingCode = $bookingType === 'flight' ? 'flight_profit' : 'hotel_profit';
-        $defaultFee  = $bookingType === 'flight' ? 7 : 12;
+        $defaultFee = $bookingType === 'flight' ? 7 : 12;
         $service_fees_percent = (float) (Setting::where('code', $settingCode)->value('value') ?? $defaultFee);
 
         $total_price = $price;
@@ -60,28 +60,28 @@ trait PriceCalculationTrait
         $vat2 = $unit_administrative_fees;
 
         return [
-            'hotel_price' => (float)$hotel_price,
-            'hotel_unit_administrative_fees' => (float)$hotel_unit_administrative_fees,
-            'hotel_tax2_amount' => (float)number_format($hotel_tax2_amount, 2),
-            'hotel_total_taxes2' => (float)number_format($hotel_total_taxes2, 2),
-            'hotel_total_price' => (float)$hotel_total_price,
+            'hotel_price' => (float) $hotel_price,
+            'hotel_unit_administrative_fees' => (float) $hotel_unit_administrative_fees,
+            'hotel_tax2_amount' => (float) number_format($hotel_tax2_amount, 2),
+            'hotel_total_taxes2' => (float) number_format($hotel_total_taxes2, 2),
+            'hotel_total_price' => (float) $hotel_total_price,
 
-            'flights_price' => (float)number_format($flights_price,2),
+            'flights_price' => (float) number_format($flights_price, 2),
             'flights_unit_administrative_fees' => $flights_unit_administrative_fees,
-            'flights_tax2_amount' => (float)number_format($flights_tax2_amount, 2),
-            'flights_total_taxes2' => (float)number_format($flights_total_taxes2, 2),
-            'flights_total_price' => (float)number_format($flights_total_price,2),
+            'flights_tax2_amount' => (float) number_format($flights_tax2_amount, 2),
+            'flights_total_taxes2' => (float) number_format($flights_total_taxes2, 2),
+            'flights_total_price' => (float) number_format($flights_total_price, 2),
 
-            'base_price' => (float)number_format($price,2),
-            'tax1_amount' => (float)number_format($tax1_amount,2),
-            'total_taxes2' => (float)number_format($total_taxes2, 2),
-            'total_taxes1' => (float)number_format($total_taxes1, 2),
-            'tax2_amount' => (float)number_format($tax2_amount, 2),
-            'unit_administrative_fees' => (float)number_format($unit_administrative_fees,2),
+            'base_price' => (float) number_format($price, 2),
+            'tax1_amount' => (float) number_format($tax1_amount, 2),
+            'total_taxes2' => (float) number_format($total_taxes2, 2),
+            'total_taxes1' => (float) number_format($total_taxes1, 2),
+            'tax2_amount' => (float) number_format($tax2_amount, 2),
+            'unit_administrative_fees' => (float) number_format($unit_administrative_fees, 2),
 
-            'total_price' => (float)number_format($total_price,2),
+            'total_price' => (float) number_format($total_price, 2),
 
-            'vat' => (float)number_format($vat1 + $vat2,2),
+            'vat' => (float) number_format($vat1 + $vat2, 2),
         ];
     }
 }

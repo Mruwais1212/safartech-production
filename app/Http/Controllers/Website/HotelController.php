@@ -10,12 +10,12 @@ use App\Models\ReservationHotel;
 use App\Models\TBOHotel;
 use App\Services\SearchService;
 use App\Services\TBOHotelBookingService;
+use App\Support\LogRedactor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
-use App\Support\LogRedactor;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class HotelController extends Controller
 {
@@ -55,9 +55,9 @@ class HotelController extends Controller
 
         SearchService::searchNew($request, 2);
         Log::info('paxRooms mm', LogRedactor::redact(['request' => $request->all()]));
+
         return redirect('/hotels');
     }
-
 
     public function index(Request $request)
     {
@@ -68,8 +68,8 @@ class HotelController extends Controller
         }
         $priceRange = explode(',', $request->input('price_range')); // now it's an array
         if (isset($priceRange[0]) || isset($priceRange[1])) {
-            $preferences['max_budget'] = isset($priceRange[1]) ? (int)$priceRange[1] : $preferences['max_budget'];
-            $preferences['min_budget'] = isset($priceRange[0]) ? (int)$priceRange[0] : $preferences['min_budget'];
+            $preferences['max_budget'] = isset($priceRange[1]) ? (int) $priceRange[1] : $preferences['max_budget'];
+            $preferences['min_budget'] = isset($priceRange[0]) ? (int) $priceRange[0] : $preferences['min_budget'];
             session()->put('preferences', $preferences); // update the session
 
         }
@@ -78,18 +78,18 @@ class HotelController extends Controller
         if (! $city_code) {
             return back()->with('error', 'Sorry, This city is not available');
         }
-        $paxRooms[] = (object)[
-                'Adults' => (int) $preferences['adults'],
-                'Children' =>  (int) $preferences['children'],
-                'ChildrenAges' => (int) $preferences['infants']
-            ];
+        $paxRooms[] = (object) [
+            'Adults' => (int) $preferences['adults'],
+            'Children' => (int) $preferences['children'],
+            'ChildrenAges' => (int) $preferences['infants'],
+        ];
         request()->merge(input: [
             'destination' => $preferences['destination'],
             'checkin' => $preferences['start_date'],
             'checkout' => $preferences['end_date'],
             'check_in' => $preferences['start_date'],
             'check_out' => $preferences['end_date'],
-            'guest_nationality' => $preferences['guest_nationality'] ?:'SA',
+            'guest_nationality' => $preferences['guest_nationality'] ?: 'SA',
             'rooms' => (int) $preferences['rooms'],
             'adults' => (int) $preferences['adults'],
             'children' => (int) $preferences['children'],
@@ -108,7 +108,7 @@ class HotelController extends Controller
         if (! $hotels) {
             $hotels = collect([]);
 
-            return view('website.hotels', ['hotels' => json_encode($hotels),'preferences'=>$preferences]);
+            return view('website.hotels', ['hotels' => json_encode($hotels), 'preferences' => $preferences]);
         }
 
         request()->merge(input: [
@@ -117,19 +117,20 @@ class HotelController extends Controller
 
         session(['city_code' => $city_code]);
         $hotels->{'hotels'} = TBOHotelResource::collection($hotels);
-//        dd($preferences);
-        return view('website.hotels', ['hotels' => json_encode($hotels),'preferences'=>$preferences]);
+
+        //        dd($preferences);
+        return view('website.hotels', ['hotels' => json_encode($hotels), 'preferences' => $preferences]);
     }
 
     public function selectRoom($id)
     {
-        try{
+        try {
             $preBookRoom = (new TBOHotelBookingService)->perBook($id);
 
             // Log only essential information instead of the full response which may contain HTML
-            Log::info('Hotel pre-booking initiated for ID: ' . $id, [
+            Log::info('Hotel pre-booking initiated for ID: '.$id, [
                 'has_hotel_result' => array_key_exists('HotelResult', $preBookRoom),
-                'response_keys' => array_keys($preBookRoom)
+                'response_keys' => array_keys($preBookRoom),
             ]);
 
             if (array_key_exists('HotelResult', $preBookRoom)) {
@@ -141,7 +142,7 @@ class HotelController extends Controller
                     'hotel.RateConditionsHotel' => $RateConditions,
                     'hotel.BookingCodeHotel' => $id,
                     'hotel.CurrencyHotel' => $currency,
-                    "hotel.selected_room" => $preBookRoom['HotelResult'][0]['Rooms'][0],
+                    'hotel.selected_room' => $preBookRoom['HotelResult'][0]['Rooms'][0],
                 ]);
             } else {
                 Cache::forget('rooms'.@session('HotelCode'));
@@ -168,8 +169,9 @@ class HotelController extends Controller
             }
 
             return redirect(to: 'summary');
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             Log::error($e->getMessage());
+
             return back()->with('error', 'Something went wrong please try again');
         }
     }
@@ -214,7 +216,7 @@ class HotelController extends Controller
                     'country_name' => @$hotel['CountryName'],
                     'check_in_time' => @$hotel['CheckInTime'],
                     'check_out_time' => @$hotel['CheckOutTime'],
-                    
+
                 ]);
             }
         }
@@ -228,7 +230,7 @@ class HotelController extends Controller
                 'check_in' => session('preferences')['start_date'],
                 'check_out' => session('preferences')['end_date'],
                 'hotel_codes' => $hotel->code ?? $hotel['HotelCode'],
-                'guest_nationality' => session('preferences')['guest_nationality']?? 'SA',
+                'guest_nationality' => session('preferences')['guest_nationality'] ?? 'SA',
                 'paxRooms' => session('preferences')['paxRooms'] ?? [],
 
                 'rooms' => (int) session('preferences')['rooms'],
@@ -250,6 +252,7 @@ class HotelController extends Controller
 
         $hotel = json_encode(TBOHotelResource::make($hotel));
         Log::info('Hotel Details: ', ['hotel' => $hotel, 'rooms' => $rooms]);
+
         return view('website.hotel-single', compact('hotel', 'rooms'));
     }
 
@@ -277,7 +280,7 @@ class HotelController extends Controller
             'checkout' => @session('preferences')['end_date'],
             'check_in' => session('preferences')['start_date'],
             'check_out' => session('preferences')['end_date'],
-            "paxRooms" => @session('preferences')['paxRooms'] ?? [],
+            'paxRooms' => @session('preferences')['paxRooms'] ?? [],
             'guest_nationality' => session('preferences')['guest_nationality'] ?? 'SA',
             'city_code' => $city_code,
 
@@ -298,63 +301,63 @@ class HotelController extends Controller
         session([
             'preferences.destination_code' => $tripAirport?->country_code,
             'preferences.destination_name' => $tripAirport?->city,
-            'preferences.destination'      => $tripAirport?->city_code,
-            'preferences.trip_id'          => $trip->id,
+            'preferences.destination' => $tripAirport?->city_code,
+            'preferences.trip_id' => $trip->id,
         ]);
 
         $hotels->{'hotels'} = TBOHotelResource::collection($hotels);
-       
+
         return view('website.hotels', ['hotels' => json_encode($hotels), 'trip' => $trip]);
     }
 
     public function searchCity(Request $request)
     {
         $searchTerm = trim($request->city_name);
-        
+
         // Check if the search term contains Arabic characters
         $isArabic = preg_match('/[\x{0600}-\x{06FF}]/u', $searchTerm);
-        
+
         // Return empty if search term is too short (1 char for Arabic, 2 for English)
         $minLength = $isArabic ? 1 : 2;
         if (mb_strlen($searchTerm, 'UTF-8') < $minLength) {
             return response()->json([]);
         }
-        
+
         Log::info('City Search Input: ', [
             'search_term' => $searchTerm,
             'is_arabic' => $isArabic,
-            'request' => $request->all()
+            'request' => $request->all(),
         ]);
 
         $query = City::query();
-        
+
         if ($isArabic) {
             // For Arabic search, prioritize Arabic field but also search English
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('name_ar', 'like', '%'.$searchTerm.'%')
-                  ->orWhere('name_en', 'like', '%'.$searchTerm.'%');
+                    ->orWhere('name_en', 'like', '%'.$searchTerm.'%');
             });
             // Order Arabic matches first
-            $query->orderByRaw("CASE WHEN name_ar LIKE ? THEN 1 ELSE 2 END", ['%'.$searchTerm.'%']);
+            $query->orderByRaw('CASE WHEN name_ar LIKE ? THEN 1 ELSE 2 END', ['%'.$searchTerm.'%']);
         } else {
             // For English/Latin search, prioritize English field but also search Arabic
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('name_en', 'like', '%'.$searchTerm.'%')
-                  ->orWhere('name_ar', 'like', '%'.$searchTerm.'%');
+                    ->orWhere('name_ar', 'like', '%'.$searchTerm.'%');
             });
             // Order English matches first
-            $query->orderByRaw("CASE WHEN name_en LIKE ? THEN 1 ELSE 2 END", ['%'.$searchTerm.'%']);
+            $query->orderByRaw('CASE WHEN name_en LIKE ? THEN 1 ELSE 2 END', ['%'.$searchTerm.'%']);
         }
-        
+
         $cities = $query->take(5)->get();
-        
+
         Log::info('City Search Results: ', [
             'search_term' => $searchTerm,
             'is_arabic' => $isArabic,
             'results_count' => $cities->count(),
-            'results' => $cities->toArray()
+            'results' => $cities->toArray(),
         ]);
-        
+
         return response()->json($cities);
     }
 

@@ -3,26 +3,27 @@
 namespace App\Http\Controllers\Website;
 
 use App\Helpers\PriceCalculationHelper;
+use App\Mail\BookingEmail;
+use App\Models\Airport;
 use App\Models\Reservation;
+use App\Models\TransactionCard;
 use App\Services\MoyasarPaymentService;
 use App\Services\ReservationService;
 use App\Services\TBOFlightBookingService;
+use App\Traits\PriceCalculationTrait;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
-use App\Mail\BookingEmail;
-use App\Models\Airport;
-use App\Models\TransactionCard;
-use App\Traits\PriceCalculationTrait;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class PaymentController extends Controller implements HasMiddleware
 {
     use PriceCalculationTrait;
+
     public function __construct(Request $request)
     {
         parent::__construct($request);
@@ -70,15 +71,15 @@ class PaymentController extends Controller implements HasMiddleware
         $tripType = $preferences['trip_type'] ?? null;
 
         $flightAmount = $flight['flight_amount'] ?? 0;
-        $flightAmount = PriceCalculationHelper::calculatePriceAmounts($flightAmount, $reservationType,'flight');
+        $flightAmount = PriceCalculationHelper::calculatePriceAmounts($flightAmount, $reservationType, 'flight');
         $inboundAmount = session()->has('flight.inbound_flightSegment') ? $flight['inbound_flight_amount'] ?? 0 : 0;
-        $inboundAmount = PriceCalculationHelper::calculatePriceAmounts($inboundAmount, $reservationType,'flight');
+        $inboundAmount = PriceCalculationHelper::calculatePriceAmounts($inboundAmount, $reservationType, 'flight');
 
         $hotelAmount = $hotel['TotalFareHotel'] ?? 0;
-        $hotelAmount = PriceCalculationHelper::calculatePriceAmounts($hotelAmount, $reservationType,'hotel');
+        $hotelAmount = PriceCalculationHelper::calculatePriceAmounts($hotelAmount, $reservationType, 'hotel');
 
         $totalBasePrice = match ($tripType) {
-            1 =>PriceCalculationHelper::mergeCalculatePrices([$flightAmount , $inboundAmount , $hotelAmount]) ,
+            1 => PriceCalculationHelper::mergeCalculatePrices([$flightAmount, $inboundAmount, $hotelAmount]) ,
             2 => $hotelAmount,
             3 => PriceCalculationHelper::mergeCalculatePrices([$flightAmount + $inboundAmount]),
             default => 0,
@@ -98,47 +99,47 @@ class PaymentController extends Controller implements HasMiddleware
             // Get SSR data from session instead of making new API calls
             $ssrData = [
                 'outbound' => $flight['SSRDetails'] ?? [],
-                'inbound' => $flight['InboundSSRDetails'] ?? []
+                'inbound' => $flight['InboundSSRDetails'] ?? [],
             ];
 
             // Check if SSR data is empty (could be due to expired session)
-            $hasSSRData = !empty($ssrData['outbound']) || !empty($ssrData['inbound']);
+            $hasSSRData = ! empty($ssrData['outbound']) || ! empty($ssrData['inbound']);
             $traceId = session('traceId');
 
             Log::info('SSR data retrieved from session for summary page', [
-                'has_outbound' => !empty($ssrData['outbound']),
-                'has_inbound' => !empty($ssrData['inbound']),
+                'has_outbound' => ! empty($ssrData['outbound']),
+                'has_inbound' => ! empty($ssrData['inbound']),
                 'has_any_ssr_data' => $hasSSRData,
-                'session_expired_detected' => !$hasSSRData && !empty($traceId),
+                'session_expired_detected' => ! $hasSSRData && ! empty($traceId),
             ]);
 
-            if (!$hasSSRData) {
+            if (! $hasSSRData) {
                 Log::warning('No SSR data available - possibly due to expired TraceId session');
             }
         }
 
         return view('website.summary', [
-            'passengers'=> $passengers,
-            'totalPrice' =>(float) number_format($price['total_price'], 2, '.', ''),
+            'passengers' => $passengers,
+            'totalPrice' => (float) number_format($price['total_price'], 2, '.', ''),
             'currency' => __('dashboard.SAR'),
             'tripType' => $tripType,
             'ssrData' => $ssrData, // Pass real SSR data to view
         ]);
     }
 
-
     private function callFlightAPIs()
     {
         try {
-            $tboService = new TBOFlightBookingService();
-            
+            $tboService = new TBOFlightBookingService;
+
             // Get current flight session data
             $traceId = session('traceId');
             $outboundResultIndex = session('flight.flightResult');
             $inboundResultIndex = session('flight.inbound_flightResult');
-            
-            if (!$traceId) {
+
+            if (! $traceId) {
                 Log::warning('No traceId found in session for FareQuote/FareRules API calls');
+
                 return;
             }
 
@@ -146,13 +147,13 @@ class PaymentController extends Controller implements HasMiddleware
             if ($outboundResultIndex) {
                 Log::info('Calling FareQuote and FareRules APIs for outbound flight', [
                     'traceId' => $traceId,
-                    'resultIndex' => $outboundResultIndex
+                    'resultIndex' => $outboundResultIndex,
                 ]);
 
                 // Call FareQuote API for outbound flight with fresh call (not cached)
                 $fareQuoteResponse = $tboService->fareQuote($traceId, $outboundResultIndex);
                 Log::info('FareQuote API response for outbound flight', $fareQuoteResponse);
-                
+
                 if (isset($fareQuoteResponse['Response']['Results'])) {
                     $flight = session('flight', []);
                     $flight['FareQuote'] = $fareQuoteResponse['Response']['Results'];
@@ -171,7 +172,7 @@ class PaymentController extends Controller implements HasMiddleware
                 // Call FareRules API for outbound flight
                 $fareRulesResponse = $tboService->fareRules($traceId, $outboundResultIndex);
                 Log::info('FareRules API response for outbound flight', $fareRulesResponse);
-                
+
                 if (isset($fareRulesResponse['Response']['FareRules'])) {
                     $flight = session('flight', []);
                     $flight['FareRules'] = $fareRulesResponse['Response']['FareRules'];
@@ -191,13 +192,13 @@ class PaymentController extends Controller implements HasMiddleware
             if ($inboundResultIndex) {
                 Log::info('Calling FareQuote and FareRules APIs for inbound flight', [
                     'traceId' => $traceId,
-                    'resultIndex' => $inboundResultIndex
+                    'resultIndex' => $inboundResultIndex,
                 ]);
 
                 // Call FareQuote API for inbound flight
                 $inboundFareQuoteResponse = $tboService->fareQuote($traceId, $inboundResultIndex);
                 Log::info('FareQuote API response for inbound flight', $inboundFareQuoteResponse);
-                
+
                 if (isset($inboundFareQuoteResponse['Response']['Results'])) {
                     $flight = session('flight', []);
                     $flight['InboundFareQuote'] = $inboundFareQuoteResponse['Response']['Results'];
@@ -215,7 +216,7 @@ class PaymentController extends Controller implements HasMiddleware
                 // Call FareRules API for inbound flight
                 $inboundFareRulesResponse = $tboService->fareRules($traceId, $inboundResultIndex);
                 Log::info('FareRules API response for inbound flight', $inboundFareRulesResponse);
-                
+
                 if (isset($inboundFareRulesResponse['Response']['FareRules'])) {
                     $flight = session('flight', []);
                     $flight['InboundFareRules'] = $inboundFareRulesResponse['Response']['FareRules'];
@@ -236,10 +237,11 @@ class PaymentController extends Controller implements HasMiddleware
         } catch (\Exception $e) {
             Log::error('Error calling TBO Flight APIs from passenger page', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
+
     public function payment(Request $request)
     {
         // Calculate SSR cost from passenger session data
@@ -411,19 +413,19 @@ class PaymentController extends Controller implements HasMiddleware
         return view('website.error');
     }
 
-
     private function callSSR()
     {
         try {
-            $tboService = new TBOFlightBookingService();
-            
+            $tboService = new TBOFlightBookingService;
+
             // Get current flight session data
             $traceId = session('traceId');
             $outboundResultIndex = session('flight.flightResult');
             $inboundResultIndex = session('flight.inbound_flightResult');
-            
-            if (!$traceId) {
+
+            if (! $traceId) {
                 Log::warning('No traceId found in session for SSR API calls');
+
                 return;
             }
             Log::info('Starting SSR API calls', ['traceId' => $traceId, 'outboundResultIndex' => $outboundResultIndex, 'inboundResultIndex' => $inboundResultIndex]);
@@ -431,16 +433,16 @@ class PaymentController extends Controller implements HasMiddleware
             if ($outboundResultIndex) {
                 Log::info('Calling SSR API for outbound flight', [
                     'traceId' => $traceId,
-                    'resultIndex' => $outboundResultIndex
+                    'resultIndex' => $outboundResultIndex,
                 ]);
 
                 $ssrResponse = $tboService->ssr($traceId, $outboundResultIndex);
                 Log::info('SSR API response for outbound flight', $ssrResponse);
-                
+
                 // Parse the SSR response using the new method
-                //$parsedSSR = $tboService->parseSSRResponse($ssrResponse);
-                
-                if ($ssrResponse && $ssrResponse['Response']['ResponseStatus'] == 1 ) {
+                // $parsedSSR = $tboService->parseSSRResponse($ssrResponse);
+
+                if ($ssrResponse && $ssrResponse['Response']['ResponseStatus'] == 1) {
                     $flight = session('flight', []);
                     $flight['SSRDetails'] = $ssrResponse['Response'];
                     session(['flight' => $flight]);
@@ -462,23 +464,23 @@ class PaymentController extends Controller implements HasMiddleware
             if ($inboundResultIndex) {
                 Log::info('Calling SSR API for inbound flight', [
                     'traceId' => $traceId,
-                    'resultIndex' => $inboundResultIndex
+                    'resultIndex' => $inboundResultIndex,
                 ]);
 
                 $inboundSSRResponse = $tboService->ssr($traceId, $inboundResultIndex);
                 Log::info('SSR API response for inbound flight', $inboundSSRResponse);
-                
-                // Parse the SSR response using the new method
-                //$parsedInboundSSR = $tboService->parseSSRResponse($inboundSSRResponse);
 
-                if ($inboundSSRResponse && $inboundSSRResponse['Response']['ResponseStatus'] == 1 ) {
+                // Parse the SSR response using the new method
+                // $parsedInboundSSR = $tboService->parseSSRResponse($inboundSSRResponse);
+
+                if ($inboundSSRResponse && $inboundSSRResponse['Response']['ResponseStatus'] == 1) {
                     $flight = session('flight', []);
                     $flight['InboundSSRDetails'] = $inboundSSRResponse['Response'];
                     session(['flight' => $flight]);
                     Log::info('Successfully stored parsed inbound SSR details in flight session', [
                         'is_lcc' => $inboundSSRResponse['Response']['is_lcc'],
                         'meals_count' => count($inboundSSRResponse['Response']['meals']),
-                        'baggage_count' => count($inboundSSRResponse['Response']['Baggage'])
+                        'baggage_count' => count($inboundSSRResponse['Response']['Baggage']),
                     ]);
                 } else {
                     Log::warning('Failed to parse inbound SSR response');
@@ -492,9 +494,9 @@ class PaymentController extends Controller implements HasMiddleware
         } catch (\Exception $e) {
             Log::error('Error calling SSR API from passenger page', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             // Set empty SSR data as fallback to prevent page crashes
             $flight = session('flight', []);
             $flight['SSRDetails'] = ['is_lcc' => false, 'MealDynamic' => [], 'Baggage' => [], 'Seats' => []];
@@ -509,23 +511,23 @@ class PaymentController extends Controller implements HasMiddleware
     public function getSSRData()
     {
         $flight = session('flight', []);
-        
+
         $ssrData = [
             'outbound_ssr' => $flight['SSRDetails'] ?? [],
-            'inbound_ssr' => $flight['InboundSSRDetails'] ?? []
+            'inbound_ssr' => $flight['InboundSSRDetails'] ?? [],
         ];
 
         // If this is an AJAX request, return JSON
         if (request()->ajax() || request()->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'data' => $ssrData
+                'data' => $ssrData,
             ]);
         }
 
         return $ssrData;
     }
-    
+
     public function moyasarSuccess(Request $request)
     {
         $validation = Validator::make($request->post(), [
@@ -672,7 +674,6 @@ class PaymentController extends Controller implements HasMiddleware
 
         return view('website.error');
     }
-
 
     public function bookingError(Request $request)
     {

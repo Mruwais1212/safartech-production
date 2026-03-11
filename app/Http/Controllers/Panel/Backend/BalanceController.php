@@ -11,7 +11,7 @@ use App\Notifications\Balance\DeductBalanceFromAdminPanelNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 
-class BalanceController extends Controller 
+class BalanceController extends Controller
 {
     public function index(Request $request)
     {

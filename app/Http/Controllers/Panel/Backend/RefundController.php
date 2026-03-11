@@ -4,11 +4,8 @@ namespace App\Http\Controllers\Panel\Backend;
 
 use App\Http\Controllers\Panel\Controller;
 use App\Models\Reservation;
-use App\Exports\ReservationsExport;
 use App\Models\ReservationFlight;
 use App\Models\ReservationHotel;
-use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Facades\Excel;
 
 class RefundController extends Controller
 {
@@ -27,7 +24,8 @@ class RefundController extends Controller
         if ($type == 'flights') {
             $reservations = [];
         }
-        return view('admin.backend.refunds.index', compact('reservations','type'));
+
+        return view('admin.backend.refunds.index', compact('reservations', 'type'));
     }
 
     public function cancel_hotel($id)

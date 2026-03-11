@@ -16,7 +16,7 @@ return [
 
     'moyasar' => [
         'secret_key' => env('MOYASAR_SECRET_KEY'),
-        'base_url'   => env('MOYASAR_BASE_URL', 'https://api.moyasar.com'),
+        'base_url' => env('MOYASAR_BASE_URL', 'https://api.moyasar.com'),
     ],
 
     'google_maps' => [
@@ -71,9 +71,9 @@ return [
         'username' => env('TBO_FLIGHT_USERNAME'),
         'password' => env('TBO_FLIGHT_PASSWORD'),
         'url' => env('TBO_FLIGHT_URL'),
-        'auth'=> env('Auth_Api_TOBO'),
+        'auth' => env('Auth_Api_TOBO'),
         'after_booking' => env('TBO_FLIGHT_BOOKING_URL'),
-        'RC_TBOINDIA_URL'=>env('RC_TBOINDIA_URL','https://api-stage.tboair.com/InternalAirService.svc/rest'),
-        'search_url'=>env('TBO_FLIGHT_SEARCH_URL','https://apistaging.tboair.com/InternalAirService.svc/rest/Search/')
+        'RC_TBOINDIA_URL' => env('RC_TBOINDIA_URL', 'https://api-stage.tboair.com/InternalAirService.svc/rest'),
+        'search_url' => env('TBO_FLIGHT_SEARCH_URL', 'https://apistaging.tboair.com/InternalAirService.svc/rest/Search/'),
     ],
 ];

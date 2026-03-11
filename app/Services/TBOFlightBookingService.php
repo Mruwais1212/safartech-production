@@ -26,7 +26,7 @@ class TBOFlightBookingService
     public function authenticate()
     {
         return Cache::remember('tbo-flight-auth', now()->addHours(2), function () {
-               
+
             $response = Http::timeout(120)->post(config('services.tbo_flight.auth').'/Authenticate/ValidateAgency/', [
                 'UserName' => $this->username,
                 'Password' => $this->password,
@@ -35,25 +35,25 @@ class TBOFlightBookingService
             ]);
 
             $responseData = $response->json();
-            
-            if (!$response->successful() || !isset($responseData['TokenId'])) {
+
+            if (! $response->successful() || ! isset($responseData['TokenId'])) {
                 Log::error('TBO Authentication failed', [
                     'status' => $response->status(),
-                    'response' => LogRedactor::redact((array) $responseData)
+                    'response' => LogRedactor::redact((array) $responseData),
                 ]);
-                throw new \Exception('TBO Authentication failed: ' . ($responseData['Error']['ErrorMessage'] ?? 'Unknown error'));
+                throw new \Exception('TBO Authentication failed: '.($responseData['Error']['ErrorMessage'] ?? 'Unknown error'));
             }
-             session(['traceId' => $responseData['TrackingId']]);
+            session(['traceId' => $responseData['TrackingId']]);
             Log::info('TBO Authentication successful', ['trace_id' => $responseData['TrackingId'] ?? null]);
+
             return $responseData['TokenId'];
         });
     }
 
-
-     public function authenticateV2()
+    public function authenticateV2()
     {
         return Cache::remember('tbo-flight-auth', now()->addHours(2), function () {
-            
+
             $response = Http::timeout(120)->post(config('services.tbo_flight.auth').'/Authenticate/ValidateAgency/', [
                 'UserName' => $this->username,
                 'Password' => $this->password,
@@ -62,20 +62,20 @@ class TBOFlightBookingService
             ]);
 
             $responseData = $response->json();
-            
-            if (!$response->successful() || !isset($responseData['TokenId'])) {
+
+            if (! $response->successful() || ! isset($responseData['TokenId'])) {
                 Log::error('TBO Authentication failed', [
                     'status' => $response->status(),
-                    'response' => LogRedactor::redact((array) $responseData)
+                    'response' => LogRedactor::redact((array) $responseData),
                 ]);
-                throw new \Exception('TBO Authentication failed: ' . ($responseData['Error']['ErrorMessage'] ?? 'Unknown error'));
+                throw new \Exception('TBO Authentication failed: '.($responseData['Error']['ErrorMessage'] ?? 'Unknown error'));
             }
-             session(['traceId' => $responseData['TrackingId']]);
+            session(['traceId' => $responseData['TrackingId']]);
             Log::info('TBO Authentication successful', ['trace_id' => $responseData['TrackingId'] ?? null]);
-            return ['TokenId' => $responseData['TokenId'], 'TraceId' => $responseData['TrackingId']] ;
+
+            return ['TokenId' => $responseData['TokenId'], 'TraceId' => $responseData['TrackingId']];
         });
     }
-
 
     /**
      * Get a fresh token (force refresh)
@@ -83,6 +83,7 @@ class TBOFlightBookingService
     public function getFreshToken()
     {
         Cache::forget('tbo-flight-auth');
+
         return $this->authenticate();
     }
 
@@ -92,39 +93,40 @@ class TBOFlightBookingService
     private function makeApiCall($url, $data, $method = 'POST', $maxRetries = 2)
     {
         $attempt = 0;
-        
+
         while ($attempt < $maxRetries) {
             $data['TokenId'] = $this->authenticate();
-            
+
             $response = Http::timeout(1900)->$method($url, $data);
             $responseData = $response->json();
-            
+
             // Check if token is invalid and retry with fresh token
-            if (isset($responseData['Response']['Error']['ErrorCode']) && 
-                $responseData['Response']['Error']['ErrorCode'] == 6 && 
+            if (isset($responseData['Response']['Error']['ErrorCode']) &&
+                $responseData['Response']['Error']['ErrorCode'] == 6 &&
                 strpos($responseData['Response']['Error']['ErrorMessage'], 'Invalid Token') !== false) {
-                
+
                 Log::warning('TBO API returned Invalid Token error, refreshing token and retrying...', [
                     'attempt' => $attempt + 1,
-                    'url' => $url
+                    'url' => $url,
                 ]);
-                
+
                 // Get fresh token and retry
                 $this->getFreshToken();
                 $attempt++;
+
                 continue;
             }
-            
+
             // Return response if no token error
             return $responseData;
         }
-        
+
         Log::error('TBO API call failed after maximum retries', [
             'url' => $url,
             'max_retries' => $maxRetries,
-            'last_response' => $responseData ?? null
+            'last_response' => $responseData ?? null,
         ]);
-        
+
         return $responseData ?? ['Response' => ['Error' => ['ErrorMessage' => 'API call failed after retries']]];
     }
 
@@ -136,9 +138,10 @@ class TBOFlightBookingService
         try {
             // Get search parameters from session to recreate the search
             $preferences = session('preferences', []);
-            
+
             if (empty($preferences)) {
                 Log::error('No preferences found in session to refresh TraceId');
+
                 return null;
             }
 
@@ -149,66 +152,67 @@ class TBOFlightBookingService
                     'Origin' => $preferences['origin'] ?? 'RUH',
                     'Destination' => $preferences['destination'] ?? 'CAI',
                     'FlightCabinClass' => 1,
-                    'PreferredDepartureTime' => ($preferences['start_date'] ?? date('Y-m-d')) . 'T' . ($preferences['flight_time'] ?? '00:00:00'),
-                    'PreferredArrivalTime' => ($preferences['start_date'] ?? date('Y-m-d')) . 'T00:00:00',
+                    'PreferredDepartureTime' => ($preferences['start_date'] ?? date('Y-m-d')).'T'.($preferences['flight_time'] ?? '00:00:00'),
+                    'PreferredArrivalTime' => ($preferences['start_date'] ?? date('Y-m-d')).'T00:00:00',
                 ];
 
                 $segments[] = [
                     'Origin' => $preferences['destination'] ?? 'CAI',
                     'Destination' => $preferences['origin'] ?? 'RUH',
                     'FlightCabinClass' => 1,
-                    'PreferredDepartureTime' => ($preferences['end_date'] ?? date('Y-m-d')) . 'T' . ($preferences['flight_time_return'] ?? '00:00:00'),
-                    'PreferredArrivalTime' => ($preferences['end_date'] ?? date('Y-m-d')) . 'T00:00:00',
+                    'PreferredDepartureTime' => ($preferences['end_date'] ?? date('Y-m-d')).'T'.($preferences['flight_time_return'] ?? '00:00:00'),
+                    'PreferredArrivalTime' => ($preferences['end_date'] ?? date('Y-m-d')).'T00:00:00',
                 ];
             } else {
                 $segments[] = [
                     'Origin' => $preferences['origin'] ?? 'RUH',
                     'Destination' => $preferences['destination'] ?? 'CAI',
                     'FlightCabinClass' => 1,
-                    'PreferredDepartureTime' => ($preferences['start_date'] ?? date('Y-m-d')) . 'T' . ($preferences['flight_time'] ?? '00:00:00'),
-                    'PreferredArrivalTime' => ($preferences['start_date'] ?? date('Y-m-d')) . 'T00:00:00',
+                    'PreferredDepartureTime' => ($preferences['start_date'] ?? date('Y-m-d')).'T'.($preferences['flight_time'] ?? '00:00:00'),
+                    'PreferredArrivalTime' => ($preferences['start_date'] ?? date('Y-m-d')).'T00:00:00',
                 ];
             }
 
             // Perform fresh search to get new TraceId
             Log::info('Performing fresh search to get new TraceId due to session timeout');
-            
+
             $response = Http::timeout(1900)->post(config('services.tbo_flight.search_url'), [
                 'AdultCount' => (string) ($preferences['adults'] ?? 1),
                 'ChildCount' => (string) ($preferences['children'] ?? 0),
                 'InfantCount' => (string) ($preferences['infants'] ?? 0),
                 'IsDomestic' => (string) ($preferences['is_domestic'] ?? false),
-                'BookingMode' => "5",
-                'DirectFlight' => "false",
-                'OneStopFlight' => "false",
+                'BookingMode' => '5',
+                'DirectFlight' => 'false',
+                'OneStopFlight' => 'false',
                 'JourneyType' => (string) ($preferences['journey_type'] ?? 1),
                 'EndUserIp' => request()->ip(),
                 'TokenId' => $this->authenticate(),
-                //'PreferredAirlines' => ["EK", "QR", "EY", "SQ", "CX", "TG", "MH", "GA", "TK", "LH", "BA", "AF", "KL", "LX", "VS", "AC", "UA", "DL", "AA", "NZ"],                //'Sources' => ["AI", "SV", "EK", "EY", "UL"],
+                // 'PreferredAirlines' => ["EK", "QR", "EY", "SQ", "CX", "TG", "MH", "GA", "TK", "LH", "BA", "AF", "KL", "LX", "VS", "AC", "UA", "DL", "AA", "NZ"],                //'Sources' => ["AI", "SV", "EK", "EY", "UL"],
                 'Segments' => $segments,
-                
-               
-                //'ResultFareType' => 0,
-              //  'PreferredAirlines' => ["SG"] 
-           ]);
+
+                // 'ResultFareType' => 0,
+                //  'PreferredAirlines' => ["SG"]
+            ]);
 
             $responseData = $response->json();
-            
+
             if (isset($responseData['Response']['TraceId'])) {
                 $newTraceId = $responseData['Response']['TraceId'];
-                Log::info('Successfully obtained fresh TraceId: ' . $newTraceId);
-                
+                Log::info('Successfully obtained fresh TraceId: '.$newTraceId);
+
                 // Update session with new TraceId
                 session(['traceId' => $newTraceId]);
-                
+
                 return $newTraceId;
             } else {
                 Log::error('Failed to get fresh TraceId from search response', $responseData);
+
                 return null;
             }
 
         } catch (\Exception $e) {
-            Log::error('Exception while getting fresh TraceId: ' . $e->getMessage());
+            Log::error('Exception while getting fresh TraceId: '.$e->getMessage());
+
             return null;
         }
     }
@@ -221,45 +225,45 @@ class TBOFlightBookingService
             $Segments[] = [
                 'Origin' => $request->origin,
                 'Destination' => $request->destination,
-                'FlightCabinClass' =>  1,
-                'PreferredDepartureTime' => $request->start_date . 'T' . $request->flight_time,
-                'PreferredArrivalTime' => $request->start_date . 'T00:00:00',
+                'FlightCabinClass' => 1,
+                'PreferredDepartureTime' => $request->start_date.'T'.$request->flight_time,
+                'PreferredArrivalTime' => $request->start_date.'T00:00:00',
             ];
 
             $Segments[] = [
                 'Origin' => $request->destination,
                 'Destination' => $request->origin,
-                'FlightCabinClass' =>  1,
-                'PreferredDepartureTime' => $request->end_date . 'T' . $request->flight_time_return,
-                'PreferredArrivalTime' => $request->end_date . 'T00:00:00',
+                'FlightCabinClass' => 1,
+                'PreferredDepartureTime' => $request->end_date.'T'.$request->flight_time_return,
+                'PreferredArrivalTime' => $request->end_date.'T00:00:00',
             ];
         } else {
             $Segments[] = [
                 'Origin' => $request->origin,
                 'Destination' => $request->destination,
-                'FlightCabinClass' =>  1,
-                'PreferredDepartureTime' => $request->start_date . 'T' . $request->flight_time,
-                'PreferredArrivalTime' => $request->start_date . 'T00:00:00',
+                'FlightCabinClass' => 1,
+                'PreferredDepartureTime' => $request->start_date.'T'.$request->flight_time,
+                'PreferredArrivalTime' => $request->start_date.'T00:00:00',
             ];
         }
 
         $requestBody = [
-            'AdultCount' => (string) $request->adults ?: "1",
-            'ChildCount' => (string) $request->children ?: "0",
-            'InfantCount' => (string) $request->infants ?: "0",
+            'AdultCount' => (string) $request->adults ?: '1',
+            'ChildCount' => (string) $request->children ?: '0',
+            'InfantCount' => (string) $request->infants ?: '0',
             'IsDomestic' => (string) $request->is_domestic ?: false,
-            'BookingMode' => "5",
-            'DirectFlight' => "false",
-            'OneStopFlight' => "false",
+            'BookingMode' => '5',
+            'DirectFlight' => 'false',
+            'OneStopFlight' => 'false',
             'JourneyType' => (string) $request->journey_type ?: 1, // Specify journey type (1 - OneWay, 2 - Return, 3 - Multi Stop, 4 - AdvanceSearch, 5 - Special Return)
             'EndUserIp' => request()->ip(),
             'TokenId' => $this->authenticate(),
-            //'PreferredAirlines' => ["EK", "QR", "EY", "SQ", "CX", "TG", "MH", "GA", "TK", "LH", "BA", "AF", "KL", "LX", "VS", "AC", "UA", "DL", "AA", "NZ"],            //'Sources' => ["AI", "SV", "EK", "EY", "UL"],
+            // 'PreferredAirlines' => ["EK", "QR", "EY", "SQ", "CX", "TG", "MH", "GA", "TK", "LH", "BA", "AF", "KL", "LX", "VS", "AC", "UA", "DL", "AA", "NZ"],            //'Sources' => ["AI", "SV", "EK", "EY", "UL"],
             'Segments' => $Segments,
-            
-           // 'ResultFareType' => 0,
-       // 'PreferredAirlines' => ["SG"]           
-        //            'SearchCombinationType'=>1
+
+            // 'ResultFareType' => 0,
+            // 'PreferredAirlines' => ["SG"]
+            //            'SearchCombinationType'=>1
         ];
 
         $response = Http::timeout(1900)->post(config('services.tbo_flight.search_url'), $requestBody);
@@ -268,7 +272,7 @@ class TBOFlightBookingService
         Log::info('One: REQUEST Flight: ');
         Log::info(
             $requestBody
-            );
+        );
         Log::info('One: RESPONSE Flight: ', $response->json());
 
         session(['flight.flight_expired_time' => Carbon::now()->addMinutes(10)->format('Y-m-d H:i:s')]);
@@ -288,25 +292,26 @@ class TBOFlightBookingService
             'BookingMode' => 'API',
             'IPAddress' => request()->ip(),
         ]);
-        
+
         return $response->json();
     }
 
     public function fareRules($traceId, $resultIndex, $tokenId = null)
-    {   
-        $requestBody= [
+    {
+        $requestBody = [
             'TokenId' => $tokenId ?? $this->authenticate(),
             'TraceId' => $traceId,
             'ResultIndex' => $resultIndex,
             'EndUserIp' => request()->ip(),
         ];
-        $response = Http::timeout(1900)->post(config('services.tbo_flight.RC_TBOINDIA_URL').'/FareRule/',$requestBody );
-        
+        $response = Http::timeout(1900)->post(config('services.tbo_flight.RC_TBOINDIA_URL').'/FareRule/', $requestBody);
+
         Log::info('Two: REQUEST FareRules: ');
 
         Log::info('Two: REQUEST FareRules', LogRedactor::redact(['request' => $requestBody]));
 
         Log::info('Two: RESPONSE FareRules', LogRedactor::redact(['response' => $response->json()]));
+
         return $response->json();
     }
 
@@ -328,8 +333,6 @@ class TBOFlightBookingService
         return $response->json();
     }
 
-       
- 
     public function ssr($traceId, $resultIndex, $tokenId = null)
     {
         $response = Http::timeout(1900)->post(config('services.tbo_flight.RC_TBOINDIA_URL').'/SSR/', [
@@ -340,12 +343,12 @@ class TBOFlightBookingService
         ]);
 
         $responseData = $response->json();
-        
+
         // Log the raw response for debugging
         Log::info('SSR API Raw Response', [
             'traceId' => $traceId,
             'resultIndex' => $resultIndex,
-            'response' => $responseData
+            'response' => $responseData,
         ]);
 
         return $responseData;
@@ -354,26 +357,22 @@ class TBOFlightBookingService
     public function booking($traceId, $flight, $fareRuleData = null, $fareQuoteData = null)
     {
         $flight = (array) $flight;
-       
-        
+
         // Fetch SSR data from TBO API for accurate pricing and descriptions
         $ssrApiResponse = $this->getSSRData($traceId, $flight['ResultIndex']);
         $ssrApiData = isset($ssrApiResponse['Response']) ? $ssrApiResponse['Response'] : null;
-      
-        
-            $fareRuleResponse = $fareRuleData;
-            
-            // $this->fareRules($traceId, $flight['ResultIndex']);
-            // if (!$fareRuleResponse || !isset($fareRuleResponse['Response']['ResponseStatus']) || $fareRuleResponse['Response']['ResponseStatus'] != 1) {
-            //     Log::error('FareRule API failed for flight: ' . $flight['ResultIndex'], $fareRuleResponse ?: []);
-            //     // Continue with booking even if FareRule fails, but log the error
-            // } else {
-            //     $fareRuleData = $fareRuleResponse['Response']['FareRules'] ?? $fareRuleResponse['Response']['FareRule'] ?? $fareRuleResponse;
-            //     Log::info('FareRule API successful for flight: ' . $flight['ResultIndex']);
-            // }
-    
 
-        
+        $fareRuleResponse = $fareRuleData;
+
+        // $this->fareRules($traceId, $flight['ResultIndex']);
+        // if (!$fareRuleResponse || !isset($fareRuleResponse['Response']['ResponseStatus']) || $fareRuleResponse['Response']['ResponseStatus'] != 1) {
+        //     Log::error('FareRule API failed for flight: ' . $flight['ResultIndex'], $fareRuleResponse ?: []);
+        //     // Continue with booking even if FareRule fails, but log the error
+        // } else {
+        //     $fareRuleData = $fareRuleResponse['Response']['FareRules'] ?? $fareRuleResponse['Response']['FareRule'] ?? $fareRuleResponse;
+        //     Log::info('FareRule API successful for flight: ' . $flight['ResultIndex']);
+        // }
+
         $fareQuoteResponse = $fareQuoteData;
         // $this->fareQuote($traceId, $flight['ResultIndex']);
         // if (!$fareQuoteResponse || !isset($fareQuoteResponse['Response']['ResponseStatus']) || $fareQuoteResponse['Response']['ResponseStatus'] != 1) {
@@ -390,12 +389,12 @@ class TBOFlightBookingService
             $ssrResponse = $this->getSSRData($traceId, $flight['ResultIndex']);
             if ($ssrResponse && isset($ssrResponse['Response']['ResponseStatus']) && $ssrResponse['Response']['ResponseStatus'] == 1) {
                 $ssrData = $ssrResponse['Response'];
-                Log::info('SSR API successful for flight: ' . $flight['ResultIndex']);
+                Log::info('SSR API successful for flight: '.$flight['ResultIndex']);
             } else {
-                Log::warning('SSR API failed for flight: ' . $flight['ResultIndex'], $ssrResponse ?: []);
+                Log::warning('SSR API failed for flight: '.$flight['ResultIndex'], $ssrResponse ?: []);
             }
         } catch (\Exception $e) {
-            Log::error('SSR API exception for flight: ' . $flight['ResultIndex'], ['error' => $e->getMessage()]);
+            Log::error('SSR API exception for flight: '.$flight['ResultIndex'], ['error' => $e->getMessage()]);
         }
 
         $Segments_BE = $flight['Segments'][0];
@@ -405,17 +404,17 @@ class TBOFlightBookingService
         if ($fareQuoteData) {
             Log::info('Using FareQuote data for updated pricing in booking');
             $fareQuoteResults = $fareQuoteData['Results'] ?? $fareQuoteData;
-            
+
             // Core fare and pricing data
             $Fare_BE = $fareQuoteResults['Fare'] ?? $flight['Fare'];
             $FareRules = $fareQuoteResults['FareRules'] ?? $flight['FareRules'];
             $LastTicketDate = $fareQuoteResults['LastTicketDate'] ?? $flight['LastTicketDate'];
             $ValidatingAirline = $fareQuoteResults['ValidatingAirline'] ?? $flight['ValidatingAirline'];
             $FareClassification = $fareQuoteResults['FareClassification'] ?? $flight['FareClassification'] ?? 'NORMAL';
-            
+
             // Use updated segments if available in FareQuote
             $Segments_BE = $fareQuoteResults['Segments'][0] ?? $flight['Segments'][0];
-            
+
             // Additional FareQuote specific fields
             $IsLCC = $fareQuoteResults['IsLCC'] ?? $flight['IsLCC'] ?? false;
             $IsRefundable = $fareQuoteResults['IsRefundable'] ?? $flight['IsRefundable'] ?? false;
@@ -428,15 +427,15 @@ class TBOFlightBookingService
             $IsHoldAllowedWithSSR = $fareQuoteResults['IsHoldAllowedWithSSR'] ?? false;
             $ResultFareType = $fareQuoteResults['ResultFareType'] ?? 'RegularFare';
             $IsPriceChanged = $fareQuoteData['IsPriceChanged'] ?? false;
-            
+
             Log::info('FareQuote pricing details', [
                 'IsPriceChanged' => $IsPriceChanged,
                 'OriginalFare' => $flight['Fare']['PublishedFare'] ?? 'N/A',
                 'UpdatedFare' => $Fare_BE['PublishedFare'] ?? 'N/A',
                 'IsLCC' => $IsLCC,
-                'IsRefundable' => $IsRefundable
+                'IsRefundable' => $IsRefundable,
             ]);
-            
+
         } else {
             Log::info('Using original flight data for booking (FareQuote not available)');
             $Fare_BE = $flight['Fare'];
@@ -455,23 +454,23 @@ class TBOFlightBookingService
             $ResultFareType = 'RegularFare';
             $IsPriceChanged = false;
         }
-        
+
         // Safely access FareRules as array - BOOKING METHOD
         $Destination = null;
         $Origin = null;
-        
-        if (is_array($FareRules) && !empty($FareRules)) {
+
+        if (is_array($FareRules) && ! empty($FareRules)) {
             $lastFareRule = end($FareRules);
             $firstFareRule = reset($FareRules);
-            
+
             $Destination = is_object($lastFareRule) ? $lastFareRule->Destination : ($lastFareRule['Destination'] ?? null);
             $Origin = is_object($firstFareRule) ? $firstFareRule->Origin : ($firstFareRule['Origin'] ?? null);
         } else {
             // Fallback to segment data if FareRules is not available
             if (isset($Segments_BE[0])) {
-                $firstSegment = is_array($Segments_BE[0]) ? $Segments_BE[0] : (array)$Segments_BE[0];
-                $lastSegment = is_array($Segments_BE) ? end($Segments_BE) : (array)end($Segments_BE);
-                
+                $firstSegment = is_array($Segments_BE[0]) ? $Segments_BE[0] : (array) $Segments_BE[0];
+                $lastSegment = is_array($Segments_BE) ? end($Segments_BE) : (array) end($Segments_BE);
+
                 $Origin = $firstSegment['Origin']['Airport']['CityCode'] ?? 'DEL';
                 $Destination = $lastSegment['Destination']['Airport']['CityCode'] ?? 'JED';
             } else {
@@ -480,50 +479,49 @@ class TBOFlightBookingService
                 $Destination = 'JED';
             }
         }
-        
+
         Log::info('Extracted Origin and Destination for booking', [
             'Origin' => $Origin,
             'Destination' => $Destination,
             'FareRules_Type' => gettype($FareRules),
-            'FareRules_Count' => is_array($FareRules) ? count($FareRules) : 'not_array'
+            'FareRules_Count' => is_array($FareRules) ? count($FareRules) : 'not_array',
         ]);
-        
+
         $todayDate = now()->format('Y-m-d');
 
         // Get passenger data from session or use defaults
         $passengers = [];
         $sessionPassengers = session('passengers', []);
-        
+
         Log::info('Processing passenger data for booking', [
             'passengers_count' => count($sessionPassengers),
-            'passengers_data' => $sessionPassengers
+            'passengers_data' => $sessionPassengers,
         ]);
-        
-        
-        if (!empty($sessionPassengers)) {
+
+        if (! empty($sessionPassengers)) {
             foreach ($sessionPassengers as $key => $passenger) {
                 // Get SSR selections from passenger data directly
-               
+
                 $passengerMeal = $passenger['selected_meal'] ?? 'none';
                 $passengerBaggage = $passenger['selected_baggage'] ?? 'none';
-                
+
                 Log::info("Processing SSR for passenger {$key}", [
-                    'passenger_name' => ($passenger['first_name'] ?? 'Unknown') . ' ' . ($passenger['last_name'] ?? 'Unknown'),
+                    'passenger_name' => ($passenger['first_name'] ?? 'Unknown').' '.($passenger['last_name'] ?? 'Unknown'),
                     'meal_selection' => $passengerMeal,
                     'baggage_selection' => $passengerBaggage,
                     'meal_price' => $passenger['meal_price'] ?? 0,
-                    'baggage_price' => $passenger['baggage_price'] ?? 0
+                    'baggage_price' => $passenger['baggage_price'] ?? 0,
                 ]);
-                
+
                 // Create SSR objects using TBO API data
                 $mealSSR = $this->createMealSSR($passengerMeal, $ssrData, $Origin, $Destination);
                 $baggageSSR = $this->createBaggageSSR($passengerBaggage, $ssrData, $Origin, $Destination);
-                
+
                 Log::info("Created SSR objects for passenger {$key}", [
                     'meal_ssr' => $mealSSR,
-                    'baggage_ssr' => $baggageSSR
+                    'baggage_ssr' => $baggageSSR,
                 ]);
-                
+
                 $passengers[] = (object) [
                     // Required fields only
                     'PaxId' => 0,
@@ -533,7 +531,7 @@ class TBOFlightBookingService
                     'Mobile1' => $passenger['phone'] ?? '9664355353',
                     'Mobile1CountryCode' => '966',
                     'IsLeadPax' => $key === 0 ? true : false,
-                    'DateOfBirth' => isset($passenger['birth_date']) ? $passenger['birth_date'] . 'T00:00:00' : '1985-05-08T00:00:00',
+                    'DateOfBirth' => isset($passenger['birth_date']) ? $passenger['birth_date'].'T00:00:00' : '1985-05-08T00:00:00',
                     'Type' => $passenger['pax_type'] ?? 1,
                     'Gender' => $passenger['gender'] ?? 1,
                     'Email' => $passenger['email'] ?? 'test@email.com',
@@ -541,20 +539,20 @@ class TBOFlightBookingService
                         'CountryCode' => $passenger['nationality'] ?? 'SA',
                         'CountryName' => isset($passenger['nationality']) ? Country::where('code', $passenger['nationality'])->first()?->name_en ?? 'Saudi Arabia' : 'Saudi Arabia',
                     ],
-                    
+
                     // Optional fields with sensible defaults
                     'PassportNo' => $passenger['passport_number'] ?? null,
-                    'PassportExpiry' => isset($passenger['passport_expiry_date']) ? $passenger['passport_expiry_date'] . 'T00:00:00' : '0001-01-01T00:00:00',
+                    'PassportExpiry' => isset($passenger['passport_expiry_date']) ? $passenger['passport_expiry_date'].'T00:00:00' : '0001-01-01T00:00:00',
                     'AddressLine1' => $passenger['address'] ?? 'Saudi Arabia',
                     'Country' => (object) [
                         'CountryCode' => 'SA',
                         'CountryName' => 'Saudi Arabia',
                     ],
-                    
+
                     // Auto-generated/default fields
-                    'PaxKey' => strtoupper(substr($passenger['last_name'] ?? 'USER', 0, 5) . substr($passenger['first_name'] ?? 'TEST', 0, 6) . ($passenger['title'] ?? 'MR')),
+                    'PaxKey' => strtoupper(substr($passenger['last_name'] ?? 'USER', 0, 5).substr($passenger['first_name'] ?? 'TEST', 0, 6).($passenger['title'] ?? 'MR')),
                     'Fare_BE' => $Fare_BE,
-                    
+
                     // TBO Required defaults
                     'PassportIssueCountryCode' => null,
                     'PassportIssueDate' => '0001-01-01T00:00:00',
@@ -595,7 +593,7 @@ class TBOFlightBookingService
                             'IdNumber' => $passenger['passport_number'] ?? null,
                             'IssuedCountryCode' => null,
                             'IssueDate' => null,
-                            'ExpiryDate' => isset($passenger['passport_expiry_date']) ? $passenger['passport_expiry_date'] . 'T00:00:00' : '0001-01-01T00:00:00',
+                            'ExpiryDate' => isset($passenger['passport_expiry_date']) ? $passenger['passport_expiry_date'].'T00:00:00' : '0001-01-01T00:00:00',
                         ],
                     ],
                 ];
@@ -634,8 +632,8 @@ class TBOFlightBookingService
                 'PassportNo' => null,
                 'PassportExpiry' => '0001-01-01T00:00:00',
                 'Fare_BE' => $Fare_BE,
-                'PaxKey' => strtoupper(substr($passenger['last_name'] ?? 'USER', 0, 5) . substr($passenger['first_name'] ?? 'TEST', 0, 6) . ($passenger['title'] ?? 'MR')),
-                
+                'PaxKey' => strtoupper(substr($passenger['last_name'] ?? 'USER', 0, 5).substr($passenger['first_name'] ?? 'TEST', 0, 6).($passenger['title'] ?? 'MR')),
+
                 // Required TBO defaults
                 'PassportIssueCountryCode' => null,
                 'PassportIssueDate' => '0001-01-01T00:00:00',
@@ -676,10 +674,10 @@ class TBOFlightBookingService
 
         // Get user data for UserData field
         $leadPassenger = $passengers[0];
-        $userData = ($leadPassenger->Email ?? 'sdfs@gmail.com') . ',' . 
-                   ($leadPassenger->Mobile1CountryCode ?? '966') . '-' . ($leadPassenger->Mobile1 ?? '4355353') . ',' .
-                   ($leadPassenger->Title ?? 'Mr') . ' ' . ($leadPassenger->FirstName ?? 'FirstName') . ' ' . ($leadPassenger->LastName ?? 'LastName');
-        Log::info('UserData for booking: ' . json_encode($Segments_BE[0]['Origin']['DepTime']));
+        $userData = ($leadPassenger->Email ?? 'sdfs@gmail.com').','.
+                   ($leadPassenger->Mobile1CountryCode ?? '966').'-'.($leadPassenger->Mobile1 ?? '4355353').','.
+                   ($leadPassenger->Title ?? 'Mr').' '.($leadPassenger->FirstName ?? 'FirstName').' '.($leadPassenger->LastName ?? 'LastName');
+        Log::info('UserData for booking: '.json_encode($Segments_BE[0]['Origin']['DepTime']));
         // Add mandatory TBO API fields to segments
         foreach ($Segments_BE as $index => $segment) {
             if (is_array($segment)) {
@@ -688,7 +686,7 @@ class TBOFlightBookingService
                 $Segments_BE[$index]['BookingClass'] = $segment['BookingClass'] ?? $segment['CabinClass'] ?? 'Y';
                 $Segments_BE[$index]['OperatingCarrier'] = $segment['OperatingCarrier'] ?? $segment['Airline']['AirlineCode'] ?? '';
                 $Segments_BE[$index]['Stops'] = $segment['Stops'] ?? 0;
-                
+
                 // Rename IsETicketEligible to ETicketEligible if exists
                 if (isset($segment['IsETicketEligible'])) {
                     $Segments_BE[$index]['ETicketEligible'] = $segment['IsETicketEligible'];
@@ -700,15 +698,15 @@ class TBOFlightBookingService
         }
 
         // Generate a unique FlightId based on flight data
-        $flightId = hash('crc32', $flight['ResultIndex'] . $traceId . time());
+        $flightId = hash('crc32', $flight['ResultIndex'].$traceId.time());
         $flightIdNumeric = hexdec(substr($flightId, 0, 8)); // Convert hex to numeric for TBO API
-        
+
         Log::info('Generated FlightId for booking', [
             'FlightId' => $flightIdNumeric,
             'ResultIndex' => $flight['ResultIndex'],
-            'TraceId' => $traceId
+            'TraceId' => $traceId,
         ]);
-        
+
         $array = [
             'ResultId' => $flight['ResultIndex'],
             'Itinerary' => (object) [
@@ -733,7 +731,7 @@ class TBOFlightBookingService
                 'CreatedOn' => $todayDate,
                 'TboAirBookingSourceId' => 0,
                 'PaymentMode' => 0,
-                //"SourceSessionId"=> "03e32262-9dd6-4248-a304-ade5f182edb3",
+                // "SourceSessionId"=> "03e32262-9dd6-4248-a304-ade5f182edb3",
                 'FailedBookingId' => 0,
                 'ValidatingAirline' => null,
                 'ValidatingAirlineCode' => $ValidatingAirline,
@@ -741,7 +739,7 @@ class TBOFlightBookingService
                 'IsDomestic' => false,
                 'AirlineCode' => null,
                 'TravelDate' => $Segments_BE[0]['Origin']['DepTime'],
-                'NonRefundable' => !$IsRefundable,
+                'NonRefundable' => ! $IsRefundable,
                 'BookingId' => 0,
                 'BookingMode' => 5,
                 'AgentRefNo' => null,
@@ -754,7 +752,7 @@ class TBOFlightBookingService
                 'TrackingId' => $traceId,
                 'SupplierGroupId' => 5,
                 'TripId' => null,
-                'TripName' => ($leadPassenger->FirstName ?? 'FirstName') . ' ' . ($leadPassenger->LastName ?? 'LastName') . ' Trip',
+                'TripName' => ($leadPassenger->FirstName ?? 'FirstName').' '.($leadPassenger->LastName ?? 'LastName').' Trip',
                 'PNRStatus' => 0,
                 'StaffRemarks' => null,
                 'PricingKeyDetail' => null,
@@ -775,14 +773,14 @@ class TBOFlightBookingService
                 'MiniFareRules' => [[]],
                 'FareClassification' => $FareClassification,
                 'CustomizedFareType' => null,
-                //"IsVATApplicable"=> true,
+                // "IsVATApplicable"=> true,
                 'ResultType' => 2,
-                
+
                 // Include FareQuote data properly in the itinerary structure
                 'Fare' => $fareQuoteData['Fare'] ?? $Fare_BE,
                 'FareBreakup' => $fareQuoteData['FareBreakup'] ?? null,
                 'ResultIndex' => $fareQuoteData['ResultIndex'] ?? $flight['ResultIndex'],
-                ...$fareQuoteData ,
+                ...$fareQuoteData,
                 // Include FareRules data in the itinerary
                 'FareRuleDetail' => $fareRuleData,
             ],
@@ -802,27 +800,26 @@ class TBOFlightBookingService
             'WebServerIP' => null,
         ];
 
- 
         $response = Http::timeout(1900)->post(config('services.tbo_flight.after_booking').'/Booking/Book/', $array);
         $responseData = $response->json();
         Log::info('Four: booking-flight-Request ', $array);
         Log::info('Four: booking-flight-response ', $responseData);
 
         // Check for session timeout and retry with fresh TraceId
-        if (isset($responseData['Response']['Error']['ErrorMessage']) && 
+        if (isset($responseData['Response']['Error']['ErrorMessage']) &&
             (str_contains($responseData['Response']['Error']['ErrorMessage'], 'Session TimeOut') ||
              str_contains($responseData['Response']['Error']['ErrorMessage'], 'InvalidRequest') ||
              str_contains($responseData['Response']['Error']['ErrorMessage'], 'Please do FareQuote before'))) {
-            
+
             Log::warning('Session timeout detected in booking, refreshing TraceId and retrying');
-            
+
             $newTraceId = $this->getFreshTraceId();
             if ($newTraceId) {
                 // Update the array with new TraceId
                 $array['TraceId'] = $newTraceId;
-                
+
                 // Retry booking with new TraceId
-                Log::info('Retrying booking with fresh TraceId: ' . $newTraceId);
+                Log::info('Retrying booking with fresh TraceId: '.$newTraceId);
                 $response = Http::timeout(1900)->post(config('services.tbo_flight.after_booking').'/Booking/Book/', $array);
                 $responseData = $response->json();
                 Log::info('booking-flight-retry-response ', $responseData);
@@ -836,19 +833,18 @@ class TBOFlightBookingService
     {
         $flight = (array) $flight;
 
-        
-            $fareRuleResponse = $fareRuleData;
-            
-            // $this->fareRules($traceId, $flight['ResultIndex']);
-            // if (!$fareRuleResponse || !isset($fareRuleResponse['Response']['ResponseStatus']) || $fareRuleResponse['Response']['ResponseStatus'] != 1) {
-            //     Log::error('FareRule API failed for flight: ' . $flight['ResultIndex'], $fareRuleResponse ?: []);
-            //     // Continue with ticketing even if FareRule fails, but log the error
-            // } else {
-            //     $fareRuleData = $fareRuleResponse['Response']['FareRules'] ?? $fareRuleResponse['Response']['FareRule'] ?? $fareRuleResponse;
-            //     Log::info('FareRule API successful for flight: ' . $flight['ResultIndex']);
-            // }
-       // }
- 
+        $fareRuleResponse = $fareRuleData;
+
+        // $this->fareRules($traceId, $flight['ResultIndex']);
+        // if (!$fareRuleResponse || !isset($fareRuleResponse['Response']['ResponseStatus']) || $fareRuleResponse['Response']['ResponseStatus'] != 1) {
+        //     Log::error('FareRule API failed for flight: ' . $flight['ResultIndex'], $fareRuleResponse ?: []);
+        //     // Continue with ticketing even if FareRule fails, but log the error
+        // } else {
+        //     $fareRuleData = $fareRuleResponse['Response']['FareRules'] ?? $fareRuleResponse['Response']['FareRule'] ?? $fareRuleResponse;
+        //     Log::info('FareRule API successful for flight: ' . $flight['ResultIndex']);
+        // }
+        // }
+
         $fareQuoteResponse = $fareQuoteData;
         // $this->fareQuote($traceId, $flight['ResultIndex']);
         // if (!$fareQuoteResponse || !isset($fareQuoteResponse['Response']['ResponseStatus']) || $fareQuoteResponse['Response']['ResponseStatus'] != 1) {
@@ -865,37 +861,37 @@ class TBOFlightBookingService
             $ssrResponse = $this->getSSRData($traceId, $flight['ResultIndex']);
             if ($ssrResponse && isset($ssrResponse['Response']['ResponseStatus']) && $ssrResponse['Response']['ResponseStatus'] == 1) {
                 $ssrData = $ssrResponse['Response'];
-                Log::info('SSR API successful for flight: ' . $flight['ResultIndex']);
+                Log::info('SSR API successful for flight: '.$flight['ResultIndex']);
             } else {
-                Log::warning('SSR API failed for flight: ' . $flight['ResultIndex'], $ssrResponse ?: []);
+                Log::warning('SSR API failed for flight: '.$flight['ResultIndex'], $ssrResponse ?: []);
             }
         } catch (\Exception $e) {
-            Log::error('SSR API exception for flight: ' . $flight['ResultIndex'], ['error' => $e->getMessage()]);
+            Log::error('SSR API exception for flight: '.$flight['ResultIndex'], ['error' => $e->getMessage()]);
         }
 
         $passengers = [];
         $Segments_BE = $flight['Segments'][0];
         $FareRules = $flight['FareRules'];
-        
+
         // Use FareQuote data if available, otherwise fall back to original flight data
         if ($fareQuoteData) {
             Log::info('Using FareQuote data for updated pricing in ticketing');
             $fareQuoteResults = $fareQuoteData['Results'] ?? $fareQuoteData;
-            
+
             // Core fare and pricing data
             $Fare_BE = $fareQuoteResults['Fare'] ?? $flight['Fare'];
-            //$FareRules = $fareQuoteResults['FareRules'] ?? $flight['FareRules'];
+            // $FareRules = $fareQuoteResults['FareRules'] ?? $flight['FareRules'];
             $LastTicketDate = $fareQuoteResults['LastTicketDate'] ?? $flight['LastTicketDate'];
             $ValidatingAirline = $fareQuoteResults['ValidatingAirline'] ?? $flight['ValidatingAirline'];
             $FareClassification = $fareQuoteResults['FareClassification'] ?? $flight['FareClassification'] ?? 'NORMAL';
             $AirlineCode = $fareQuoteResults['AirlineCode'] ?? $flight['AirlineCode'] ?? null;
-            
+
             $LastTicketDate = $fareQuoteResults['LastTicketDate'] ?? $flight['LastTicketDate'] ?? null;
             $MiniFareRules = $fareQuoteResults['MiniFareRules'] ?? $flight['MiniFareRules'] ?? [[]];
             $FareClassification = $fareQuoteResults['FareClassification'] ?? $flight['FareClassification'] ?? 'NORMAL';
             // Use updated segments if available in FareQuote
             $Segments_BE = $fareQuoteResults['Segments'][0] ?? $flight['Segments'][0];
-            
+
             // Additional FareQuote specific fields
             $IsLCC = $fareQuoteResults['IsLCC'] ?? $flight['IsLCC'] ?? true;
             $IsRefundable = $fareQuoteResults['IsRefundable'] ?? $flight['IsRefundable'] ?? false;
@@ -908,15 +904,15 @@ class TBOFlightBookingService
             $IsHoldAllowedWithSSR = $fareQuoteResults['IsHoldAllowedWithSSR'] ?? false;
             $ResultFareType = $fareQuoteResults['ResultFareType'] ?? 'RegularFare';
             $IsPriceChanged = $fareQuoteData['IsPriceChanged'] ?? false;
-            
+
             Log::info('FareQuote pricing details for ticketing', [
                 'IsPriceChanged' => $IsPriceChanged,
                 'OriginalFare' => $flight['Fare']['PublishedFare'] ?? 'N/A',
                 'UpdatedFare' => $Fare_BE['PublishedFare'] ?? 'N/A',
                 'IsLCC' => $IsLCC,
-                'IsRefundable' => $IsRefundable
+                'IsRefundable' => $IsRefundable,
             ]);
-            
+
         } else {
             Log::info('Using original flight data for ticketing (FareQuote not available)');
             $Fare_BE = $flight['Fare'];
@@ -935,23 +931,23 @@ class TBOFlightBookingService
             $ResultFareType = 'RegularFare';
             $IsPriceChanged = false;
         }
-        
+
         // Safely access FareRules as array - TICKET METHOD
         $Destination = null;
         $Origin = null;
-        
-        if (is_array($FareRules) && !empty($FareRules)) {
+
+        if (is_array($FareRules) && ! empty($FareRules)) {
             $lastFareRule = end($FareRules);
             $firstFareRule = reset($FareRules);
-            
+
             $Destination = is_object($lastFareRule) ? $lastFareRule->Destination : ($lastFareRule['Destination'] ?? null);
             $Origin = is_object($firstFareRule) ? $firstFareRule->Origin : ($firstFareRule['Origin'] ?? null);
         } else {
             // Fallback to segment data if FareRules is not available
             if (isset($Segments_BE[0])) {
-                $firstSegment = is_array($Segments_BE[0]) ? $Segments_BE[0] : (array)$Segments_BE[0];
-                $lastSegment = is_array($Segments_BE) ? end($Segments_BE) : (array)end($Segments_BE);
-                
+                $firstSegment = is_array($Segments_BE[0]) ? $Segments_BE[0] : (array) $Segments_BE[0];
+                $lastSegment = is_array($Segments_BE) ? end($Segments_BE) : (array) end($Segments_BE);
+
                 $Origin = $firstSegment['Origin']['Airport']['CityCode'] ?? 'DEL';
                 $Destination = $lastSegment['Destination']['Airport']['CityCode'] ?? 'JED';
             } else {
@@ -960,35 +956,35 @@ class TBOFlightBookingService
                 $Destination = 'JED';
             }
         }
-        
+
         Log::info('Extracted Origin and Destination for ticketing', [
             'Origin' => $Origin,
             'Destination' => $Destination,
             'FareRules_Type' => gettype($FareRules),
-            'FareRules_Count' => is_array($FareRules) ? count($FareRules) : 'not_array'
+            'FareRules_Count' => is_array($FareRules) ? count($FareRules) : 'not_array',
         ]);
-        
+
         $todayDate = now()->format('Y-m-d');
 
         $sessionPassengers = session('passengers', []);
-       
+
         foreach ($sessionPassengers as $key => $passenger) {
             // Get SSR selections from passenger data directly
             $passengerMeal = $passenger['selected_meal'] ?? 'none';
             $passengerBaggage = $passenger['selected_baggage'] ?? 'none';
-            
+
             Log::info("Processing SSR for passenger {$key} in ticketing", [
-                'passenger_name' => ($passenger['first_name'] ?? 'Unknown') . ' ' . ($passenger['last_name'] ?? 'Unknown'),
+                'passenger_name' => ($passenger['first_name'] ?? 'Unknown').' '.($passenger['last_name'] ?? 'Unknown'),
                 'meal_selection' => $passengerMeal,
                 'baggage_selection' => $passengerBaggage,
                 'meal_price' => $passenger['meal_price'] ?? 0,
-                'baggage_price' => $passenger['baggage_price'] ?? 0
+                'baggage_price' => $passenger['baggage_price'] ?? 0,
             ]);
-            
+
             // Create SSR objects using TBO API data
             $mealSSR = $this->createMealSSR($passengerMeal, $ssrData, $Origin, $Destination);
             $baggageSSR = $this->createBaggageSSR($passengerBaggage, $ssrData, $Origin, $Destination);
-            
+
             $passengers[] = (object) [
                 'PassportIssueCountryCode' => null,
                 'PassportIssueDate' => '0001-01-01T00:00:00',
@@ -1001,7 +997,7 @@ class TBOFlightBookingService
                 'Mobile2' => '',
                 'Mobile2CountryCode' => '',
                 'IsLeadPax' => true,
-                'DateOfBirth' => $passenger['birth_date'] . 'T00:00:00',
+                'DateOfBirth' => $passenger['birth_date'].'T00:00:00',
                 'Type' => $passenger['pax_type'],
                 'PassengerIdType' => 0,
                 'PassengerIdNo' => null,
@@ -1031,9 +1027,9 @@ class TBOFlightBookingService
                 'Fare_BE' => $Fare_BE,
                 'FFAirline' => null,
                 'FFNumber' => null,
-                'PaxKey' => strtoupper(substr($passenger['last_name'] ?? 'USER', 0, 5) . substr($passenger['first_name'] ?? 'TEST', 0, 6) . ($passenger['title'] ?? 'MR')),
+                'PaxKey' => strtoupper(substr($passenger['last_name'] ?? 'USER', 0, 5).substr($passenger['first_name'] ?? 'TEST', 0, 6).($passenger['title'] ?? 'MR')),
                 'TboAirPaxId' => 0,
-                'PassportExpiry' => isset($passenger['passport_expiry_date']) ? $passenger['passport_expiry_date'] . 'T00:00:00' : '0001-01-01T00:00:00',
+                'PassportExpiry' => isset($passenger['passport_expiry_date']) ? $passenger['passport_expiry_date'].'T00:00:00' : '0001-01-01T00:00:00',
                 'PaxBaggage' => $baggageSSR,
                 'PaxMeal' => $mealSSR,
                 'IDCardNo' => null,
@@ -1053,7 +1049,7 @@ class TBOFlightBookingService
                         'IdNumber' => isset($passenger['passport_number']) && $passenger['passport_number'] ? $passenger['passport_number'] : null,
                         'IssuedCountryCode' => null,
                         'IssueDate' => null,
-                        'ExpiryDate' => isset($passenger['passport_expiry_date']) ? $passenger['passport_expiry_date'] . 'T00:00:00' : '0001-01-01T00:00:00',
+                        'ExpiryDate' => isset($passenger['passport_expiry_date']) ? $passenger['passport_expiry_date'].'T00:00:00' : '0001-01-01T00:00:00',
                     ],
                 ],
             ];
@@ -1067,7 +1063,7 @@ class TBOFlightBookingService
         //         $Segments_BE[$index]['BookingClass'] = $segment['BookingClass'] ?? $segment['CabinClass'] ?? 'Y';
         //         $Segments_BE[$index]['OperatingCarrier'] = $segment['OperatingCarrier'] ?? $segment['Airline']['AirlineCode'] ?? '';
         //         $Segments_BE[$index]['Stops'] = $segment['Stops'] ?? 0;
-                
+
         //         // Rename IsETicketEligible to ETicketEligible if exists
         //         if (isset($segment['IsETicketEligible'])) {
         //             $Segments_BE[$index]['ETicketEligible'] = $segment['IsETicketEligible'];
@@ -1079,19 +1075,19 @@ class TBOFlightBookingService
         // }
 
         // Generate a unique FlightId for LCC ticketing
-        $flightId = hash('crc32', $flight['ResultIndex'] . $traceId . time());
+        $flightId = hash('crc32', $flight['ResultIndex'].$traceId.time());
         $flightIdNumeric = hexdec(substr($flightId, 0, 8)); // Convert hex to numeric for TBO API
 
         Log::info('Generated FlightId for LCC ticketing', [
             'FlightId' => $flightIdNumeric,
             'ResultIndex' => $flight['ResultIndex'],
-            'TraceId' => $traceId
+            'TraceId' => $traceId,
         ]);
         $todayDate = now()->format('Y-m-d');
-         $leadPassenger = $passengers[0];
-        $userData = ($leadPassenger->Email ?? 'sdfs@gmail.com') . ',' . 
-                   ($leadPassenger->Mobile1CountryCode ?? '966') . '-' . ($leadPassenger->Mobile1 ?? '4355353') . ',' .
-                   ($leadPassenger->Title ?? 'Mr') . ' ' . ($leadPassenger->FirstName ?? 'FirstName') . ' ' . ($leadPassenger->LastName ?? 'LastName');
+        $leadPassenger = $passengers[0];
+        $userData = ($leadPassenger->Email ?? 'sdfs@gmail.com').','.
+                   ($leadPassenger->Mobile1CountryCode ?? '966').'-'.($leadPassenger->Mobile1 ?? '4355353').','.
+                   ($leadPassenger->Title ?? 'Mr').' '.($leadPassenger->FirstName ?? 'FirstName').' '.($leadPassenger->LastName ?? 'LastName');
 
         $array = [
             'ResultId' => $flight['ResultIndex'],
@@ -1100,7 +1096,7 @@ class TBOFlightBookingService
                 'IsHoldEligibleForLcc' => false,
                 'IsManual' => false,
                 'IssuancePCC' => null,
-                'FlightId' =>$IsLCC ? 0: $flightIdNumeric,
+                'FlightId' => $IsLCC ? 0 : $flightIdNumeric,
                 'Segments_BE' => $Segments_BE,
                 'Passenger' => $passengers,
                 'FareRules' => $FareRules,
@@ -1117,15 +1113,15 @@ class TBOFlightBookingService
                 'CreatedOn' => $todayDate,
                 'TboAirBookingSourceId' => 0,
                 'PaymentMode' => 0,
-                //'SourceSessionId' => '7fdc1982-5da6-4ed4-8d63-3587cb17369a',
+                // 'SourceSessionId' => '7fdc1982-5da6-4ed4-8d63-3587cb17369a',
                 'FailedBookingId' => 0,
-                
+
                 'Ticketed' => false,
                 'IsDomestic' => false,
                 'AirlineCode' => null,
                 'TravelDate' => $Segments_BE[0]['Origin']['DepTime'] ?? $flight['Segments'][0]['Origin']['DepTime'],
-                'NonRefundable' => !$IsRefundable,
-                
+                'NonRefundable' => ! $IsRefundable,
+
                 'BookingId' => 0,
                 'BookingMode' => 5,
                 'AgentRefNo' => null,
@@ -1139,7 +1135,7 @@ class TBOFlightBookingService
                 'SupplierGroupId' => 5,
                 'OrderKey' => null,
                 'TripId' => null,
-                'TripName' => ($leadPassenger->FirstName ?? 'FirstName') . ' ' . ($leadPassenger->LastName ?? 'LastName') . ' Trip',
+                'TripName' => ($leadPassenger->FirstName ?? 'FirstName').' '.($leadPassenger->LastName ?? 'LastName').' Trip',
                 'PNRStatus' => 0,
                 'StaffRemarks' => null,
                 'PricingKeyDetail' => null,
@@ -1158,18 +1154,18 @@ class TBOFlightBookingService
                 'PaymentKey' => null,
                 'HotelConfirmationNumber' => null,
                 'HelpCenter' => null,
-                
+
                 'FareClassification' => $FareClassification,
                 'CustomizedFareType' => null,
-                //"IsVATApplicable"=> false,
+                // "IsVATApplicable"=> false,
                 'ResultType' => 2,
-                
+
                 // Include FareQuote data properly in the ticket itinerary structure
                 'Fare' => $fareQuoteData['Fare'] ?? $Fare_BE,
                 'FareBreakup' => $fareQuoteData['FareBreakup'] ?? null,
                 'ResultIndex' => $fareQuoteData['ResultIndex'] ?? $flight['ResultIndex'],
-                ...$fareQuoteData ,
-                
+                ...$fareQuoteData,
+
                 // Include FareRules data in the ticket itinerary
                 'FareRuleDetail' => $fareRuleData,
                 'ValidatingAirline' => null,
@@ -1180,42 +1176,42 @@ class TBOFlightBookingService
                 'FareClassification' => $FareClassification,
                 'Fare_BE' => $Fare_BE,
             ],
-            'PNR' => "",
+            'PNR' => '',
             'BookingId' => '',
             'CorporateCode' => null,
             'ConfirmPriceChangeTicket' => false,
-            'IPAddress' =>  '115.114.12.58',
+            'IPAddress' => '115.114.12.58',
             'IsGenerateTicketRequestFromQueues' => false,
-            'SegmentAnalyticsToken' =>'fdhzelbwysit22iibnxsghsj',
+            'SegmentAnalyticsToken' => 'fdhzelbwysit22iibnxsghsj',
             'TokenId' => $this->authenticate(),
             'TrackingId' => $traceId,
             'EndUserBrowserAgent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
             'PointOfSale' => 'IN',
             'RequestOrigin' => 'India-https://www.tboair.com',
-            'UserData' =>  $userData,
+            'UserData' => $userData,
             'WebServerIP' => null,
         ];
         Log::info('ticket-flight-request', ['trace_id' => $traceId, 'result_index' => $flight['ResultIndex'] ?? null]);
         $response = Http::timeout(1900)->post(config('services.tbo_flight.after_booking').'/Booking/Ticket/', $array);
         $responseData = $response->json();
-        
+
         Log::info('ticket-flight-response', ['trace_id' => $traceId, 'pnr' => $responseData['PNR'] ?? null, 'status' => $responseData['Status'] ?? null]);
 
         // Check for session timeout and retry with fresh TraceId
-        if (isset($responseData['Response']['Error']['ErrorMessage']) && 
+        if (isset($responseData['Response']['Error']['ErrorMessage']) &&
             (str_contains($responseData['Response']['Error']['ErrorMessage'], 'Session TimeOut') ||
              str_contains($responseData['Response']['Error']['ErrorMessage'], 'InvalidRequest') ||
              str_contains($responseData['Response']['Error']['ErrorMessage'], 'Please do FareQuote before'))) {
-            
+
             Log::warning('Session timeout detected in ticket, refreshing TraceId and retrying');
-            
+
             $newTraceId = $this->getFreshTraceId();
             if ($newTraceId) {
                 // Update the array with new TraceId
                 $array['TrackingId'] = $newTraceId;
-                
+
                 // Retry ticket with new TraceId
-                Log::info('Retrying ticket with fresh TraceId: ' . $newTraceId);
+                Log::info('Retrying ticket with fresh TraceId: '.$newTraceId);
                 $response = Http::timeout(1900)->post(config('services.tbo_flight.after_booking').'/Booking/Ticket/', $array);
                 $responseData = $response->json();
                 Log::info('ticket-flight-retry-response ', $responseData);
@@ -1225,11 +1221,11 @@ class TBOFlightBookingService
         return $responseData;
     }
 
-
-     private function createBaggageSSR($baggageCode, $ssrData, $origin, $destination)
+    private function createBaggageSSR($baggageCode, $ssrData, $origin, $destination)
     {
         if (empty($baggageCode) || $baggageCode === 'none') {
             Log::info('No baggage SSR requested', ['baggage_code' => $baggageCode]);
+
             return null;
         }
 
@@ -1237,18 +1233,19 @@ class TBOFlightBookingService
             'baggage_code' => $baggageCode,
             'origin' => $origin,
             'destination' => $destination,
-            'has_ssr_data' => !empty($ssrData),
+            'has_ssr_data' => ! empty($ssrData),
             'ssr_structure' => [
                 'has_Baggage' => isset($ssrData['Baggage']),
-                'Baggage_count' => isset($ssrData['Baggage']) ? count($ssrData['Baggage']) : 0
-            ]
+                'Baggage_count' => isset($ssrData['Baggage']) ? count($ssrData['Baggage']) : 0,
+            ],
         ]);
 
         // Try to find baggage in SSR API data first
         $baggageFromAPI = $this->findBaggageInSSR($baggageCode, $ssrData);
-        
+
         if ($baggageFromAPI) {
             Log::info('Found baggage in SSR API data', $baggageFromAPI);
+
             return [
                 'Code' => $baggageFromAPI['Code'],
                 'Description' => $baggageFromAPI['Description'] ?? "Extra {$baggageFromAPI['Weight']}kg Baggage",
@@ -1256,7 +1253,7 @@ class TBOFlightBookingService
                 'Amount' => floatval($baggageFromAPI['Price'] ?? 0),
                 'Currency' => $baggageFromAPI['Currency'] ?? 'SAR',
                 'Origin' => $baggageFromAPI['Origin'] ?? $origin,
-                'Destination' => $baggageFromAPI['Destination'] ?? $destination
+                'Destination' => $baggageFromAPI['Destination'] ?? $destination,
             ];
         }
 
@@ -1274,14 +1271,15 @@ class TBOFlightBookingService
             'Amount' => $weight ? floatval($weight * 3.5) : 65.0, // Estimate based on weight or default
             'Currency' => 'SAR',
             'Origin' => $origin,
-            'Destination' => $destination
+            'Destination' => $destination,
         ];
-        
+
         Log::info('Using fallback baggage data (not found in SSR API)', $fallbackBaggage);
+
         return $fallbackBaggage;
     }
 
-     private function findBaggageInSSR($baggageCode, $ssrData)
+    private function findBaggageInSSR($baggageCode, $ssrData)
     {
         if (empty($baggageCode) || $baggageCode === 'none') {
             return null;
@@ -1289,41 +1287,42 @@ class TBOFlightBookingService
 
         // Map frontend codes to potential API codes dynamically
         $possibleCodes = $this->mapBaggageCodeToAPI($baggageCode, $ssrData);
-        
+
         // Debug: Log the actual SSR data structure
         Log::info('SSR Baggage data structure debug', [
             'frontend_code' => $baggageCode,
             'possible_codes' => $possibleCodes,
             'ssr_baggage_structure' => isset($ssrData['Baggage']) ? array_keys($ssrData['Baggage']) : 'no_baggage_key',
-            'ssr_baggage_sample' => isset($ssrData['Baggage'][0]) ? $ssrData['Baggage'][0] : 'no_first_element'
+            'ssr_baggage_sample' => isset($ssrData['Baggage'][0]) ? $ssrData['Baggage'][0] : 'no_first_element',
         ]);
-        
+
         // For LCC airlines - check Baggage array (only LCC has baggage pricing)
         if (isset($ssrData['Baggage']) && is_array($ssrData['Baggage'])) {
             // Handle nested array structure - check first flight segment
             foreach ($ssrData['Baggage'] as $segmentIndex => $flightSegmentBaggage) {
                 Log::info("Processing baggage segment {$segmentIndex}", [
                     'is_array' => is_array($flightSegmentBaggage),
-                    'segment_data' => is_array($flightSegmentBaggage) ? 'array_with_' . count($flightSegmentBaggage) . '_items' : $flightSegmentBaggage
+                    'segment_data' => is_array($flightSegmentBaggage) ? 'array_with_'.count($flightSegmentBaggage).'_items' : $flightSegmentBaggage,
                 ]);
-                
+
                 if (is_array($flightSegmentBaggage)) {
                     foreach ($flightSegmentBaggage as $baggageIndex => $baggage) {
                         Log::info("Checking baggage item {$baggageIndex}", [
                             'baggage_code' => $baggage['Code'] ?? 'no_code',
                             'baggage_weight' => $baggage['Weight'] ?? 'no_weight',
                             'baggage_price' => $baggage['Price'] ?? 'no_price',
-                            'full_baggage_data' => $baggage
+                            'full_baggage_data' => $baggage,
                         ]);
-                        
+
                         if (isset($baggage['Code'])) {
                             // Check if the API code matches any of our possible codes
                             if (in_array($baggage['Code'], $possibleCodes) || $baggage['Code'] === $baggageCode) {
                                 Log::info('Found matching baggage in SSR data', [
                                     'frontend_code' => $baggageCode,
                                     'matched_api_code' => $baggage['Code'],
-                                    'baggage_data' => $baggage
+                                    'baggage_data' => $baggage,
                                 ]);
+
                                 return $baggage;
                             }
                         }
@@ -1331,17 +1330,18 @@ class TBOFlightBookingService
                 } else {
                     // Handle case where flightSegmentBaggage is not an array (direct baggage object)
                     if (isset($flightSegmentBaggage['Code'])) {
-                        Log::info("Checking direct baggage object", [
+                        Log::info('Checking direct baggage object', [
                             'baggage_code' => $flightSegmentBaggage['Code'],
-                            'baggage_data' => $flightSegmentBaggage
+                            'baggage_data' => $flightSegmentBaggage,
                         ]);
-                        
+
                         if (in_array($flightSegmentBaggage['Code'], $possibleCodes) || $flightSegmentBaggage['Code'] === $baggageCode) {
                             Log::info('Found matching baggage in direct SSR data', [
                                 'frontend_code' => $baggageCode,
                                 'matched_api_code' => $flightSegmentBaggage['Code'],
-                                'baggage_data' => $flightSegmentBaggage
+                                'baggage_data' => $flightSegmentBaggage,
                             ]);
+
                             return $flightSegmentBaggage;
                         }
                     }
@@ -1352,36 +1352,37 @@ class TBOFlightBookingService
         Log::info('No matching baggage found in SSR data using strict matching, trying fuzzy matching', [
             'frontend_code' => $baggageCode,
             'possible_codes' => $possibleCodes,
-            'total_ssr_baggage_segments' => isset($ssrData['Baggage']) ? count($ssrData['Baggage']) : 0
+            'total_ssr_baggage_segments' => isset($ssrData['Baggage']) ? count($ssrData['Baggage']) : 0,
         ]);
-        
+
         // Fallback: Try fuzzy matching if strict matching failed
         if (isset($ssrData['Baggage']) && is_array($ssrData['Baggage'])) {
             $frontendWeight = null;
             if (preg_match('/(\d+)/', $baggageCode, $matches)) {
                 $frontendWeight = intval($matches[1]);
             }
-            
+
             if ($frontendWeight) {
                 Log::info('Attempting fuzzy weight-based matching', ['target_weight' => $frontendWeight]);
-                
+
                 foreach ($ssrData['Baggage'] as $segmentIndex => $flightSegmentBaggage) {
                     if (is_array($flightSegmentBaggage)) {
                         foreach ($flightSegmentBaggage as $baggageIndex => $baggage) {
                             if (isset($baggage['Weight'])) {
                                 $apiWeight = intval($baggage['Weight']);
-                                
+
                                 // Try exact weight match
                                 if ($apiWeight === $frontendWeight) {
                                     Log::info('Found fuzzy weight match', [
                                         'frontend_code' => $baggageCode,
                                         'api_code' => $baggage['Code'] ?? 'no_code',
                                         'matched_weight' => $apiWeight,
-                                        'baggage_data' => $baggage
+                                        'baggage_data' => $baggage,
                                     ]);
+
                                     return $baggage;
                                 }
-                                
+
                                 // Try closest weight match (±2kg tolerance)
                                 if (abs($apiWeight - $frontendWeight) <= 2) {
                                     Log::info('Found close weight match', [
@@ -1390,8 +1391,9 @@ class TBOFlightBookingService
                                         'target_weight' => $frontendWeight,
                                         'api_weight' => $apiWeight,
                                         'weight_diff' => abs($apiWeight - $frontendWeight),
-                                        'baggage_data' => $baggage
+                                        'baggage_data' => $baggage,
                                     ]);
+
                                     return $baggage;
                                 }
                             }
@@ -1400,84 +1402,84 @@ class TBOFlightBookingService
                 }
             }
         }
-        
+
         Log::info('No matching baggage found even with fuzzy matching - dumping full SSR structure for debugging', [
             'frontend_code' => $baggageCode,
             'possible_codes' => $possibleCodes,
             'tried_fuzzy_matching' => isset($frontendWeight),
-            'full_ssr_baggage_dump' => $ssrData['Baggage'] ?? 'no_baggage_in_ssr'
+            'full_ssr_baggage_dump' => $ssrData['Baggage'] ?? 'no_baggage_in_ssr',
         ]);
-        
+
         return null;
     }
-    
+
     /**
      * Map frontend baggage codes to potential API codes dynamically from SSR data
      */
     private function mapBaggageCodeToAPI($frontendCode, $ssrData = null)
     {
         // If no SSR data provided, try to get it from session
-        if (!$ssrData) {
+        if (! $ssrData) {
             $flight = session('flight', []);
             $ssrData = $flight['SSRDetails'] ?? [];
         }
-        
+
         $possibleCodes = [$frontendCode]; // Always include the original code
-        
+
         // Extract weight from frontend code for better matching
         $frontendWeight = null;
         if (preg_match('/(\d+)/', $frontendCode, $matches)) {
             $frontendWeight = intval($matches[1]);
         }
-        
+
         Log::info('Baggage mapping analysis', [
             'frontend_code' => $frontendCode,
             'extracted_weight' => $frontendWeight,
-            'has_ssr_data' => !empty($ssrData),
-            'ssr_baggage_available' => isset($ssrData['Baggage'])
+            'has_ssr_data' => ! empty($ssrData),
+            'ssr_baggage_available' => isset($ssrData['Baggage']),
         ]);
-        
+
         // If we have SSR data, build dynamic mapping
-        if (!empty($ssrData) && isset($ssrData['Baggage']) && is_array($ssrData['Baggage'])) {
+        if (! empty($ssrData) && isset($ssrData['Baggage']) && is_array($ssrData['Baggage'])) {
             // Handle nested array structure - check first flight segment
             foreach ($ssrData['Baggage'] as $segmentIndex => $flightSegmentBaggage) {
                 Log::info("Mapping codes from baggage segment {$segmentIndex}", [
                     'is_array' => is_array($flightSegmentBaggage),
-                    'element_count' => is_array($flightSegmentBaggage) ? count($flightSegmentBaggage) : 'not_array'
+                    'element_count' => is_array($flightSegmentBaggage) ? count($flightSegmentBaggage) : 'not_array',
                 ]);
-                
+
                 if (is_array($flightSegmentBaggage)) {
                     foreach ($flightSegmentBaggage as $baggage) {
                         if (isset($baggage['Code'])) {
                             $apiCode = $baggage['Code'];
                             $weight = isset($baggage['Weight']) ? intval($baggage['Weight']) : null;
-                            
+
                             Log::info('Analyzing API baggage code', [
                                 'api_code' => $apiCode,
                                 'weight' => $weight,
-                                'frontend_weight' => $frontendWeight
+                                'frontend_weight' => $frontendWeight,
                             ]);
-                            
+
                             // Add exact match
                             if ($apiCode === $frontendCode) {
                                 $possibleCodes[] = $apiCode;
                                 Log::info('Added exact code match', ['code' => $apiCode]);
                             }
-                            
+
                             // Weight-based matching
                             if ($weight && $frontendWeight && $weight == $frontendWeight) {
                                 $possibleCodes[] = $apiCode;
                                 Log::info('Added weight-based match', ['api_code' => $apiCode, 'weight' => $weight]);
                             }
-                            
+
                             // Pattern-based matching
                             if ($frontendWeight) {
                                 // Check if API code contains the weight
-                                if (str_contains($apiCode, (string)$frontendWeight)) {
+                                if (str_contains($apiCode, (string) $frontendWeight)) {
                                     $possibleCodes[] = $apiCode;
                                     Log::info('Added pattern-based match', ['api_code' => $apiCode, 'pattern' => $frontendWeight]);
                                 }
-                                
+
                                 // Check common patterns: BG20 -> EB20, BG20 -> BG20#1, etc.
                                 $weightStr = str_pad($frontendWeight, 2, '0', STR_PAD_LEFT);
                                 $commonPatterns = [
@@ -1486,9 +1488,9 @@ class TBOFlightBookingService
                                     "BG{$frontendWeight}",
                                     "BG{$weightStr}",
                                     "{$frontendWeight}KG",
-                                    "{$weightStr}KG"
+                                    "{$weightStr}KG",
                                 ];
-                                
+
                                 foreach ($commonPatterns as $pattern) {
                                     if (str_contains($apiCode, $pattern) || str_starts_with($apiCode, $pattern)) {
                                         $possibleCodes[] = $apiCode;
@@ -1507,21 +1509,21 @@ class TBOFlightBookingService
                 }
             }
         }
-        
+
         // Remove duplicates and return
         $possibleCodes = array_unique($possibleCodes);
-        
+
         Log::info('Final dynamic baggage code mapping', [
             'frontend_code' => $frontendCode,
             'possible_api_codes' => $possibleCodes,
             'mapping_count' => count($possibleCodes),
-            'has_ssr_data' => !empty($ssrData)
+            'has_ssr_data' => ! empty($ssrData),
         ]);
-        
+
         return $possibleCodes;
     }
 
-    public function bookAndTicket($traceId, $flight )
+    public function bookAndTicket($traceId, $flight)
     {
         $tokenId = $this->authenticate();
         $flight = (array) $flight;
@@ -1529,33 +1531,32 @@ class TBOFlightBookingService
         // Fetch SSRData
         $ssrData = null;
         try {
-            $ssrResponse = $this->getSSRData($traceId, $flight['ResultIndex'],$tokenId);
+            $ssrResponse = $this->getSSRData($traceId, $flight['ResultIndex'], $tokenId);
             if ($ssrResponse && isset($ssrResponse['Response']['ResponseStatus']) && $ssrResponse['Response']['ResponseStatus'] == 1) {
                 $ssrData = $ssrResponse['Response'];
-                
-            }  else {
-                Log::warning('SSRData API failed for flight ID: ' .  $ssrResponse ?: []);
+
+            } else {
+                Log::warning('SSRData API failed for flight ID: '.$ssrResponse ?: []);
             }
         } catch (\Exception $e) {
-            Log::error('SSR API exception for flight: ' . $flight['ResultIndex'], ['error' => $e->getMessage()]);
+            Log::error('SSR API exception for flight: '.$flight['ResultIndex'], ['error' => $e->getMessage()]);
         }
 
-
-        // Fetch FareRule data 
+        // Fetch FareRule data
         $fareRuleData = null;
         $FareRules = null;
         try {
-            $fareRuleResponse = (new TBOFlightBookingService)->fareRules($traceId, $flight['ResultIndex'],$tokenId);
-            Log::info('fareRuleResponse: '. json_encode($fareRuleResponse));
-            if ($fareRuleResponse  && $fareRuleResponse['Response']  && isset($fareRuleResponse['Response']['ResponseStatus']) && $fareRuleResponse['Response']['ResponseStatus'] == 1) {
+            $fareRuleResponse = (new TBOFlightBookingService)->fareRules($traceId, $flight['ResultIndex'], $tokenId);
+            Log::info('fareRuleResponse: '.json_encode($fareRuleResponse));
+            if ($fareRuleResponse && $fareRuleResponse['Response'] && isset($fareRuleResponse['Response']['ResponseStatus']) && $fareRuleResponse['Response']['ResponseStatus'] == 1) {
                 $fareRuleData = $fareRuleResponse['Response']['FareRules'];
                 $FareRules = $fareRuleData;
-              
+
             } else {
-                Log::warning('FareRule API failed for flight ID: ' , $fareRuleResponse ?: []);
+                Log::warning('FareRule API failed for flight ID: ', $fareRuleResponse ?: []);
             }
         } catch (\Exception $e) {
-            Log::error('FareRule API exception for flight ID: ' . ', Error: ' . $e->getMessage());
+            Log::error('FareRule API exception for flight ID: '.', Error: '.$e->getMessage());
         }
 
         // Fetch FareQuote data
@@ -1567,7 +1568,7 @@ class TBOFlightBookingService
         $LastTicketDate = null;
         $MiniFareRules = null;
         $FareClassification = null;
-        /* 
+        /*
         var jsonData = pm.response.json();
             pm.environment.set("Fare_BE", JSON.stringify(jsonData.Response.Results.Fare));
 
@@ -1585,13 +1586,13 @@ class TBOFlightBookingService
 
         */
         try {
-            Log::info('Testing existing trace_id validity with FareQuote for flight ID: ' );
-            $fareQuoteResponse = (new TBOFlightBookingService)->fareQuote($traceId, $flight['ResultIndex'],$tokenId);
-            Log::info('fareQuoteResponse: '. json_encode($fareQuoteResponse));
-            if ($fareQuoteResponse && $fareQuoteResponse['Response'] &&  isset($fareQuoteResponse['Response']['ResponseStatus']) && $fareQuoteResponse['Response']['ResponseStatus'] == 1) {
+            Log::info('Testing existing trace_id validity with FareQuote for flight ID: ');
+            $fareQuoteResponse = (new TBOFlightBookingService)->fareQuote($traceId, $flight['ResultIndex'], $tokenId);
+            Log::info('fareQuoteResponse: '.json_encode($fareQuoteResponse));
+            if ($fareQuoteResponse && $fareQuoteResponse['Response'] && isset($fareQuoteResponse['Response']['ResponseStatus']) && $fareQuoteResponse['Response']['ResponseStatus'] == 1) {
                 $fareQuoteData = $fareQuoteResponse['Response']['Results'];
                 $Fare_BE = $fareQuoteData['Fare'];
-                //$Segments_BE = $fareQuoteData['Segments'][0];
+                // $Segments_BE = $fareQuoteData['Segments'][0];
                 $Segments_BE = [];
                 foreach ($fareQuoteData['Segments'] as $segmentArray) {
                     $Segments_BE = array_merge($Segments_BE, $segmentArray);
@@ -1601,30 +1602,31 @@ class TBOFlightBookingService
                 $LastTicketDate = $fareQuoteData['LastTicketDate'];
                 $MiniFareRules = $fareQuoteData['MiniFareRules'];
                 $FareClassification = $fareQuoteData['FareClassification'];
-                //Log::info('Existing trace_id is valid - FareQuote successful for flight ID: ' . $flight->id);
-        } else {
-            Log::warning('FareQuote API failed for flight ID: ' .  $fareQuoteResponse ?: []);
-            return null;
-        }
+                // Log::info('Existing trace_id is valid - FareQuote successful for flight ID: ' . $flight->id);
+            } else {
+                Log::warning('FareQuote API failed for flight ID: '.$fareQuoteResponse ?: []);
+
+                return null;
+            }
         } catch (\Exception $e) {
-            Log::error('FareQuote API exception for flight ID: ' .   ', Error: ' . $e->getMessage());
+            Log::error('FareQuote API exception for flight ID: '.', Error: '.$e->getMessage());
         }
 
         $Destination = null;
         $Origin = null;
-        
-        if (is_array($FareRules) && !empty($FareRules)) {
+
+        if (is_array($FareRules) && ! empty($FareRules)) {
             $lastFareRule = end($FareRules);
             $firstFareRule = reset($FareRules);
-            
+
             $Destination = is_object($firstFareRule) ? $firstFareRule->Destination : ($firstFareRule['Destination'] ?? null);
             $Origin = is_object($firstFareRule) ? $firstFareRule->Origin : ($firstFareRule['Origin'] ?? null);
         } else {
             // Fallback to segment data if FareRules is not available
             if (isset($Segments_BE[0])) {
-                $firstSegment = is_array($Segments_BE[0]) ? $Segments_BE[0] : (array)$Segments_BE[0];
-                $lastSegment = is_array($Segments_BE) ? end($Segments_BE) : (array)end($Segments_BE);
-                
+                $firstSegment = is_array($Segments_BE[0]) ? $Segments_BE[0] : (array) $Segments_BE[0];
+                $lastSegment = is_array($Segments_BE) ? end($Segments_BE) : (array) end($Segments_BE);
+
                 $Origin = $firstSegment['Origin']['Airport']['CityCode'] ?? 'DEL';
                 $Destination = $firstSegment['Destination']['Airport']['CityCode'] ?? 'JED';
             } else {
@@ -1637,35 +1639,34 @@ class TBOFlightBookingService
         $todayDate = now()->format('Y-m-d');
         $passengers = [];
         $sessionPassengers = session('passengers', []);
-       
-       
+
         foreach ($sessionPassengers as $key => $passenger) {
             // Get SSR selections from passenger data directly
             $passengerMeal = $passenger['selected_meal'] ?? 'none';
             $passengerBaggage = $passenger['selected_baggage'] ?? 'none';
-            
+
             Log::info("Processing SSR for passenger {$key} in ticketing", [
-                'passenger_name' => ($passenger['first_name'] ?? 'Unknown') . ' ' . ($passenger['last_name'] ?? 'Unknown'),
+                'passenger_name' => ($passenger['first_name'] ?? 'Unknown').' '.($passenger['last_name'] ?? 'Unknown'),
                 'meal_selection' => $passengerMeal,
                 'baggage_selection' => $passengerBaggage,
                 'meal_price' => $passenger['meal_price'] ?? 0,
-                'baggage_price' => $passenger['baggage_price'] ?? 0
+                'baggage_price' => $passenger['baggage_price'] ?? 0,
             ]);
-            
+
             // Create SSR objects using TBO API data
             $mealSSR = $this->createMealSSR($passengerMeal, $ssrData, $Origin, $Destination);
             $baggageSSR = $this->createBaggageSSR($passengerBaggage, $ssrData, $Origin, $Destination);
-            
+
             Log::info("SSR creation results for passenger {$key} in bookAndTicket", [
-                'passenger_name' => ($passenger['first_name'] ?? 'Unknown') . ' ' . ($passenger['last_name'] ?? 'Unknown'),
+                'passenger_name' => ($passenger['first_name'] ?? 'Unknown').' '.($passenger['last_name'] ?? 'Unknown'),
                 'baggage_input' => $passengerBaggage,
                 'baggage_ssr_result' => $baggageSSR,
                 'meal_ssr_result' => $mealSSR,
                 'origin' => $Origin,
                 'destination' => $Destination,
-                'has_ssr_data' => !empty($ssrData)
+                'has_ssr_data' => ! empty($ssrData),
             ]);
-            
+
             $passengers[] = (object) [
                 'PassportIssueCountryCode' => null,
                 'PassportIssueDate' => '0001-01-01T00:00:00',
@@ -1678,7 +1679,7 @@ class TBOFlightBookingService
                 'Mobile2' => '-',
                 'Mobile2CountryCode' => '',
                 'IsLeadPax' => true,
-                'DateOfBirth' => $passenger['birth_date'] . 'T00:00:00' ?? "1985-05-08T00:00:00",
+                'DateOfBirth' => $passenger['birth_date'].'T00:00:00' ?? '1985-05-08T00:00:00',
                 'Type' => $passenger['pax_type'],
                 'PassengerIdType' => 0,
                 'PassengerIdNo' => null,
@@ -1691,7 +1692,7 @@ class TBOFlightBookingService
                     'CountryName' => Country::where('code', $passenger['nationality'])->first()?->name_en ?? $passenger['nationality'],
                 ],
                 'Country' => [
-                    'CountryCode' =>  $passenger['nationality'],
+                    'CountryCode' => $passenger['nationality'],
                     'CountryName' => Country::where('code', $passenger['nationality'])->first()?->name_en ?? $passenger['nationality'],
                 ],
                 'City' => [
@@ -1708,9 +1709,9 @@ class TBOFlightBookingService
                 'Fare_BE' => $Fare_BE,
                 'FFAirline' => null,
                 'FFNumber' => null,
-                'PaxKey' => strtoupper(substr($passenger['last_name'] ?? 'USER', 0, 5) . substr($passenger['first_name'] ?? 'TEST', 0, 6) . ($passenger['title'] ?? 'MR')),
+                'PaxKey' => strtoupper(substr($passenger['last_name'] ?? 'USER', 0, 5).substr($passenger['first_name'] ?? 'TEST', 0, 6).($passenger['title'] ?? 'MR')),
                 'TboAirPaxId' => 0,
-                'PassportExpiry' => isset($passenger['passport_expiry_date']) ? $passenger['passport_expiry_date'] . 'T00:00:00' : '0001-01-01T00:00:00',
+                'PassportExpiry' => isset($passenger['passport_expiry_date']) ? $passenger['passport_expiry_date'].'T00:00:00' : '0001-01-01T00:00:00',
                 'PaxBaggage' => $baggageSSR,
                 'PaxMeal' => $mealSSR,
                 'IDCardNo' => null,
@@ -1730,251 +1731,229 @@ class TBOFlightBookingService
                         'IdNumber' => isset($passenger['passport_number']) && $passenger['passport_number'] ? $passenger['passport_number'] : null,
                         'IssuedCountryCode' => null,
                         'IssueDate' => null,
-                        'ExpiryDate' => isset($passenger['passport_expiry_date']) ? $passenger['passport_expiry_date'] . 'T00:00:00' : '0001-01-01T00:00:00',
+                        'ExpiryDate' => isset($passenger['passport_expiry_date']) ? $passenger['passport_expiry_date'].'T00:00:00' : '0001-01-01T00:00:00',
                     ],
                 ],
             ];
-        };
+        }
         $todayDate = now()->format('Y-m-d');
         $leadPassenger = $passengers[0];
-        $userData = ($leadPassenger->Email ?? 'sdfs@gmail.com') . ',' . 
-                   ($leadPassenger->Mobile1CountryCode ?? '966') . '-' . ($leadPassenger->Mobile1 ?? '4355353') . ',' .
-                   ($leadPassenger->Title ?? 'Mr') . ' ' . ($leadPassenger->FirstName ?? 'FirstName') . ' ' . ($leadPassenger->LastName ?? 'LastName');
+        $userData = ($leadPassenger->Email ?? 'sdfs@gmail.com').','.
+                   ($leadPassenger->Mobile1CountryCode ?? '966').'-'.($leadPassenger->Mobile1 ?? '4355353').','.
+                   ($leadPassenger->Title ?? 'Mr').' '.($leadPassenger->FirstName ?? 'FirstName').' '.($leadPassenger->LastName ?? 'LastName');
 
         Log::info('Segments prepared for booking', ['segments_count' => count($Segments_BE), 'trace_id' => $traceId]);
 
-
-        $bookingRequest =(object) [
-            "ResultId" => $flight['ResultIndex'],
-            "Itinerary" => (object) [
-                "AgencySalesRepresentative" => 0,
-                "IsHoldEligibleForLcc" => false,
-                "IsManual" => false,
-                "IssuancePCC" => null,
-                "FlightId" => 0,
-                "Segments_BE" => $Segments_BE,
-                "Passenger" => $passengers,
-                "FareRules" => $FareRules,
-                "PNR" => "",
-                "InactivePNR" => null,
-                "SplitPNR" => null,
-                "SupplierCode" => null,
-                "FlightBookingSource" => 72,
-                "Destination" => $Destination,
-                "FareType" => "PUBL",
-                "LastTicketDate" => $LastTicketDate,
-                "LastVoidDate" => "0001-01-01T00:00:00",
-                "Origin" => $Origin,
-                "CreatedOn" => $todayDate,
-                "TboAirBookingSourceId" => 0,
-                "PaymentMode" => 0,
-                //"SourceSessionId" => "03e32262-9dd6-4248-a304-ade5f182edb3",
-                "FailedBookingId" => 0,
-                "ValidatingAirline" => null,
-                "ValidatingAirlineCode" => $ValidatingAirline,
-                "Ticketed" => false,
-                "IsDomestic" => false,
-                "AirlineCode" => $AirlineCode,
-                "TravelDate" => "2024-05-24T21:20:00",
-                "NonRefundable" => true,
-                "BookingId" => 0,
-                "BookingMode" => 1,
-                "AgentRefNo" => null,
-                "IsLcc" => $fareQuoteData['IsLCC'],
-                "ClientIP" => request()->ip(),
-                "AirlineRemark" => $fareQuoteData['AirlineRemark'] ?? null,
-                "SearchType" => 1,
-                "OnBehalfOf" => 0,
-                "EarnedLoyaltyPoints" => 0,
-                "TrackingId" => $traceId,
-                "SupplierGroupId" => 5,
-                "TripId" => null,
-                "TripName" => "Anand Pathak Trip",
-                "PNRStatus" => 0,
-                "StaffRemarks" => null,
-                "PricingKeyDetail" => null,
-                "TokenId" => $tokenId,
-                "SSRData" => null,
-                "isNewBooking" => false,
-                "ParentBookingId" => 0,
-                "isFromBulkImport" => false,
-                "isApplicableforNewWidgetWallet" => false,
-                "callBackUrl" => "tboairdemo.techmaster.in",
-                "isCancellationcoverAdded" => false,
-                "FoidDetails" => [],
-                "BookingOperations" => null,
-                "UpsellOptionsList" => null,
-                "PaymentKey" => null,
-                "HotelConfirmationNumber" => null,
-                "HelpCenter" => null,
-                "MiniFareRules" => $MiniFareRules,
-                "FareClassification" => $FareClassification,
-                "CustomizedFareType" => null,
-                //"IsVATApplicable" => true,
-                "ResultType" => 2
+        $bookingRequest = (object) [
+            'ResultId' => $flight['ResultIndex'],
+            'Itinerary' => (object) [
+                'AgencySalesRepresentative' => 0,
+                'IsHoldEligibleForLcc' => false,
+                'IsManual' => false,
+                'IssuancePCC' => null,
+                'FlightId' => 0,
+                'Segments_BE' => $Segments_BE,
+                'Passenger' => $passengers,
+                'FareRules' => $FareRules,
+                'PNR' => '',
+                'InactivePNR' => null,
+                'SplitPNR' => null,
+                'SupplierCode' => null,
+                'FlightBookingSource' => 72,
+                'Destination' => $Destination,
+                'FareType' => 'PUBL',
+                'LastTicketDate' => $LastTicketDate,
+                'LastVoidDate' => '0001-01-01T00:00:00',
+                'Origin' => $Origin,
+                'CreatedOn' => $todayDate,
+                'TboAirBookingSourceId' => 0,
+                'PaymentMode' => 0,
+                // "SourceSessionId" => "03e32262-9dd6-4248-a304-ade5f182edb3",
+                'FailedBookingId' => 0,
+                'ValidatingAirline' => null,
+                'ValidatingAirlineCode' => $ValidatingAirline,
+                'Ticketed' => false,
+                'IsDomestic' => false,
+                'AirlineCode' => $AirlineCode,
+                'TravelDate' => '2024-05-24T21:20:00',
+                'NonRefundable' => true,
+                'BookingId' => 0,
+                'BookingMode' => 1,
+                'AgentRefNo' => null,
+                'IsLcc' => $fareQuoteData['IsLCC'],
+                'ClientIP' => request()->ip(),
+                'AirlineRemark' => $fareQuoteData['AirlineRemark'] ?? null,
+                'SearchType' => 1,
+                'OnBehalfOf' => 0,
+                'EarnedLoyaltyPoints' => 0,
+                'TrackingId' => $traceId,
+                'SupplierGroupId' => 5,
+                'TripId' => null,
+                'TripName' => 'Anand Pathak Trip',
+                'PNRStatus' => 0,
+                'StaffRemarks' => null,
+                'PricingKeyDetail' => null,
+                'TokenId' => $tokenId,
+                'SSRData' => null,
+                'isNewBooking' => false,
+                'ParentBookingId' => 0,
+                'isFromBulkImport' => false,
+                'isApplicableforNewWidgetWallet' => false,
+                'callBackUrl' => 'tboairdemo.techmaster.in',
+                'isCancellationcoverAdded' => false,
+                'FoidDetails' => [],
+                'BookingOperations' => null,
+                'UpsellOptionsList' => null,
+                'PaymentKey' => null,
+                'HotelConfirmationNumber' => null,
+                'HelpCenter' => null,
+                'MiniFareRules' => $MiniFareRules,
+                'FareClassification' => $FareClassification,
+                'CustomizedFareType' => null,
+                // "IsVATApplicable" => true,
+                'ResultType' => 2,
             ],
-            "PNR" => "",
-            "BookingId" => "",
-            "CorporateCode" => null,
-            "ConfirmPriceChangeTicket" => false,
-            "IPAddress" => request()->ip(),
-            "IsGenerateTicketRequestFromQueues" => false,
-            "SegmentAnalyticsToken" => "fdhzelbwysit22iibnxsghsj",
-            "TokenId" => $tokenId,
-            "TrackingId" => $traceId,
-            "EndUserBrowserAgent" => "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-            "PointOfSale" => "IN",
-            "RequestOrigin" => "India-https://www.tboair.com",
-            "UserData" =>  $userData,
-            "WebServerIP" => null
+            'PNR' => '',
+            'BookingId' => '',
+            'CorporateCode' => null,
+            'ConfirmPriceChangeTicket' => false,
+            'IPAddress' => request()->ip(),
+            'IsGenerateTicketRequestFromQueues' => false,
+            'SegmentAnalyticsToken' => 'fdhzelbwysit22iibnxsghsj',
+            'TokenId' => $tokenId,
+            'TrackingId' => $traceId,
+            'EndUserBrowserAgent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'PointOfSale' => 'IN',
+            'RequestOrigin' => 'India-https://www.tboair.com',
+            'UserData' => $userData,
+            'WebServerIP' => null,
         ];
-     
 
-
-        if($fareQuoteData['IsLCC']){
-           
-        
-
+        if ($fareQuoteData['IsLCC']) {
 
             Log::info('ticket-flight-request', ['trace_id' => $traceId, 'result_index' => $flight['ResultIndex'] ?? null]);
             $responseTicket = Http::timeout(1900)->post(config('services.tbo_flight.after_booking').'/Booking/Ticket/', $bookingRequest);
             $responseTicketData = $responseTicket->json();
-            
+
             Log::info('Five: ticket-flight-response ');
 
             Log::info('ticket-flight-response', ['trace_id' => $traceId, 'pnr' => $responseTicketData['PNR'] ?? null, 'status' => $responseTicketData['Status'] ?? null]);
 
-            
+            return ['responseTicketData' => $responseTicketData];
 
-            return ['responseTicketData'=>$responseTicketData];
+        } else {
 
-        }else{
-            
+            Log::info('book-flight-request', ['trace_id' => $traceId, 'result_index' => $flight['ResultIndex'] ?? null]);
+            $bookingResponse = Http::timeout(1900)->post(config('services.tbo_flight.after_booking').'/Booking/Book/', $bookingRequest);
+            $responseData = $bookingResponse->json();
 
-                Log::info('book-flight-request', ['trace_id' => $traceId, 'result_index' => $flight['ResultIndex'] ?? null]);
-                $bookingResponse = Http::timeout(1900)->post(config('services.tbo_flight.after_booking').'/Booking/Book/', $bookingRequest);
-                $responseData = $bookingResponse->json();
-                
-                Log::info('book-flight-response', ['trace_id' => $traceId, 'pnr' => $responseData['PNR'] ?? null, 'status' => $responseData['Status'] ?? null]);
+            Log::info('book-flight-response', ['trace_id' => $traceId, 'pnr' => $responseData['PNR'] ?? null, 'status' => $responseData['Status'] ?? null]);
 
+            if (! ((isset($responseData['IsSuccess']) && $responseData['IsSuccess']) ||
+            (isset($responseData['Status']) && $responseData['Status'] == 1))) {
+                return $responseData;
+            }
 
-                if (!((isset($responseData['IsSuccess']) && $responseData['IsSuccess']) || 
+            // $responseData['IsPriceChanged'] = true;
+            // First, check if the keys exist before accessing them
+            if ((isset($responseData['IsPriceChanged']) && $responseData['IsPriceChanged'] === true) ||
+                (isset($responseData['IsTimeChanged']) && $responseData['IsTimeChanged'] === true)) {
+
+                $errorType = '';
+                $message = '';
+
+                // Determine error type
+                if (isset($responseData['IsPriceChanged']) && $responseData['IsPriceChanged'] === true &&
+                    isset($responseData['IsTimeChanged']) && $responseData['IsTimeChanged'] === true) {
+                    $errorType = 'price_and_time_changed';
+                    $message = 'Flight fare and schedule have changed. Please search again.';
+                } elseif (isset($responseData['IsPriceChanged']) && $responseData['IsPriceChanged'] === true) {
+                    $errorType = 'price_changed';
+                    $message = 'Fare has changed. Please search again with current prices.';
+                } else {
+                    $errorType = 'time_changed';
+                    $message = 'Flight schedule has changed. Please search again.';
+                }
+
+                Log::warning("$errorType detected - Attempting to cancel booking");
+
+                // Only attempt cancellation if we have required parameters
+                if (isset($responseData['PNR']) && $responseData['PNR'] && isset($responseData['BookingId']) && $responseData['BookingId']) {
+                    try {
+                        $cancelRequest = [
+                            'EndUserIp' => request()->ip(),
+                            'TokenId' => $tokenId,
+                            'PNR' => $responseData['PNR'],
+                            'LastName' => 'John',
+                            'BookingId' => $responseData['BookingId'],
+                        ];
+
+                        Log::info('Attempting cancellation request', ['pnr' => $cancelRequest['PNR'] ?? null, 'booking_id' => $cancelRequest['BookingId'] ?? null]);
+
+                        // Try different cancel endpoints
+                        $cancelResponse = Http::timeout(30)->post(config('services.tbo_flight.after_booking').'/Booking/ReleasePNR/', $cancelRequest);
+                        // OR try this alternative endpoint:
+                        // $cancelResponse = Http::timeout(30)->post(config('services.tbo_flight.url').'/Booking/CancelBooking/', $cancelRequest);
+
+                        $cancelData = $cancelResponse->json();
+                        Log::info('Cancellation response', ['pnr' => $cancelRequest['PNR'] ?? null, 'status' => $cancelData['Status'] ?? null]);
+
+                    } catch (\Exception $e) {
+                        Log::error('Cancellation failed:', ['error' => $e->getMessage()]);
+                    }
+                } else {
+                    Log::warning('Cannot cancel - Missing PNR or BookingId', [
+                        'PNR' => $responseData['PNR'] ?? null,
+                        'BookingId' => $responseData['BookingId'] ?? null,
+                    ]);
+                }
+
+                return [
+                    'status' => 'error',
+                    'error_type' => $errorType,
+                    'message' => $message,
+                    'new_price' => $responseData['NewPrice'] ?? $responseData['Fare'] ?? null,
+                    // 'original_price' => $bookingRequest['TotalPrice'] ?? null,
+                    'cancelled' => true,
+                    'response_data' => $responseData,
+                ];
+            }
+
+            // If no price/time change detected, continue with normal flow
+            if (! ((isset($responseData['IsSuccess']) && $responseData['IsSuccess']) ||
                 (isset($responseData['Status']) && $responseData['Status'] == 1))) {
-                    return $responseData;
-                }
-                
+                return $responseData;
+            }
 
+            $PNR = $responseData['PNR'] ?? null;
 
-             
-                //$responseData['IsPriceChanged'] = true;
-                // First, check if the keys exist before accessing them
-                if ((isset($responseData['IsPriceChanged']) && $responseData['IsPriceChanged'] === true) ||
-                    (isset($responseData['IsTimeChanged']) && $responseData['IsTimeChanged'] === true)) {
-                    
-                    $errorType = '';
-                    $message = '';
-                    
-                    // Determine error type
-                    if (isset($responseData['IsPriceChanged']) && $responseData['IsPriceChanged'] === true && 
-                        isset($responseData['IsTimeChanged']) && $responseData['IsTimeChanged'] === true) {
-                        $errorType = 'price_and_time_changed';
-                        $message = 'Flight fare and schedule have changed. Please search again.';
-                    } elseif (isset($responseData['IsPriceChanged']) && $responseData['IsPriceChanged'] === true) {
-                        $errorType = 'price_changed';
-                        $message = 'Fare has changed. Please search again with current prices.';
-                    } else {
-                        $errorType = 'time_changed';
-                        $message = 'Flight schedule has changed. Please search again.';
-                    }
-                    
-                    Log::warning("$errorType detected - Attempting to cancel booking");
-                    
-                    // Only attempt cancellation if we have required parameters
-                    if (isset($responseData['PNR']) && $responseData['PNR'] && isset($responseData['BookingId']) && $responseData['BookingId']) {
-                        try {
-                            $cancelRequest = [
-                                'EndUserIp' => request()->ip(),
-                                'TokenId' => $tokenId,
-                                'PNR' => $responseData['PNR'],
-                                'LastName' => "John",
-                                'BookingId' => $responseData['BookingId']
-                            ];
-                            
-                            Log::info('Attempting cancellation request', ['pnr' => $cancelRequest['PNR'] ?? null, 'booking_id' => $cancelRequest['BookingId'] ?? null]);
-                            
-                            // Try different cancel endpoints
-                            $cancelResponse = Http::timeout(30)->post(config('services.tbo_flight.after_booking').'/Booking/ReleasePNR/', $cancelRequest);
-                            // OR try this alternative endpoint:
-                            // $cancelResponse = Http::timeout(30)->post(config('services.tbo_flight.url').'/Booking/CancelBooking/', $cancelRequest);
-                            
-                            $cancelData = $cancelResponse->json();
-                            Log::info('Cancellation response', ['pnr' => $cancelRequest['PNR'] ?? null, 'status' => $cancelData['Status'] ?? null]);
-                            
-                        } catch (\Exception $e) {
-                            Log::error('Cancellation failed:', ['error' => $e->getMessage()]);
-                        }
-                    } else {
-                        Log::warning('Cannot cancel - Missing PNR or BookingId', [
-                            'PNR' => $responseData['PNR'] ?? null,
-                            'BookingId' => $responseData['BookingId'] ?? null
-                        ]);
-                    }
-                    
-                    return [
-                        'status' => 'error',
-                        'error_type' => $errorType,
-                        'message' => $message,
-                        'new_price' => $responseData['NewPrice'] ?? $responseData['Fare'] ?? null,
-                       // 'original_price' => $bookingRequest['TotalPrice'] ?? null,
-                        'cancelled' => true,
-                        'response_data' => $responseData
-                    ];
-                }
+            if (! $PNR) {
+                Log::error('No PNR generated despite successful response');
 
-                // If no price/time change detected, continue with normal flow
-                if (!((isset($responseData['IsSuccess']) && $responseData['IsSuccess']) || 
-                    (isset($responseData['Status']) && $responseData['Status'] == 1))) {
-                    return $responseData;
-                }
+                return [
+                    'status' => 'error',
+                    'message' => 'Booking failed - No PNR generated',
+                    'response_data' => $responseData,
+                ];
+            }
 
-                $PNR = $responseData['PNR'] ?? null;
+            $PNR = $responseData['PNR'] ?? null;
 
-                if (!$PNR) {
-                    Log::error('No PNR generated despite successful response');
-                    return [
-                        'status' => 'error', 
-                        'message' => 'Booking failed - No PNR generated',
-                        'response_data' => $responseData
-                    ];
-                }
+            $bookingRequest->PNR = $PNR;
 
- 
+            if (isset($bookingRequest->Itinerary)) {
+                $bookingRequest->Itinerary->PNR = $PNR;
+            }
 
+            Log::info('ticket-flight-request', ['trace_id' => $traceId, 'pnr' => $PNR]);
+            $responseTicket = Http::timeout(1900)->post(config('services.tbo_flight.after_booking').'/Booking/Ticket/', $bookingRequest);
+            $responseTicketData = $responseTicket->json();
 
-                $PNR = $responseData['PNR'] ?? null;
+            Log::info('ticket-flight-response', ['trace_id' => $traceId, 'pnr' => $responseTicketData['PNR'] ?? $PNR, 'status' => $responseTicketData['Status'] ?? null]);
 
-                $bookingRequest->PNR = $PNR;
-
-                if (isset($bookingRequest->Itinerary)) {
-                    $bookingRequest->Itinerary->PNR = $PNR;
-                }
-        
-
-
-                Log::info('ticket-flight-request', ['trace_id' => $traceId, 'pnr' => $PNR]);
-                $responseTicket = Http::timeout(1900)->post(config('services.tbo_flight.after_booking').'/Booking/Ticket/', $bookingRequest);
-                $responseTicketData = $responseTicket->json();
-                
-                Log::info('ticket-flight-response', ['trace_id' => $traceId, 'pnr' => $responseTicketData['PNR'] ?? $PNR, 'status' => $responseTicketData['Status'] ?? null]);
-
-                
-
-                return ['responseTicketData'=>$responseTicketData, 'responseBookingData'=>$responseData];
+            return ['responseTicketData' => $responseTicketData, 'responseBookingData' => $responseData];
 
         }
-        
-       
-
 
     }
 
@@ -1984,44 +1963,44 @@ class TBOFlightBookingService
      */
     public function ticketLCC($traceId, $flight, $fareRuleData = null, $fareQuoteData = null)
     {
-        Log::info('Starting LCC direct ticketing for flight: ' . $flight['ResultIndex']);
-        
+        Log::info('Starting LCC direct ticketing for flight: '.$flight['ResultIndex']);
+
         // Fetch SSR data from TBO API for accurate pricing and descriptions
         $ssrApiData = null;
         try {
             $ssrResponse = $this->getSSRData($traceId, $flight['ResultIndex']);
             if ($ssrResponse && isset($ssrResponse['Response']['ResponseStatus']) && $ssrResponse['Response']['ResponseStatus'] == 1) {
                 $ssrApiData = $ssrResponse['Response'];
-                Log::info('SSR API successful for LCC flight: ' . $flight['ResultIndex']);
+                Log::info('SSR API successful for LCC flight: '.$flight['ResultIndex']);
             } else {
-                Log::warning('SSR API failed for LCC flight: ' . $flight['ResultIndex'], $ssrResponse ?: []);
+                Log::warning('SSR API failed for LCC flight: '.$flight['ResultIndex'], $ssrResponse ?: []);
             }
         } catch (\Exception $e) {
-            Log::error('SSR API exception for LCC flight: ' . $flight['ResultIndex'], ['error' => $e->getMessage()]);
+            Log::error('SSR API exception for LCC flight: '.$flight['ResultIndex'], ['error' => $e->getMessage()]);
         }
-        
+
         // Call FareRule API before LCC ticketing if not already provided
-        if (!$fareRuleData) {
-            Log::info('Calling FareRule API before LCC ticketing for flight: ' . $flight['ResultIndex']);
+        if (! $fareRuleData) {
+            Log::info('Calling FareRule API before LCC ticketing for flight: '.$flight['ResultIndex']);
             $fareRuleResponse = $this->fareRules($traceId, $flight['ResultIndex']);
-            if (!$fareRuleResponse || !isset($fareRuleResponse['Response']['ResponseStatus']) || $fareRuleResponse['Response']['ResponseStatus'] != 1) {
-                Log::error('FareRule API failed for LCC flight: ' . $flight['ResultIndex'], $fareRuleResponse ?: []);
+            if (! $fareRuleResponse || ! isset($fareRuleResponse['Response']['ResponseStatus']) || $fareRuleResponse['Response']['ResponseStatus'] != 1) {
+                Log::error('FareRule API failed for LCC flight: '.$flight['ResultIndex'], $fareRuleResponse ?: []);
                 // Continue with ticketing even if FareRule fails, but log the error
             } else {
                 $fareRuleData = $fareRuleResponse['Response']['FareRules'] ?? $fareRuleResponse['Response']['FareRule'] ?? $fareRuleResponse;
-                Log::info('FareRule API successful for LCC flight: ' . $flight['ResultIndex']);
+                Log::info('FareRule API successful for LCC flight: '.$flight['ResultIndex']);
             }
         }
 
         // Always call FareQuote API immediately before LCC ticketing for freshest data (TBO requirement)
-        Log::info('Calling fresh FareQuote API immediately before LCC ticketing for flight: ' . $flight['ResultIndex']);
+        Log::info('Calling fresh FareQuote API immediately before LCC ticketing for flight: '.$flight['ResultIndex']);
         $fareQuoteResponse = $this->fareQuote($traceId, $flight['ResultIndex']);
-        if (!$fareQuoteResponse || !isset($fareQuoteResponse['Response']['ResponseStatus']) || $fareQuoteResponse['Response']['ResponseStatus'] != 1) {
-            Log::error('Fresh FareQuote API failed for LCC flight: ' . $flight['ResultIndex'], $fareQuoteResponse);
+        if (! $fareQuoteResponse || ! isset($fareQuoteResponse['Response']['ResponseStatus']) || $fareQuoteResponse['Response']['ResponseStatus'] != 1) {
+            Log::error('Fresh FareQuote API failed for LCC flight: '.$flight['ResultIndex'], $fareQuoteResponse);
             // Continue with ticketing with existing data, but log the error
         } else {
             $fareQuoteData = $fareQuoteResponse['Response']['Results'] ?? $fareQuoteResponse['Response'];
-            Log::info('Fresh FareQuote API successful for LCC flight: ' . $flight['ResultIndex']);
+            Log::info('Fresh FareQuote API successful for LCC flight: '.$flight['ResultIndex']);
         }
 
         // For LCC, we call ticket directly without booking
@@ -2047,13 +2026,13 @@ class TBOFlightBookingService
     public function refund($request)
     {
         $response = Http::timeout(1900)->post(config('services.tbo_flight.after_booking').'/Booking/RefundApi', [
-            'TokenId'     => $this->authenticate(),
-            'EndUserIp'   => request()->ip(),
-            'BookingId'   => $request->booking_id,
-            'PaxId'       => $request->pax_ids,
-            'SegmentId'   => $request->segment_ids,
+            'TokenId' => $this->authenticate(),
+            'EndUserIp' => request()->ip(),
+            'BookingId' => $request->booking_id,
+            'PaxId' => $request->pax_ids,
+            'SegmentId' => $request->segment_ids,
             'RequestType' => 'Refund',
-            'Remarks'     => $request->remarks ?? 'Refund Request',
+            'Remarks' => $request->remarks ?? 'Refund Request',
         ]);
 
         return $response->json();
@@ -2067,9 +2046,10 @@ class TBOFlightBookingService
         // Check if SSR data is already cached in session
         $cacheKey = "ssr_api_data_{$traceId}_{$resultIndex}";
         $cachedSSR = session($cacheKey);
-        
+
         if ($cachedSSR) {
             Log::info('Using cached SSR data', ['cache_key' => $cacheKey]);
+
             // Return in same format as fresh API call - wrap cached Response in full structure
             return ['Response' => $cachedSSR];
         }
@@ -2077,24 +2057,26 @@ class TBOFlightBookingService
         // Fetch SSR data from TBO API
         Log::info('Fetching SSR data from TBO API', [
             'trace_id' => $traceId,
-            'result_index' => $resultIndex
+            'result_index' => $resultIndex,
         ]);
-        
+
         $ssrResponse = $this->ssr($traceId, $resultIndex);
-        
+
         Log::info('SSR API Response', $ssrResponse);
 
         if (isset($ssrResponse['Response'])) {
             $ssrData = $ssrResponse['Response'];
-            
+
             // Cache the SSR data in session for reuse during booking process
             session([$cacheKey => $ssrData]);
-            
+
             Log::info('SSR data cached successfully', ['cache_key' => $cacheKey]);
+
             return $ssrResponse; // Return full response structure for consistency
         }
 
         Log::warning('No SSR data found in API response', $ssrResponse);
+
         return [];
     }
 
@@ -2114,9 +2096,9 @@ class TBOFlightBookingService
                 'has_MealDynamic' => isset($ssrData['MealDynamic']),
                 'MealDynamic_count' => isset($ssrData['MealDynamic']) ? count($ssrData['MealDynamic']) : 0,
                 'has_Meal' => isset($ssrData['Meal']),
-                'Meal_count' => isset($ssrData['Meal']) ? count($ssrData['Meal']) : 0
+                'Meal_count' => isset($ssrData['Meal']) ? count($ssrData['Meal']) : 0,
             ],
-            'ssr_meal_sample' => isset($ssrData['MealDynamic'][0]) ? $ssrData['MealDynamic'][0] : (isset($ssrData['Meal'][0]) ? $ssrData['Meal'][0] : 'no_meal_data')
+            'ssr_meal_sample' => isset($ssrData['MealDynamic'][0]) ? $ssrData['MealDynamic'][0] : (isset($ssrData['Meal'][0]) ? $ssrData['Meal'][0] : 'no_meal_data'),
         ]);
 
         // For LCC airlines - check MealDynamic array
@@ -2125,41 +2107,43 @@ class TBOFlightBookingService
             foreach ($ssrData['MealDynamic'] as $segmentIndex => $flightSegmentMeals) {
                 Log::info("Processing meal segment {$segmentIndex}", [
                     'is_array' => is_array($flightSegmentMeals),
-                    'segment_data' => is_array($flightSegmentMeals) ? 'array_with_' . count($flightSegmentMeals) . '_items' : $flightSegmentMeals
+                    'segment_data' => is_array($flightSegmentMeals) ? 'array_with_'.count($flightSegmentMeals).'_items' : $flightSegmentMeals,
                 ]);
-                
+
                 if (is_array($flightSegmentMeals)) {
                     foreach ($flightSegmentMeals as $mealIndex => $meal) {
                         Log::info("Checking meal item {$mealIndex}", [
                             'meal_code' => $meal['Code'] ?? 'no_code',
                             'meal_description' => $meal['AirlineDescription'] ?? $meal['Description'] ?? 'no_description',
                             'meal_price' => $meal['Price'] ?? 'no_price',
-                            'full_meal_data' => $meal
+                            'full_meal_data' => $meal,
                         ]);
-                        
+
                         if (isset($meal['Code']) && $meal['Code'] === $mealCode) {
                             Log::info('Found matching meal in MealDynamic SSR data', [
                                 'meal_code' => $mealCode,
                                 'matched_api_code' => $meal['Code'],
-                                'meal_data' => $meal
+                                'meal_data' => $meal,
                             ]);
+
                             return $meal;
                         }
                     }
                 } else {
                     // Handle case where flightSegmentMeals is not an array (direct meal object)
                     if (isset($flightSegmentMeals['Code'])) {
-                        Log::info("Checking direct meal object in MealDynamic", [
+                        Log::info('Checking direct meal object in MealDynamic', [
                             'meal_code' => $flightSegmentMeals['Code'],
-                            'meal_data' => $flightSegmentMeals
+                            'meal_data' => $flightSegmentMeals,
                         ]);
-                        
+
                         if ($flightSegmentMeals['Code'] === $mealCode) {
                             Log::info('Found matching meal in direct MealDynamic SSR data', [
                                 'meal_code' => $mealCode,
                                 'matched_api_code' => $flightSegmentMeals['Code'],
-                                'meal_data' => $flightSegmentMeals
+                                'meal_data' => $flightSegmentMeals,
                             ]);
+
                             return $flightSegmentMeals;
                         }
                     }
@@ -2170,47 +2154,49 @@ class TBOFlightBookingService
         // For Non-LCC airlines - check Meal array
         if (isset($ssrData['Meal']) && is_array($ssrData['Meal'])) {
             Log::info('Checking Meal array for Non-LCC airlines', [
-                'meal_count' => count($ssrData['Meal'])
+                'meal_count' => count($ssrData['Meal']),
             ]);
-            
+
             // Handle both direct array and nested array structure
             foreach ($ssrData['Meal'] as $mealIndex => $mealData) {
                 Log::info("Processing meal data {$mealIndex}", [
                     'is_array' => is_array($mealData),
-                    'meal_data_sample' => is_array($mealData) ? 'nested_array' : $mealData
+                    'meal_data_sample' => is_array($mealData) ? 'nested_array' : $mealData,
                 ]);
-                
+
                 if (is_array($mealData)) {
                     // Nested structure
                     foreach ($mealData as $subMealIndex => $meal) {
                         Log::info("Checking nested meal item {$subMealIndex}", [
                             'meal_code' => $meal['Code'] ?? 'no_code',
-                            'meal_data' => $meal
+                            'meal_data' => $meal,
                         ]);
-                        
+
                         if (isset($meal['Code']) && $meal['Code'] === $mealCode) {
                             Log::info('Found matching meal in nested Meal SSR data', [
                                 'meal_code' => $mealCode,
                                 'matched_api_code' => $meal['Code'],
-                                'meal_data' => $meal
+                                'meal_data' => $meal,
                             ]);
+
                             return $meal;
                         }
                     }
                 } else {
                     // Direct structure
                     if (isset($mealData['Code'])) {
-                        Log::info("Checking direct meal data", [
+                        Log::info('Checking direct meal data', [
                             'meal_code' => $mealData['Code'],
-                            'meal_data' => $mealData
+                            'meal_data' => $mealData,
                         ]);
-                        
+
                         if ($mealData['Code'] === $mealCode) {
                             Log::info('Found matching meal in direct Meal SSR data', [
                                 'meal_code' => $mealCode,
                                 'matched_api_code' => $mealData['Code'],
-                                'meal_data' => $mealData
+                                'meal_data' => $mealData,
                             ]);
+
                             return $mealData;
                         }
                     }
@@ -2221,12 +2207,12 @@ class TBOFlightBookingService
         Log::info('No matching meal found in SSR data using strict matching, trying fallback patterns', [
             'meal_code' => $mealCode,
             'checked_MealDynamic' => isset($ssrData['MealDynamic']),
-            'checked_Meal' => isset($ssrData['Meal'])
+            'checked_Meal' => isset($ssrData['Meal']),
         ]);
-        
+
         // Fallback: Try pattern matching for common meal code variations
         $mealPatterns = $this->getMealCodePatterns($mealCode);
-        
+
         // Check MealDynamic with patterns
         if (isset($ssrData['MealDynamic']) && is_array($ssrData['MealDynamic'])) {
             foreach ($ssrData['MealDynamic'] as $flightSegmentMeals) {
@@ -2236,15 +2222,16 @@ class TBOFlightBookingService
                             Log::info('Found meal using pattern matching in MealDynamic', [
                                 'original_code' => $mealCode,
                                 'matched_pattern' => $meal['Code'],
-                                'meal_data' => $meal
+                                'meal_data' => $meal,
                             ]);
+
                             return $meal;
                         }
                     }
                 }
             }
         }
-        
+
         // Check Meal with patterns
         if (isset($ssrData['Meal']) && is_array($ssrData['Meal'])) {
             foreach ($ssrData['Meal'] as $mealData) {
@@ -2254,8 +2241,9 @@ class TBOFlightBookingService
                             Log::info('Found meal using pattern matching in nested Meal', [
                                 'original_code' => $mealCode,
                                 'matched_pattern' => $meal['Code'],
-                                'meal_data' => $meal
+                                'meal_data' => $meal,
                             ]);
+
                             return $meal;
                         }
                     }
@@ -2264,8 +2252,9 @@ class TBOFlightBookingService
                         Log::info('Found meal using pattern matching in direct Meal', [
                             'original_code' => $mealCode,
                             'matched_pattern' => $mealData['Code'],
-                            'meal_data' => $mealData
+                            'meal_data' => $mealData,
                         ]);
+
                         return $mealData;
                     }
                 }
@@ -2277,8 +2266,8 @@ class TBOFlightBookingService
             'meal_patterns_tried' => $mealPatterns,
             'full_ssr_meal_dump' => [
                 'MealDynamic' => $ssrData['MealDynamic'] ?? 'no_meal_dynamic',
-                'Meal' => $ssrData['Meal'] ?? 'no_meal'
-            ]
+                'Meal' => $ssrData['Meal'] ?? 'no_meal',
+            ],
         ]);
 
         return null;
@@ -2290,25 +2279,22 @@ class TBOFlightBookingService
     private function getMealCodePatterns($mealCode)
     {
         $patterns = [$mealCode]; // Always include original
-        
+
         // Add common variations
         $upperCode = strtoupper($mealCode);
         $lowerCode = strtolower($mealCode);
-        
+
         $patterns[] = $upperCode;
         $patterns[] = $lowerCode;
-        
+
         // Add variations with/without trailing characters
-        $patterns[] = $upperCode . '#1';
-        $patterns[] = $upperCode . '_1';
-        $patterns[] = $upperCode . '-1';
-        
+        $patterns[] = $upperCode.'#1';
+        $patterns[] = $upperCode.'_1';
+        $patterns[] = $upperCode.'-1';
+
         // Remove duplicates
         return array_unique($patterns);
     }
-
- 
-  
 
     /**
      * Create meal SSR object with proper TBO structure using API data
@@ -2317,6 +2303,7 @@ class TBOFlightBookingService
     {
         if (empty($mealCode) || $mealCode === 'none') {
             Log::info('No meal SSR requested', ['meal_code' => $mealCode]);
+
             return null;
         }
 
@@ -2324,20 +2311,21 @@ class TBOFlightBookingService
             'meal_code' => $mealCode,
             'origin' => $origin,
             'destination' => $destination,
-            'has_ssr_data' => !empty($ssrData),
+            'has_ssr_data' => ! empty($ssrData),
             'ssr_structure' => [
                 'has_MealDynamic' => isset($ssrData['MealDynamic']),
                 'MealDynamic_count' => isset($ssrData['MealDynamic']) ? count($ssrData['MealDynamic']) : 0,
                 'has_Meal' => isset($ssrData['Meal']),
-                'Meal_count' => isset($ssrData['Meal']) ? count($ssrData['Meal']) : 0
-            ]
+                'Meal_count' => isset($ssrData['Meal']) ? count($ssrData['Meal']) : 0,
+            ],
         ]);
 
         // Try to find meal in SSR API data first
         $mealFromAPI = $this->findMealInSSR($mealCode, $ssrData);
-        
+
         if ($mealFromAPI) {
             Log::info('Found meal in SSR API data', $mealFromAPI);
+
             return [
                 'Code' => $mealFromAPI['Code'],
                 'Description' => $mealFromAPI['AirlineDescription'] ?? $this->getMealDescription($mealCode),
@@ -2345,7 +2333,7 @@ class TBOFlightBookingService
                 'Amount' => floatval($mealFromAPI['Price'] ?? 0),
                 'Currency' => $mealFromAPI['Currency'] ?? 'SAR',
                 'Origin' => $mealFromAPI['Origin'] ?? $origin,
-                'Destination' => $mealFromAPI['Destination'] ?? $destination
+                'Destination' => $mealFromAPI['Destination'] ?? $destination,
             ];
         }
 
@@ -2357,14 +2345,13 @@ class TBOFlightBookingService
             'Amount' => 0.0,
             'Currency' => 'SAR',
             'Origin' => $origin,
-            'Destination' => $destination
+            'Destination' => $destination,
         ];
-        
+
         Log::info('Using fallback meal data (not found in SSR API)', $fallbackMeal);
+
         return $fallbackMeal;
     }
-
-  
 
     /**
      * Validate and log SSR data structure for debugging
@@ -2378,9 +2365,9 @@ class TBOFlightBookingService
                 'meal_count' => isset($userSSRData['meal']) ? count($userSSRData['meal']) : 0,
                 'baggage_count' => isset($userSSRData['baggage']) ? count($userSSRData['baggage']) : 0,
             ],
-            'full_data' => $userSSRData
+            'full_data' => $userSSRData,
         ]);
-        
+
         return isset($userSSRData['meal']) && isset($userSSRData['baggage']);
     }
 
@@ -2410,7 +2397,7 @@ class TBOFlightBookingService
             'RVML' => 'Raw Vegetarian Meal',
             'SFML' => 'Seafood Meal',
             'SPML' => 'Special Meal',
-            'VOML' => 'Vegetarian Oriental Meal'
+            'VOML' => 'Vegetarian Oriental Meal',
         ];
 
         return $descriptions[$mealCode] ?? 'Special Meal';
@@ -2458,6 +2445,7 @@ class TBOFlightBookingService
 
         // Default to false (Non-LCC) if we can't determine
         Log::info('Could not determine if flight is LCC, defaulting to Non-LCC');
+
         return false;
     }
 
@@ -2466,7 +2454,7 @@ class TBOFlightBookingService
      */
     public function parseSSRResponse($ssrResponse, $isLcc = null)
     {
-        if (!isset($ssrResponse['Response'])) {
+        if (! isset($ssrResponse['Response'])) {
             return null;
         }
 
@@ -2475,14 +2463,16 @@ class TBOFlightBookingService
         // Check for errors first
         if (isset($response['ResponseStatus']) && $response['ResponseStatus'] == 4) {
             Log::warning('SSR API session expired', ['response' => $response]);
+
             return null;
         }
 
-        if (!isset($response['ResponseStatus']) || $response['ResponseStatus'] != 1) {
+        if (! isset($response['ResponseStatus']) || $response['ResponseStatus'] != 1) {
             Log::warning('SSR API failed', ['response' => $response]);
+
             return null;
         }
-        
+
         // Auto-detect if LCC if not provided
         if ($isLcc === null) {
             $isLcc = $this->isLccFlight();
@@ -2493,14 +2483,14 @@ class TBOFlightBookingService
             'has_baggage' => isset($response['Baggage']),
             'has_meal_dynamic' => isset($response['MealDynamic']),
             'has_meal' => isset($response['Meal']),
-            'has_seat_preference' => isset($response['SeatPreference'])
+            'has_seat_preference' => isset($response['SeatPreference']),
         ]);
 
         $parsedResponse = [
             'is_lcc' => $isLcc,
             'MealDynamic' => [],
             'baggage' => [],
-            'seats' => []
+            'seats' => [],
         ];
 
         if ($isLcc) {
@@ -2515,7 +2505,7 @@ class TBOFlightBookingService
                         'origin' => $meal['Origin'] ?? '',
                         'destination' => $meal['Destination'] ?? '',
                         'airline_code' => $meal['AirlineCode'] ?? '',
-                        'flight_number' => $meal['FlightNumber'] ?? ''
+                        'flight_number' => $meal['FlightNumber'] ?? '',
                     ];
                 }
             }
@@ -2531,7 +2521,7 @@ class TBOFlightBookingService
                         'origin' => $baggage['Origin'] ?? '',
                         'destination' => $baggage['Destination'] ?? '',
                         'airline_code' => $baggage['AirlineCode'] ?? '',
-                        'flight_number' => $baggage['FlightNumber'] ?? ''
+                        'flight_number' => $baggage['FlightNumber'] ?? '',
                     ];
                 }
             }
@@ -2547,7 +2537,7 @@ class TBOFlightBookingService
                         'origin' => '',
                         'destination' => '',
                         'airline_code' => '',
-                        'flight_number' => ''
+                        'flight_number' => '',
                     ];
                 }
             }
@@ -2560,7 +2550,7 @@ class TBOFlightBookingService
                         'code' => $seat['Code'] ?? '',
                         'description' => $seat['Description'] ?? '',
                         'price' => 0, // Non-LCC seat preferences are usually indicative
-                        'currency' => 'SAR'
+                        'currency' => 'SAR',
                     ];
                 }
             }
@@ -2569,7 +2559,7 @@ class TBOFlightBookingService
         Log::info('SSR response parsed', [
             'meals_count' => count($parsedResponse['meals']),
             'baggage_count' => count($parsedResponse['baggage']),
-            'seats_count' => count($parsedResponse['seats'])
+            'seats_count' => count($parsedResponse['seats']),
         ]);
 
         return $parsedResponse;
@@ -2585,17 +2575,17 @@ class TBOFlightBookingService
             Log::info('Fetching flight booking details', [
                 'pnr' => $pnr,
                 'booking_id' => $bookingId,
-                'has_token' => !empty($tokenId)
+                'has_token' => ! empty($tokenId),
             ]);
 
             $requestData = [
                 'TokenId' => $tokenId ?? $this->authenticate(),
                 'PNR' => $pnr,
-                'EndUserIp' => request()->ip()
+                'EndUserIp' => request()->ip(),
             ];
 
             // Add BookingId if provided (more specific lookup)
-            if (!empty($bookingId)) {
+            if (! empty($bookingId)) {
                 $requestData['BookingId'] = $bookingId;
             }
 
@@ -2607,19 +2597,20 @@ class TBOFlightBookingService
                 'pnr' => $pnr,
                 'booking_id' => $bookingId,
                 'response_status' => $response->status(),
-                'response_data' => $responseData
+                'response_data' => $responseData,
             ]);
 
             // Check for API errors
             if (isset($responseData['Response']['Error'])) {
                 Log::error('TBO GetBookingDetail API error', [
                     'pnr' => $pnr,
-                    'error' => $responseData['Response']['Error']
+                    'error' => $responseData['Response']['Error'],
                 ]);
+
                 return [
                     'status' => 'error',
                     'error' => $responseData['Response']['Error'],
-                    'response' => LogRedactor::redact((array) $responseData)
+                    'response' => LogRedactor::redact((array) $responseData),
                 ];
             }
 
@@ -2628,7 +2619,7 @@ class TBOFlightBookingService
                 Log::info('Successfully retrieved flight booking details', [
                     'pnr' => $pnr,
                     'booking_status' => $responseData['BookingStatus'] ?? 'unknown',
-                    'ticket_status' => $responseData['TicketStatus'] ?? 'unknown'
+                    'ticket_status' => $responseData['TicketStatus'] ?? 'unknown',
                 ]);
 
                 return [
@@ -2637,7 +2628,7 @@ class TBOFlightBookingService
                     'booking_status' => $responseData['BookingStatus'] ?? null,
                     'ticket_status' => $responseData['TicketStatus'] ?? null,
                     'pnr' => $responseData['PNR'] ?? $pnr,
-                    'booking_id' => $responseData['BookingId'] ?? $bookingId
+                    'booking_id' => $responseData['BookingId'] ?? $bookingId,
                 ];
             }
 
@@ -2645,13 +2636,13 @@ class TBOFlightBookingService
             Log::warning('TBO GetBookingDetail API returned non-success status', [
                 'pnr' => $pnr,
                 'response_status' => $responseData['Response']['ResponseStatus'] ?? 'unknown',
-                'response' => $responseData
+                'response' => $responseData,
             ]);
 
             return [
                 'status' => 'failed',
                 'message' => 'Unable to retrieve booking details',
-                'response' => $responseData
+                'response' => $responseData,
             ];
 
         } catch (\Exception $e) {
@@ -2659,13 +2650,13 @@ class TBOFlightBookingService
                 'pnr' => $pnr,
                 'booking_id' => $bookingId,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return [
                 'status' => 'error',
                 'error' => $e->getMessage(),
-                'exception' => true
+                'exception' => true,
             ];
         }
     }

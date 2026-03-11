@@ -137,12 +137,6 @@ class CriticalSecurityPatchesTest extends TestCase
             ],
         ]);
 
-        $reservationServiceMock = Mockery::mock('alias:App\\Services\\ReservationService');
-        $reservationServiceMock->shouldReceive('completeBooking')->once()->with($reservation->id, Mockery::type('string'))->andReturn([
-            'success' => true,
-            'errors' => [],
-        ]);
-
         $this->actingAs($user, 'web')->post('/moyasar-success', [
             'id' => 'pay_1',
             'nonce' => str_repeat('a', 48),
@@ -211,7 +205,7 @@ class CriticalSecurityPatchesTest extends TestCase
             'reconciliation_status' => 'reconcile_pending',
         ]);
 
-        (new ReconcileFailedPaidReservationsJob())->handle();
+        (new ReconcileFailedPaidReservationsJob)->handle();
 
         $reservation->refresh();
 

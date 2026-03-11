@@ -5,8 +5,6 @@ namespace App\Http\Controllers\Panel\Backend;
 use App\Http\Controllers\Panel\Controller;
 use App\Models\TBOHotel;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Http;
 
 class CacheHotelController extends Controller
 {
@@ -16,16 +14,17 @@ class CacheHotelController extends Controller
 
         return view('admin.backend.cache-hotel.index');
     }
+
     public function allhotels(Request $request)
     {
 
-        $columns = array(
+        $columns = [
             0 => 'id',
             1 => 'title',
             2 => 'body',
             3 => 'created_at',
             4 => 'id',
-        );
+        ];
 
         $totalData = TBOHotel::count();
 
@@ -44,7 +43,7 @@ class CacheHotelController extends Controller
         } else {
             $search = $request->input('search.value');
 
-            $posts =  TBOHotel::where('id', 'LIKE', "%{$search}%")
+            $posts = TBOHotel::where('id', 'LIKE', "%{$search}%")
                 ->orWhere('name_ar', 'LIKE', "%{$search}%")
                 ->orWhere('name_en', 'LIKE', "%{$search}%")
                 ->orWhere('code', 'LIKE', "%{$search}%")
@@ -58,23 +57,22 @@ class CacheHotelController extends Controller
                 ->get();
 
             $totalFiltered = TBOHotel::where('id', 'LIKE', "%{$search}%")
-            ->orWhere('name_ar', 'LIKE', "%{$search}%")
-            ->orWhere('name_en', 'LIKE', "%{$search}%")
-            ->orWhere('code', 'LIKE', "%{$search}%")
-            ->orWhere('address', 'LIKE', "%{$search}%")
-            ->orWhere('phone', 'LIKE', "%{$search}%")
-            ->orWhere('city_name', 'LIKE', "%{$search}%")
-            ->orWhere('country_name', 'LIKE', "%{$search}%")
-            ->count();
+                ->orWhere('name_ar', 'LIKE', "%{$search}%")
+                ->orWhere('name_en', 'LIKE', "%{$search}%")
+                ->orWhere('code', 'LIKE', "%{$search}%")
+                ->orWhere('address', 'LIKE', "%{$search}%")
+                ->orWhere('phone', 'LIKE', "%{$search}%")
+                ->orWhere('city_name', 'LIKE', "%{$search}%")
+                ->orWhere('country_name', 'LIKE', "%{$search}%")
+                ->count();
         }
 
-        $data = array();
-        if (!empty($posts)) {
+        $data = [];
+        if (! empty($posts)) {
             foreach ($posts as $post) {
-                $edit =  '/admin-panel/cached-hotels/'. $post->id .'/edit';
+                $edit = '/admin-panel/cached-hotels/'.$post->id.'/edit';
                 $images = json_decode($post->images, true);
                 $firstImage = isset($images[0]) ? $images[0] : url('/no-image.png');
-
 
                 $nestedData['id'] = $post->id;
                 $nestedData['name'] = $post->name_ar ?? $post->name_en;
@@ -86,7 +84,7 @@ class CacheHotelController extends Controller
                 $nestedData['country_name'] = $post->country_name;
                 $nestedData['options'] = '<ul class="icons-list">
                                         <li class="text-primary-600">
-                                            <a href="' . $edit . '" data-popup="tooltip" title="Edit" data-placement="top">
+                                            <a href="'.$edit.'" data-popup="tooltip" title="Edit" data-placement="top">
                                                 <i class="icon-pencil7"></i>
                                             </a>
                                         </li>
@@ -95,15 +93,16 @@ class CacheHotelController extends Controller
             }
         }
 
-        $json_data = array(
-            "draw"            => intval($request->input('draw')),
-            "recordsTotal"    => intval($totalData),
-            "recordsFiltered" => intval($totalFiltered),
-            "data"            => $data
-        );
+        $json_data = [
+            'draw' => intval($request->input('draw')),
+            'recordsTotal' => intval($totalData),
+            'recordsFiltered' => intval($totalFiltered),
+            'data' => $data,
+        ];
 
         echo json_encode($json_data);
     }
+
     public function edit($id)
     {
         $hotel = TBOHotel::findOrFail($id);
@@ -128,15 +127,15 @@ class CacheHotelController extends Controller
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 $path = $image->store('images', 'public');
-                $imagePaths[] = asset('storage/' . $path);
+                $imagePaths[] = asset('storage/'.$path);
             }
         }
 
         $hotel->images = json_encode($imagePaths);
         $hotel->save();
+
         return back()->with('success', __('dashboard.updated_successfully'));
     }
-
 
     public function deleteImage($id, Request $request)
     {
@@ -152,6 +151,7 @@ class CacheHotelController extends Controller
 
         $record->images = json_encode(array_values($images));
         $record->save();
+
         return back()->with('success', __('dashboard.photo_deleted_successfully'));
     }
 }

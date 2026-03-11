@@ -9,5 +9,5 @@ class TravelInterest extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name_ar', 'name_en', 'image','type'];
+    protected $fillable = ['name_ar', 'name_en', 'image', 'type'];
 }

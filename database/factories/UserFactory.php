@@ -41,6 +41,7 @@ class UserFactory extends Factory
             'lang' => 'en',
             'last_login' => now(),
             'group_privilege_id' => null,
+            'gender' => 'male',
             'block' => 0,
             'player_position' => rand(1, 4),
             'created_at' => now(),

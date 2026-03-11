@@ -25,8 +25,8 @@ class PassengerInformationRequest extends FormRequest
         $rules = [
             'first_name' => ['required', 'array'],
             'first_name.*' => [
-                'required', 
-                'string', 
+                'required',
+                'string',
                 'min:2',                                    // Minimum 2 characters
                 'regex:/^[a-zA-Z\s\-\'\.]+$/',             // Only letters, spaces, hyphens, apostrophes, and dots
                 'not_regex:/\d/',                           // No numbers allowed
@@ -34,23 +34,23 @@ class PassengerInformationRequest extends FormRequest
                     // Extract the index from the attribute (e.g., "first_name.0" -> 0)
                     preg_match('/first_name\.(\d+)/', $attribute, $matches);
                     $currentIndex = $matches[1] ?? null;
-                    
+
                     if ($currentIndex !== null) {
                         // Get the corresponding last name for this index
                         $currentLastName = $this->last_name[$currentIndex] ?? '';
-                        $currentFullName = strtolower(trim($value . ' ' . $currentLastName));
-                        
+                        $currentFullName = strtolower(trim($value.' '.$currentLastName));
+
                         // Check for duplicate full names (first + last name combination)
                         $allFullNames = [];
                         $firstNames = $this->first_name ?? [];
                         $lastNames = $this->last_name ?? [];
-                        
+
                         foreach ($firstNames as $index => $firstName) {
                             $lastName = $lastNames[$index] ?? '';
-                            $fullName = strtolower(trim($firstName . ' ' . $lastName));
+                            $fullName = strtolower(trim($firstName.' '.$lastName));
                             $allFullNames[$index] = $fullName;
                         }
-                        
+
                         // Count occurrences of the current full name
                         $duplicateCount = 0;
                         foreach ($allFullNames as $index => $fullName) {
@@ -58,47 +58,47 @@ class PassengerInformationRequest extends FormRequest
                                 $duplicateCount++;
                             }
                         }
-                        
+
                         if ($duplicateCount > 1) {
                             $fail(__('dashboard.duplicate_passenger_full_name'));
                         }
                     }
-                }
+                },
             ],
             'last_name' => ['required', 'array'],
             'last_name.*' => [
-                'required', 
-                'string', 
+                'required',
+                'string',
                 'min:2',                                    // Minimum 2 characters
                 'regex:/^[a-zA-Z\s\-\'\.]+$/',             // Only letters, spaces, hyphens, apostrophes, and dots
-                'not_regex:/\d/'                            // No numbers allowed
+                'not_regex:/\d/',                            // No numbers allowed
             ],
             'pax_type' => ['required', 'array'],
             'pax_type.*' => ['required', 'in:1,2,3'],
             'birth_date' => ['required', 'array'],
             'birth_date.*' => [
-                'required', 
-                'date', 
+                'required',
+                'date',
                 'before:today',
                 function ($attribute, $value, $fail) {
                     // Extract the index from the attribute (e.g., "birth_date.0" -> 0)
                     preg_match('/birth_date\.(\d+)/', $attribute, $matches);
                     $currentIndex = $matches[1] ?? null;
-                    
+
                     if ($currentIndex !== null) {
                         // Get the passenger type for this index
                         $passengerType = $this->pax_type[$currentIndex] ?? null;
-                        
+
                         // if ($passengerType == 2) { // Child
                         //     $birthDate = Carbon::parse($value);
                         //     $age = $birthDate->diffInYears(now());
-                            
+
                         //     if (!($age <= 2 && $age >= 12)) {
                         //         $fail(__('dashboard.child_age_validation'));
                         //     }
                         // }
                     }
-                }
+                },
             ],
             'email' => ['required', 'array'],
             'email.*' => ['required', 'email'],
@@ -111,7 +111,7 @@ class PassengerInformationRequest extends FormRequest
             'address' => ['required', 'array'],
             'address.*' => ['required', 'string'],
             'birth_date.0' => ['date', 'before:today', 'before:'.now()->subYears(18)->format('Y-m-d')],
-            
+
             // Infant-specific validation rules
             'guardian_adult_select' => ['nullable', 'array'],
             'guardian_adult_select.*' => ['nullable', 'string'],
@@ -132,10 +132,10 @@ class PassengerInformationRequest extends FormRequest
             $rules['passport_number.*'] = ['required', 'numeric', 'digits_between:6,15'];
             $rules['passport_expiry_date'] = ['required', 'array'];
             $rules['passport_expiry_date.*'] = [
-                'required', 
-                'date', 
+                'required',
+                'date',
                 'after:today',
-                'after:'.now()->addMonths(6)->format('Y-m-d')
+                'after:'.now()->addMonths(6)->format('Y-m-d'),
             ];
         }
 

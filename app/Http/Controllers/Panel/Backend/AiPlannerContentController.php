@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers\Panel\Backend;
 
+use App\Http\Controllers\Panel\Controller;
 use App\Http\Requests\Panel\Backend\AiPlannerContentRequest;
 use App\Models\Panel\AiPlannerSection;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Panel\Controller;
 use App\Models\Panel\Setting;
 
 class AiPlannerContentController extends Controller
@@ -15,9 +14,10 @@ class AiPlannerContentController extends Controller
      */
     public function index()
     {
-        $items = AiPlannerSection::orderBy('sort','desc')->get();
-        $settings = Setting::where('status', 1)->where('setting_type_id',5)->get();
-        return view('admin.panel.ai-page.all', compact('items','settings'));
+        $items = AiPlannerSection::orderBy('sort', 'desc')->get();
+        $settings = Setting::where('status', 1)->where('setting_type_id', 5)->get();
+
+        return view('admin.panel.ai-page.all', compact('items', 'settings'));
     }
 
     /**
@@ -37,7 +37,6 @@ class AiPlannerContentController extends Controller
 
         return redirect(url('admin-panel/ai-planner-sections'))->with('success', __('dashboard.page_content_created_successfully'));
     }
-
 
     /**
      * Show the form for editing the specified resource.

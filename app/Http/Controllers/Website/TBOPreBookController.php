@@ -50,6 +50,7 @@ class TBOPreBookController extends Controller
 
                 if (isset($preBookData['Status']) && $preBookData['Status']['Code'] == 200) {
                     Log::info('TBO PreBook Successful', ['BookingCode' => $validatedData['BookingCode']]);
+
                     return response()->json([
                         'success' => true,
                         'message' => 'PreBook successful',

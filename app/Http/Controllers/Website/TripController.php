@@ -35,7 +35,7 @@ class TripController extends Controller
 
         $relatedTrips = Destination::inRandomOrder()->where('id', '!=', $trip->id)->where('country_id', $trip->country_id)->take(3)->get();
 
-        return view('website.trip', compact('trip', 'relatedTrips','searchParams'));
+        return view('website.trip', compact('trip', 'relatedTrips', 'searchParams'));
     }
 
     public function plan($id)
@@ -56,7 +56,7 @@ class TripController extends Controller
         $searchParams = session('searchParams');
         $searchResults = session('searchResults');
 
-        if (!$searchParams || !$searchResults) {
+        if (! $searchParams || ! $searchResults) {
             return redirect()->route('ai-trip.index');
         }
 

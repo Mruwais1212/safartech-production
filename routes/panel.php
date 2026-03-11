@@ -41,7 +41,7 @@ Route::group(['namespace' => 'Backend'], function () {
     Route::resource('users', 'UserController');
     Route::resource('page-content', 'PageContentController');
 
-    Route::resource('ai-planner-sections', 'AiPlannerContentController')->only(['index', 'create','store', 'edit', 'update', 'destroy']);
+    Route::resource('ai-planner-sections', 'AiPlannerContentController')->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
 
     Route::get('balance', 'BalanceController@index');
     Route::get('add-balance', 'BalanceController@addBalance');
@@ -72,5 +72,5 @@ Route::group(['namespace' => 'Backend'], function () {
     Route::get('cached-hotels/{id}/edit', 'CacheHotelController@edit');
     Route::put('cached-hotels/{id}', 'CacheHotelController@update');
     Route::post('delete-image-cached-hotels/{id}', 'CacheHotelController@deleteImage');
-    Route::get('tbo-flight-balance',[\App\Http\Controllers\Panel\Auth\HomeController::class,'getTboFlightBalance']);
+    Route::get('tbo-flight-balance', [\App\Http\Controllers\Panel\Auth\HomeController::class, 'getTboFlightBalance']);
 });

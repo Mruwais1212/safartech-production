@@ -10,6 +10,7 @@ class SessionController
     public function showSessionData(Request $request)
     {
         $allSessionData = Session::all();
+
         return response()->json($allSessionData);
     }
 }

@@ -11,9 +11,10 @@ class FlightDetailsModal extends Component
      * Create a new component instance.
      */
     public $segments;
-    public function __construct($segments=null)
+
+    public function __construct($segments = null)
     {
-        $this->segments=$segments;
+        $this->segments = $segments;
         //
     }
 
@@ -22,7 +23,6 @@ class FlightDetailsModal extends Component
      *
      * @return \Illuminate\Contracts\View\View|Closure|string
      */
-
     public function render()
     {
         return view('components.flight-details-modal');

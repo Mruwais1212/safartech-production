@@ -2,17 +2,17 @@
 
 namespace App\Services;
 
-use Carbon\Carbon;
-use App\Models\Airport;
-use App\Models\TBOHotel;
-use App\Models\Destination;
-use App\Support\LogRedactor;
-use Illuminate\Support\Str;
-use App\Models\Panel\Setting;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
 use App\Jobs\CacheTBOHotelInDatabase;
+use App\Models\Airport;
+use App\Models\Destination;
+use App\Models\Panel\Setting;
+use App\Models\TBOHotel;
+use App\Support\LogRedactor;
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class SearchService
 {
@@ -23,117 +23,117 @@ class SearchService
         session(['preferences' => $data]);
         session(['searchParams' => $request->all()]);
         session(['searchResults' => $data]);
-        
+
         // Store guest nationality separately for easy access in forms
-        if (!empty($request->guest_nationality)) {
+        if (! empty($request->guest_nationality)) {
             session(['guest_nationality' => $request->guest_nationality]);
         }
     }
 
-     public static function searchNew($request, $tripType = 1)
+    public static function searchNew($request, $tripType = 1)
     {
         $data = self::prepareSearchDataNew($request, $tripType);
         session(['passengers' => null]);
         session(['preferences' => $data]);
         session(['searchParams' => $request->all()]);
         session(['searchResults' => $data]);
-        
+
         // Store guest nationality separately for easy access in forms
-        if (!empty($request->guest_nationality)) {
+        if (! empty($request->guest_nationality)) {
             session(['guest_nationality' => $request->guest_nationality]);
         }
     }
 
     private static function prepareSearchDataNew($request, $tripType)
     {
-       // Log::info('Preparing search data', ['request' => $request->all()]);
+        // Log::info('Preparing search data', ['request' => $request->all()]);
 
-        Log::info("Search Request Trip", LogRedactor::redact(['request' => $request->all()]));
+        Log::info('Search Request Trip', LogRedactor::redact(['request' => $request->all()]));
         $paxRooms = [];
-        $roomCount = (int)($request['rooms'] ?? 1); // Get total rooms (e.g., 2)
+        $roomCount = (int) ($request['rooms'] ?? 1); // Get total rooms (e.g., 2)
 
         // Check if we have hotel room-specific data or general flight data
-        $hasHotelRoomData = isset($request["hotel_room_1_adults"]);
-        $hasRoomData = isset($request["room_1_adults"]);
-        
-        if ($hasHotelRoomData ) {
+        $hasHotelRoomData = isset($request['hotel_room_1_adults']);
+        $hasRoomData = isset($request['room_1_adults']);
+
+        if ($hasHotelRoomData) {
             // Case 1: Hotel room-specific data (hotel_room_{i}_adults, etc.)
             for ($i = 1; $i <= $roomCount; $i++) {
-                $adults = (int)($request["hotel_room_{$i}_adults"] ?? 0);
-                $children = (int)($request["hotel_room_{$i}_children"] ?? 0);
-                $babies = (int)($request["hotel_room_{$i}_babies"] ?? 0);
+                $adults = (int) ($request["hotel_room_{$i}_adults"] ?? 0);
+                $children = (int) ($request["hotel_room_{$i}_children"] ?? 0);
+                $babies = (int) ($request["hotel_room_{$i}_babies"] ?? 0);
                 $childrenAges = $request["hotel_room_{$i}_child_ages"] ?? [];
-                
+
                 // Convert child ages from strings to integers
                 $childrenAges = array_map('intval', $childrenAges);
-                
+
                 // Include babies as children with age 1
                 $totalChildren = $children + $babies;
-                
+
                 // Add babies ages (default age 1 for each baby)
                 for ($j = 0; $j < $babies; $j++) {
                     $childrenAges[] = 1;
                 }
-                
-                $paxRooms[] = (object)[
+
+                $paxRooms[] = (object) [
                     'Adults' => $adults,
                     'Children' => $totalChildren > 0 ? $totalChildren : 0,
-                    'ChildrenAges' => $childrenAges ?? []
+                    'ChildrenAges' => $childrenAges ?? [],
                 ];
             }
-        } else if ($hasRoomData ) {
+        } elseif ($hasRoomData) {
             // Case 1: Hotel room-specific data (hotel_room_{i}_adults, etc.)
             for ($i = 1; $i <= $roomCount; $i++) {
-                $adults = (int)($request["room_{$i}_adults"] ?? 0);
-                $children = (int)($request["room_{$i}_children"] ?? 0);
-                $babies = (int)($request["room_{$i}_babies"] ?? 0);
+                $adults = (int) ($request["room_{$i}_adults"] ?? 0);
+                $children = (int) ($request["room_{$i}_children"] ?? 0);
+                $babies = (int) ($request["room_{$i}_babies"] ?? 0);
                 $childrenAges = $request["room_{$i}_child_ages"] ?? [];
                 Log::info('Room Dataa Es', [
                     'adults' => $adults,
                     'children' => $children,
                     'babies' => $babies,
-                    'childrenAges' => $childrenAges
+                    'childrenAges' => $childrenAges,
                 ]);
                 // Convert child ages from strings to integers
                 $childrenAges = array_map('intval', $childrenAges);
-                
+
                 // Include babies as children with age 1
                 $totalChildren = $children + $babies;
-                
+
                 // Add babies ages (default age 1 for each baby)
                 for ($j = 0; $j < $babies; $j++) {
                     $childrenAges[] = 1;
                 }
-                
-                $paxRooms[] = (object)[
+
+                $paxRooms[] = (object) [
                     'Adults' => $adults,
                     'Children' => $totalChildren > 0 ? $totalChildren : 0,
-                    'ChildrenAges' => $childrenAges ?? []
+                    'ChildrenAges' => $childrenAges ?? [],
                 ];
             }
-        }else {
+        } else {
             // Case 2: General flight passenger data (adults, children, babies, flight_child_ages)
-            $adults = (int)($request['adults'] ?? 1);
-            $children = (int)($request['children'] ?? 0);
-            $babies = (int)($request['babies'] ?? 0);
+            $adults = (int) ($request['adults'] ?? 1);
+            $children = (int) ($request['children'] ?? 0);
+            $babies = (int) ($request['babies'] ?? 0);
             $childrenAges = $request['flight_child_ages'] ?? [];
-            
+
             // Convert child ages from strings to integers
             $childrenAges = array_map('intval', $childrenAges);
-            
+
             // Include babies as children with age 1
             $totalChildren = $children + $babies;
-            
+
             // Add babies ages (default age 1 for each baby)
             for ($j = 0; $j < $babies; $j++) {
                 $childrenAges[] = 1;
             }
-            
+
             // Create one room with all passengers
-            $paxRooms[] = (object)[
+            $paxRooms[] = (object) [
                 'Adults' => $adults,
                 'Children' => $totalChildren > 0 ? $totalChildren : 0,
-                'ChildrenAges' => $childrenAges ?? []
+                'ChildrenAges' => $childrenAges ?? [],
             ];
         }
 
@@ -143,14 +143,14 @@ class SearchService
         $totalAdults = 0;
         $totalChildren = 0;
         $totalInfants = 0;
-        
+
         foreach ($paxRooms as $room) {
             $totalAdults += $room->Adults;
             $totalChildren += $room->Children;
-            
+
             // Count children with age 1 as infants
             if (isset($room->ChildrenAges) && is_array($room->ChildrenAges)) {
-                $infantsInRoom = count(array_filter($room->ChildrenAges, function($age) {
+                $infantsInRoom = count(array_filter($room->ChildrenAges, function ($age) {
                     return $age == 1;
                 }));
                 $totalInfants += $infantsInRoom;
@@ -162,29 +162,26 @@ class SearchService
         $end_date = Carbon::parse($request->end_date)->format('Y-m-d');
         $priceRange = explode(',', $request->input('price_range')); // now it's an array
 
-
-        $max_budget = isset($priceRange[1]) ? (int) $priceRange[1]:($request->budget ? explode(',', $request->budget)[1] : 500000);
-        $min_budget = isset($priceRange[0]) ? (int) $priceRange[0]:($request->budget ? explode(',', $request->budget)[0] : 0);
+        $max_budget = isset($priceRange[1]) ? (int) $priceRange[1] : ($request->budget ? explode(',', $request->budget)[1] : 500000);
+        $min_budget = isset($priceRange[0]) ? (int) $priceRange[0] : ($request->budget ? explode(',', $request->budget)[0] : 0);
         $trip = Destination::find($request->trip_id);
-        
+
         // Handle three cases: numeric airport ID, city code, or city name
         if (is_numeric($request->destination)) {
             // Case 1: destination is an airport ID (e.g., "448")
             $destination = Airport::find($request->destination);
-            
+
             // If not found by ID, try by city_code as fallback
-            if (!$destination) {
+            if (! $destination) {
                 $destination = Airport::where('city_code', $request->destination)->first();
             }
         } else {
             // Case 2: destination is a city name - try trip city first, then request destination
             $destination = Airport::where('city', $trip?->city?->name_en)->first();
-            if (!$destination && $request->destination) {
+            if (! $destination && $request->destination) {
                 $destination = Airport::where('city', $request->destination)->first();
             }
         }
-        
-         
 
         $request->merge([
             'start_date' => $start_date,
@@ -197,16 +194,17 @@ class SearchService
             'infants' => $totalInfants,
             'travel_interests' => $request->plans,
             'country_id' => $request->country_id,
-            "paxRooms" => $paxRooms,
+            'paxRooms' => $paxRooms,
         ]);
         $originAirport = Airport::find($request->origin);
         $fallbackDestination = $destination
             ?? Airport::where('city', $request->destination)->first();
 
-        Log::info('Preparing search data afterr', ['$request->destination'=>$request->destination,'destinationVal'=> $destination ,
+        Log::info('Preparing search data afterr', ['$request->destination' => $request->destination, 'destinationVal' => $destination,
             'destination' => $fallbackDestination?->city_code,
             'destination_name' => $fallbackDestination?->city ?? $request->destination,
-            'destination_code' => $fallbackDestination?->country_code,]);
+            'destination_code' => $fallbackDestination?->country_code, ]);
+
         return [
             'adults' => $totalAdults ?: 1,
             'children' => $totalChildren ?: 0,
@@ -224,7 +222,7 @@ class SearchService
             'destination_code' => $fallbackDestination?->country_code,
             'flight_class' => $request->flight_class ?: 1,
             'start_date' => $start_date,
-            'end_date' => $request->journey_type == 1 ? \Carbon\Carbon::parse($start_date)->addDay() :$end_date,
+            'end_date' => $request->journey_type == 1 ? \Carbon\Carbon::parse($start_date)->addDay() : $end_date,
             'flight_time' => $request->flight_time ?: '00:00:00',
             'flight_time_return' => $request->flight_time_return ?: '00:00:00',
             'min_budget' => $min_budget,
@@ -232,7 +230,7 @@ class SearchService
             'rooms' => $request->rooms ?: 1,
             'trip_type' => $tripType,
             'trip_id' => $request->trip_id,
-            "paxRooms" => $paxRooms
+            'paxRooms' => $paxRooms,
         ];
     }
 
@@ -242,31 +240,30 @@ class SearchService
         $end_date = Carbon::parse($request->end_date)->format('Y-m-d');
         $priceRange = explode(',', $request->input('price_range')); // now it's an array
 
-
-        $max_budget = isset($priceRange[1]) ? (int) $priceRange[1]:($request->budget ? explode(',', $request->budget)[1] : 500000);
-        $min_budget = isset($priceRange[0]) ? (int) $priceRange[0]:($request->budget ? explode(',', $request->budget)[0] : 0);
+        $max_budget = isset($priceRange[1]) ? (int) $priceRange[1] : ($request->budget ? explode(',', $request->budget)[1] : 500000);
+        $min_budget = isset($priceRange[0]) ? (int) $priceRange[0] : ($request->budget ? explode(',', $request->budget)[0] : 0);
         $trip = Destination::find($request->trip_id);
         Log::info('Trip Details', ['trip' => $trip]);
-        
+
         // Handle three cases: numeric airport ID, city code, or city name
         if (is_numeric($request->destination)) {
             // Case 1: destination is an airport ID (e.g., "448")
             $destination = Airport::find($request->destination);
-            
+
             // If not found by ID, try by city_code as fallback
-            if (!$destination) {
+            if (! $destination) {
                 $destination = Airport::where('city_code', $request->destination)->first();
             }
         } else {
             // Case 2: destination is a city name - try trip city first, then request destination
             $destination = Airport::where('city', $trip?->city?->name_en)->first();
-            if (!$destination && $request->destination) {
+            if (! $destination && $request->destination) {
                 $destination = Airport::where('city', $request->destination)->first();
             }
         }
-        
+
         // Final fallback if no destination found
-        if (!$destination) {
+        if (! $destination) {
             $destination = Airport::find(448); // Default fallback by ID
         }
 
@@ -283,7 +280,7 @@ class SearchService
             'country_id' => $request->country_id ?? ($trip ? $trip->country_id : null),
         ]);
 
-         Log::info('Preparing search data after', LogRedactor::redact(['request' => $request->all()]));
+        Log::info('Preparing search data after', LogRedactor::redact(['request' => $request->all()]));
 
         return [
             'adults' => $request->adults ?: 1,
@@ -302,7 +299,7 @@ class SearchService
             'destination_code' => @$destination ? @$destination->country_code : @Airport::find($request->destination)->country_code,
             'flight_class' => $request->flight_class ?: 1,
             'start_date' => $start_date,
-            'end_date' => $request->journey_type == 1 ? \Carbon\Carbon::parse($start_date)->addDay() :$end_date,
+            'end_date' => $request->journey_type == 1 ? \Carbon\Carbon::parse($start_date)->addDay() : $end_date,
             'flight_time' => $request->flight_time ?: '00:00:00',
             'flight_time_return' => $request->flight_time_return ?: '00:00:00',
             'min_budget' => $min_budget,
@@ -317,20 +314,20 @@ class SearchService
     {
         try {
             Log::info('Searching for city', ['country_code' => $country_code, 'city_name' => $city_name]);
-            $cities = Cache::remember('cities' . $country_code, 60 * 24 * 60, function () use ($country_code) {
+            $cities = Cache::remember('cities'.$country_code, 60 * 24 * 60, function () use ($country_code) {
                 return (new TBOHotelBookingService)->getCityList(country_code: $country_code);
             });
 
             if ($cities['Status']['Code'] != 200) {
-                Cache::forget('cities' . $country_code);
+                Cache::forget('cities'.$country_code);
             }
         } catch (\Throwable $th) {
-            Cache::forget('cities' . $country_code);
-            Log::info($th->getMessage() . ' on line ' . $th->getLine() . ' in ' . $th->getFile());
+            Cache::forget('cities'.$country_code);
+            Log::info($th->getMessage().' on line '.$th->getLine().' in '.$th->getFile());
 
             return false;
         }
-       // Log::info('Cities fetched', ['city_name'=>$city_name,'cities' => $cities]);
+        // Log::info('Cities fetched', ['city_name'=>$city_name,'cities' => $cities]);
         if (array_key_exists('CityList', $cities)) {
             $city_code = collect($cities['CityList'])->first(
                 fn ($city) => Str::lower($city['Name']) === Str::lower($city_name)
@@ -350,13 +347,13 @@ class SearchService
 
         if (
             $countHotelCache > 10 && TBOHotel::where('city_code', $city_code)
-            ->where('cached_at', '<', now()->subDays(@$setting->value ?: 90))->count() > 10
+                ->where('cached_at', '<', now()->subDays(@$setting->value ?: 90))->count() > 10
         ) {
             return self::getHotelsFromCache($city_code);
         }
 
         if ($countHotelCache < 10) {
-            Cache::forget('hotels' . $city_code);
+            Cache::forget('hotels'.$city_code);
 
             return self::getHotelsFromCache($city_code);
         }
@@ -366,7 +363,7 @@ class SearchService
 
     private static function getHotelsFromCache($city_code)
     {
-        $hotels = Cache::remember('hotels' . $city_code, 60 * 24, function () use ($city_code) {
+        $hotels = Cache::remember('hotels'.$city_code, 60 * 24, function () use ($city_code) {
             return (new TBOHotelBookingService)->getHotelCodeList(city_code: $city_code);
         });
 
@@ -395,7 +392,7 @@ class SearchService
             $hotels = TBOHotel::where('city_code', $city_code)->filterByRating()->get();
             $hotelsCodes = $hotels->pluck('code')->toArray();
         } else {
-            $hotels = Cache::remember('hotels-without-details' . $city_code, 60 * 24, function () use ($city_code) {
+            $hotels = Cache::remember('hotels-without-details'.$city_code, 60 * 24, function () use ($city_code) {
                 return (new TBOHotelBookingService)->getHotelCodeList(city_code: $city_code, is_detailed_response: true);
             });
 
@@ -414,7 +411,7 @@ class SearchService
 
         // Limit hotel codes to maximum 100 as per TBO API constraints
         $limitedHotelCodes = array_slice($hotelsCodes, 0, 100);
-        
+
         // Log::info('Hotel search data', [
         //     'total_available_hotels' => count($hotelsCodes),
         //     'limited_hotels_sent' => count($limitedHotelCodes),
@@ -422,17 +419,17 @@ class SearchService
         // ]);
         if (! isset($request['paxRooms']) || empty($request['paxRooms'])) {
             // ChildrenAges must be an array of ages — use age 1 as a proxy for infants
-            $infantCount  = max(0, (int) ($request['infants'] ?? 0));
+            $infantCount = max(0, (int) ($request['infants'] ?? 0));
             $paxRooms[] = (object) [
-                'Adults'       => (int) ($request['adults'] ?? 1),
-                'Children'     => (int) ($request['children'] ?? 0),
+                'Adults' => (int) ($request['adults'] ?? 1),
+                'Children' => (int) ($request['children'] ?? 0),
                 'ChildrenAges' => $infantCount > 0 ? array_fill(0, $infantCount, 1) : [],
             ];
         } else {
             $paxRooms = $request['paxRooms'];
         }
-        
-        $request->merge(['hotel_codes' => implode(',', $limitedHotelCodes),'paxRooms' => $paxRooms]);
+
+        $request->merge(['hotel_codes' => implode(',', $limitedHotelCodes), 'paxRooms' => $paxRooms]);
 
         $data = [
             'hotel_codes' => implode(',', $limitedHotelCodes),
@@ -453,7 +450,7 @@ class SearchService
         //     'data' => $data
         // ]);
 
-        $rooms = Cache::remember('rooms' . implode('-', $data), 60 * 10, function () use ($request) {
+        $rooms = Cache::remember('rooms'.implode('-', $data), 60 * 10, function () use ($request) {
             return (new TBOHotelBookingService)->searchAvailableHotelHasRooms($request);
         });
 
@@ -468,18 +465,14 @@ class SearchService
         return self::getHotelsWithRooms($hotels, $newRoom, $city_code);
     }
 
-
-
-
-     public static function searchForHotelRooms($data)
+    public static function searchForHotelRooms($data)
     {
-       $rooms = Cache::remember('rooms' . implode('-', $data), 60 * 10, function () use ($data) {
+        $rooms = Cache::remember('rooms'.implode('-', $data), 60 * 10, function () use ($data) {
             return (new TBOHotelBookingService)->searchAvailableHotelHasRooms($data);
         });
+
         return $rooms;
 
-         
-        
     }
 
     private static function prepareRoomData($rooms)
@@ -489,8 +482,8 @@ class SearchService
         if (array_key_exists('HotelResult', $rooms)) {
             foreach ($rooms['HotelResult'] as $value) {
                 $newRoom[$value['HotelCode']] = [
-                    "Rooms" => $value['Rooms'],
-                    "Hotel" => $value,
+                    'Rooms' => $value['Rooms'],
+                    'Hotel' => $value,
                     'HotelCode' => $value['HotelCode'],
                     'Name' => $value['Rooms'][0]['Name'],
                     'Price' => $value['Rooms'][0]['TotalFare'],
@@ -523,8 +516,8 @@ class SearchService
                 ->filterByRating()
                 ->when(request()->hotel_name, function ($query) {
                     $query->where(function ($query) {
-                        $query->where('name_en', 'like', '%' . Str::lower(request()->hotel_name) . '%')
-                            ->orWhere('name_ar', 'like', '%' . Str::lower(request()->hotel_name) . '%');
+                        $query->where('name_en', 'like', '%'.Str::lower(request()->hotel_name).'%')
+                            ->orWhere('name_ar', 'like', '%'.Str::lower(request()->hotel_name).'%');
                     });
                 })
                 ->get()
@@ -535,10 +528,10 @@ class SearchService
 
                     return $hotel;
                 });
-            if ((int)request()->min_budget >=0 && request()->max_budget) {
+            if ((int) request()->min_budget >= 0 && request()->max_budget) {
                 $hotels = $hotels->
-                where('price','>=',request()->min_budget)
-                    ->where('price','<=',request()->max_budget)->values();
+                where('price', '>=', request()->min_budget)
+                    ->where('price', '<=', request()->max_budget)->values();
             }
 
             if (request()->sort && $sortKey) {
@@ -562,7 +555,7 @@ class SearchService
 
         if (is_array($hotels)) {
             $hotels = collect($hotels['Hotels'])->whereIn('HotelCode', array_keys($newRoom))
-                ->when(request()->hotel_rating, fn($q) => $q->where('HotelRating', request()->hotel_rating))
+                ->when(request()->hotel_rating, fn ($q) => $q->where('HotelRating', request()->hotel_rating))
                 ->filter(function ($hotel) {
                     if (request()->hotel_name) {
                         return Str::contains(Str::lower($hotel['HotelName']), Str::lower(request()->hotel_name));
@@ -576,24 +569,24 @@ class SearchService
                     $location = explode('|', $hotel['Map'] ?? '');
                     $latitude = $location[0] ?? 0;
                     $longitude = $location[1] ?? 0;
-                    $hotel['distance'] = (new DistanceService)->calculateDistance((float)$latitude, (float)$longitude, $destination->latitude ?? 0, $destination->longitude ?? 0);
+                    $hotel['distance'] = (new DistanceService)->calculateDistance((float) $latitude, (float) $longitude, $destination->latitude ?? 0, $destination->longitude ?? 0);
 
                     return $hotel;
                 });
-            if ((int)request()->min_budget >=0 && request()->max_budget) {
+            if ((int) request()->min_budget >= 0 && request()->max_budget) {
                 $hotels = $hotels->
-                where('price','>=',request()->min_budget)
-                    ->where('price','<=',request()->max_budget)->values();
+                where('price', '>=', request()->min_budget)
+                    ->where('price', '<=', request()->max_budget)->values();
             }
 
-                if (request()->sort && $sortKey) {
-                    $hotels = $hotels->sortBy(function ($hotel) use ($sortKey) {
-                        return $hotel[$sortKey];
-                    }, SORT_REGULAR, $sortOrder == 'desc')->values();
-                }
-                $hotels = $hotels->paginate(10);
+            if (request()->sort && $sortKey) {
+                $hotels = $hotels->sortBy(function ($hotel) use ($sortKey) {
+                    return $hotel[$sortKey];
+                }, SORT_REGULAR, $sortOrder == 'desc')->values();
+            }
+            $hotels = $hotels->paginate(10);
         }
-        Log::info('hotelsssss',[$hotels]);
+        Log::info('hotelsssss', [$hotels]);
         Log::info('requestsssss', LogRedactor::redact(['request' => request()->all()]));
 
         return $hotels;

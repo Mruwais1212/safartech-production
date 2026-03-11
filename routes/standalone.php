@@ -9,9 +9,9 @@
 use App\Http\Controllers\AdminMaintenanceController;
 use App\Http\Controllers\BookingHealthController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\Webhooks\MoyasarWebhookController;
 use App\Http\Controllers\Website\SessionController;
 use App\Http\Controllers\Website\TripController;
-use App\Http\Controllers\Webhooks\MoyasarWebhookController;
 use Illuminate\Support\Facades\Route;
 
 // Payment webhook (CSRF excluded in bootstrap/app.php)
@@ -48,17 +48,18 @@ Route::middleware('web')->group(function () {
 
         Route::get('/test-ssr', function () {
             return response()->json([
-                'ssr_data'    => session('ssr_data', []),
-                'passengers'  => session('passengers', []),
+                'ssr_data' => session('ssr_data', []),
+                'passengers' => session('passengers', []),
                 'session_keys' => array_keys(session()->all()),
             ]);
         });
 
         Route::get('/test-passengers', function () {
             $passengers = session('passengers', []);
+
             return response()->json([
-                'passengers'     => $passengers,
-                'count'          => count($passengers),
+                'passengers' => $passengers,
+                'count' => count($passengers),
                 'first_passenger' => $passengers[0] ?? null,
             ]);
         });

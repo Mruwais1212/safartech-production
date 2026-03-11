@@ -6,12 +6,12 @@ use App\Notifications\Channel\BalanceChannel;
 use App\Notifications\Channel\CustomDatabaseChannel;
 use App\Notifications\Channel\FcmChannel;
 use App\Notifications\Channel\SmsChannel;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
@@ -49,36 +49,36 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('search', function ($request) {
             return $request->user('web')
-                ? Limit::perMinute(30)->by('user:' . $request->user('web')->id)
-                : Limit::perMinute(10)->by('ip:' . $request->ip());
+                ? Limit::perMinute(30)->by('user:'.$request->user('web')->id)
+                : Limit::perMinute(10)->by('ip:'.$request->ip());
         });
 
         RateLimiter::for('ai-generation', function ($request) {
             return $request->user('web')
-                ? Limit::perMinute(30)->by('user:' . $request->user('web')->id)
-                : Limit::perMinute(10)->by('ip:' . $request->ip());
+                ? Limit::perMinute(30)->by('user:'.$request->user('web')->id)
+                : Limit::perMinute(10)->by('ip:'.$request->ip());
         });
 
         RateLimiter::for('payment-init', function ($request) {
             return $request->user('web')
-                ? Limit::perMinute(5)->by('user:' . $request->user('web')->id)
-                : Limit::perMinute(5)->by('ip:' . $request->ip());
+                ? Limit::perMinute(5)->by('user:'.$request->user('web')->id)
+                : Limit::perMinute(5)->by('ip:'.$request->ip());
         });
 
         RateLimiter::for('cancel', function ($request) {
             return $request->user('web')
-                ? Limit::perMinute(5)->by('user:' . $request->user('web')->id)
-                : Limit::perMinute(5)->by('ip:' . $request->ip());
+                ? Limit::perMinute(5)->by('user:'.$request->user('web')->id)
+                : Limit::perMinute(5)->by('ip:'.$request->ip());
         });
 
         RateLimiter::for('moyasar-webhook', function ($request) {
-            return Limit::perMinute(20)->by('moyasar-webhook:' . $request->ip());
+            return Limit::perMinute(20)->by('moyasar-webhook:'.$request->ip());
         });
 
         RateLimiter::for('admin-ops', function ($request) {
             $admin = $request->user('admin');
 
-            return Limit::perMinute(10)->by($admin ? 'admin:' . $admin->id : 'ip:' . $request->ip());
+            return Limit::perMinute(10)->by($admin ? 'admin:'.$admin->id : 'ip:'.$request->ip());
         });
 
         if (! Collection::hasMacro('paginate')) {

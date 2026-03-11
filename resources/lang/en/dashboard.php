@@ -13,9 +13,9 @@ return [
     'notifications' => 'Notifications',
     'all_notifications' => 'All Notifications',
     'new_ticket' => 'New Ticket',
-    "Less than 1 year"=> "Less than 1 year",
+    'Less than 1 year' => 'Less than 1 year',
     'store' => 'Store',
-    "booking_reference_id" => 'Booking Reference ID',
+    'booking_reference_id' => 'Booking Reference ID',
     'products_that_the_customer_will_take' => 'Products That The Client Will Take',
     'all_tickets' => 'All Tickets',
     'display_all_tickets' => 'Display All Tickets',
@@ -24,23 +24,23 @@ return [
     'you_have_new_notifications' => 'You have :notification new notifications',
     'you_have_new_tickets' => 'You have :ticket new tickets',
     'home' => 'Home',
-    "cancellation_allowed_with_charges" => "Cancellation allowed with charges",
+    'cancellation_allowed_with_charges' => 'Cancellation allowed with charges',
     'saudi_arabia' => 'Saudi Arabia',
-    "Additional Charges" => 'Additional Charges',
+    'Additional Charges' => 'Additional Charges',
     'lang' => 'en',
     'dir' => 'ltr',
     'left' => 'left',
-    "Fixed" => 'Fixed',
+    'Fixed' => 'Fixed',
     'right' => 'right',
-    "Maximum rooms allowed is" => "Maximum rooms allowed is",
-    "Maximum adults allowed is" => "Maximum adults allowed is",
-    "Maximum children allowed is" => "Maximum children allowed is",
-    "Maximum babies allowed is" => "Maximum babies allowed is",
-    "Room" => "Room",
-    "Fully Refundable" => "Fully Refundable",
+    'Maximum rooms allowed is' => 'Maximum rooms allowed is',
+    'Maximum adults allowed is' => 'Maximum adults allowed is',
+    'Maximum children allowed is' => 'Maximum children allowed is',
+    'Maximum babies allowed is' => 'Maximum babies allowed is',
+    'Room' => 'Room',
+    'Fully Refundable' => 'Fully Refundable',
     'Delete' => 'Delete',
-    "Children Ages" => "Children Ages",
-    "Age" => "Age",
+    'Children Ages' => 'Children Ages',
+    'Age' => 'Age',
     //
     'app_stats' => 'App Stats',
     'supply_sales' => 'Supply Sales',
@@ -1634,7 +1634,7 @@ return [
     'direct_flight' => 'Direct Flight',
     'Round Flights' => 'Round Flights',
     'Flight Type' => 'Flight Type',
-    'Flight Path'=>'Flight path',
+    'Flight Path' => 'Flight path',
     'One Way' => 'One Way',
     'Return' => 'Return',
     'Multi Stop' => 'Multi Stop',
@@ -1710,7 +1710,7 @@ return [
     'Flight Details' => 'Flight Details',
 
     'Passenger information must match government-issued' => 'Passenger information must match government-issued',
-    
+
     // Guest Name Requirements
     'Guest Name Requirements' => 'Guest Name Requirements',
     'Names must match your passport exactly' => 'Names must match your passport exactly',
@@ -1899,21 +1899,21 @@ return [
     'meal_type' => 'Meal Type',
     'refundable' => 'Refundable',
     'can_refund' => 'Can Refund ?',
-    "Promotions" => "Promotions",
-    "No room details available" => "No room details available",
-    "No additional charges" => "No additional charges",
-    "Meal Plan" => "Meal Plan",
-    "From" => "From",
-    "No cancellation policy specified" => "No cancellation policy specified",
-    "Cancellation Policy" => "Cancellation Policy",
-    "No special inclusions available" => "No special inclusions available",
-    "Meal plan not specified" => "Meal plan not specified",
-    "No meal plan" => "No meal plan",
-    "Non-Refundable" => "Non Refundable",
-    "Refund Policy" => "Refund Policy",
-    "No promotions available" => "No promotions available",
-    "Refund policy not specified" => "Refund policy not specified",
-    "Room Inclusions" => "Room Inclusions",
+    'Promotions' => 'Promotions',
+    'No room details available' => 'No room details available',
+    'No additional charges' => 'No additional charges',
+    'Meal Plan' => 'Meal Plan',
+    'From' => 'From',
+    'No cancellation policy specified' => 'No cancellation policy specified',
+    'Cancellation Policy' => 'Cancellation Policy',
+    'No special inclusions available' => 'No special inclusions available',
+    'Meal plan not specified' => 'Meal plan not specified',
+    'No meal plan' => 'No meal plan',
+    'Non-Refundable' => 'Non Refundable',
+    'Refund Policy' => 'Refund Policy',
+    'No promotions available' => 'No promotions available',
+    'Refund policy not specified' => 'Refund policy not specified',
+    'Room Inclusions' => 'Room Inclusions',
     'not_refundable' => 'Not Refundable',
     'distance_from_center_of_city' => 'Distance From Center Of City',
     'meter' => 'Meter',
@@ -1994,14 +1994,14 @@ return [
     'Refundable' => 'Cancellation is refundable',
     'bag_weight' => ' bag weight',
     'bag_hand' => ' handbags',
-    'Cabin Class'=> 'Cabin Class',
+    'Cabin Class' => 'Cabin Class',
     'Refund Details' => 'Refund Details',
     'Cancel' => 'Cancel',
     'Confirm Selection' => 'Confirm Selection',
-    'This room is fully refundable. Refundable amount'=> 'This room is fully refundable. Refundable amount',
-    'This room is non-refundable. Total amount'=> 'This room is non-refundable. Total amount',
-    'surname'=>'Title',
-    
+    'This room is fully refundable. Refundable amount' => 'This room is fully refundable. Refundable amount',
+    'This room is non-refundable. Total amount' => 'This room is non-refundable. Total amount',
+    'surname' => 'Title',
+
     // Summary page translations
     'summary' => 'Summary',
     'Plan' => 'Plan',
@@ -2045,8 +2045,8 @@ return [
     'Proceed payment' => 'Proceed Payment',
     'Duplicate guest names are not allowed. Each guest must have a unique full name (first name + last name combination).' => 'Duplicate guest names are not allowed. Each guest must have a unique full name (first name + last name combination).',
     'Please add passengers' => 'Please add passengers',
-    "duplicate_passenger_full_name" => "Duplicate passenger full name",
-     "Minimum rooms allowed is" => "Minimum rooms allowed is",
+    'duplicate_passenger_full_name' => 'Duplicate passenger full name',
+    'Minimum rooms allowed is' => 'Minimum rooms allowed is',
     // Name validation messages
     'first_name_min_length' => 'First name must be at least 2 characters long',
     'first_name_invalid_characters' => 'First name may only contain letters, spaces, hyphens, apostrophes, and dots',
@@ -2055,7 +2055,7 @@ return [
     'last_name_invalid_characters' => 'Last name may only contain letters, spaces, hyphens, apostrophes, and dots',
     'last_name_no_numbers' => 'Last name cannot contain numbers',
     'birth_date_adult_min_age' => 'The first passenger must be at least 18 years old',
-    
+
     // Room Details Translations
     'Room Details' => 'Room Details',
     'Room Information' => 'Room Information',
@@ -2074,10 +2074,10 @@ return [
     'From' => 'From',
     'To' => 'To',
     'Details' => 'Details',
-    "standard_airline_policies_apply" => "Standard airline policies apply",
-    "processing_time_7_14_days" => "Processing time: 7-14 business days",
-    "refund_with_charges" => "Refund with applicable charges",
-    
+    'standard_airline_policies_apply' => 'Standard airline policies apply',
+    'processing_time_7_14_days' => 'Processing time: 7-14 business days',
+    'refund_with_charges' => 'Refund with applicable charges',
+
     // Flight Cancellation Policy
     'Policy Details' => 'Policy Details',
     'Information' => 'Information',
@@ -2094,7 +2094,7 @@ return [
     'Processing time: 7-14 business days' => 'Processing time: 7-14 business days',
     'No cancellation allowed' => 'No cancellation allowed',
     'Changes subject to airline policy' => 'Changes subject to airline policy',
-    
+
     // New flight search translations
     'Sorry, no flights were found for your search criteria. Please try:' => 'Sorry, no flights were found for your search criteria. Please try:',
     'Try different dates' => 'Try different dates',
@@ -2103,10 +2103,10 @@ return [
     'Try removing some filters' => 'Try removing some filters',
     'New Search' => 'New Search',
     'Go Back' => 'Go Back',
-    
+
     // LCC Restrictions
     'lcc_restrictions_apply' => 'LCC restrictions apply',
-    
+
     // SSR (Special Service Request) Translations
     'Special Services' => 'Special Services',
     'Select meals and extra baggage for each passenger' => 'Select meals and extra baggage for each passenger',
@@ -2131,7 +2131,7 @@ return [
     'SSR Session Expired' => 'Session Expired',
     'SSR data could not be retrieved from the airline. Standard meal and baggage options are shown below with estimated pricing.' => 'Special service data could not be retrieved from the airline. Standard meal and baggage options are shown below with estimated pricing.',
     'Final pricing will be confirmed during booking process.' => 'Final pricing will be confirmed during the booking process.',
-    
+
     // Validation Messages
     'Important Requirements' => 'Important Requirements',
     'Child Age' => 'Child Age',

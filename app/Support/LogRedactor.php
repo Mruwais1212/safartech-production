@@ -28,11 +28,13 @@ class LogRedactor
 
             if (self::isSensitiveKey($normalizedKey)) {
                 $redacted[$key] = self::mask($value);
+
                 continue;
             }
 
             if (is_array($value)) {
                 $redacted[$key] = self::redact($value);
+
                 continue;
             }
 
@@ -66,7 +68,6 @@ class LogRedactor
             return str_repeat('*', max($length, 4));
         }
 
-        return substr($stringValue, 0, 2) . str_repeat('*', $length - 4) . substr($stringValue, -2);
+        return substr($stringValue, 0, 2).str_repeat('*', $length - 4).substr($stringValue, -2);
     }
 }
-

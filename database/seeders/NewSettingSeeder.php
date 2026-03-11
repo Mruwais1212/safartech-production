@@ -19,7 +19,7 @@ class NewSettingSeeder extends Seeder
         SettingType::updateOrCreate(['name_ar' => 'روابط التواصل الاجتماعي', 'name_en' => 'Social links']);
         SettingType::updateOrCreate(['name_ar' => 'الخدمات', 'name_en' => 'Services']);
 
-        ////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////
         Setting::updateOrCreate([
             'name_ar' => 'اسم الشركة ',
             'name_en' => 'Company name',
@@ -71,7 +71,6 @@ class NewSettingSeeder extends Seeder
             'sort' => 12,
             'status' => 1,
         ]);
-
 
     }
 }

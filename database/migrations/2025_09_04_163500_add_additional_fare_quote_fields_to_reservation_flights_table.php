@@ -37,7 +37,7 @@ return new class extends Migration
                 'is_passport_required_at_book',
                 'is_passport_required_at_ticket',
                 'airline_remark',
-                'is_bookable_if_seat_not_available'
+                'is_bookable_if_seat_not_available',
             ]);
         });
     }

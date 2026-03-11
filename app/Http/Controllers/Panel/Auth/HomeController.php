@@ -16,8 +16,8 @@ class HomeController extends Controller
     public function index()
     {
         $statistic = [
-            'count_users' => User::where('user_type_id', UserType::CLIENT), //->where('activate', 1)
-            'count_supervisors' => User::where('user_type_id', UserType::SUPERVISOR), //->where('activate', 1),
+            'count_users' => User::where('user_type_id', UserType::CLIENT), // ->where('activate', 1)
+            'count_supervisors' => User::where('user_type_id', UserType::SUPERVISOR), // ->where('activate', 1),
             'count_reservations' => Reservation::where('payment_method', '>=', 1),
             'count_reservations_today' => Reservation::where('payment_method', '>=', 1)->whereDate('created_at', today()),
             'count_reservations_this_month' => Reservation::where('payment_method', '>=', 1)->whereMonth('created_at', now()->month),
@@ -90,17 +90,17 @@ class HomeController extends Controller
         $user = User::find(auth('admin')->id());
 
         $photoName = $user->photo; // Keep existing photo by default
-        
+
         if ($request->hasFile('photo')) {
             $photo = $request->file('photo');
             $photoName = time().'.'.$photo->getClientOriginalExtension();
-            
+
             // Ensure the uploads directory exists
             $uploadsPath = public_path('uploads');
-            if (!file_exists($uploadsPath)) {
+            if (! file_exists($uploadsPath)) {
                 mkdir($uploadsPath, 0755, true);
             }
-            
+
             $photo->move($uploadsPath, $photoName);
         }
 
@@ -117,7 +117,8 @@ class HomeController extends Controller
         return redirect()->back()->with('success', __('messages.profile_updated'));
     }
 
-    public function getTboFlightBalance(){
+    public function getTboFlightBalance()
+    {
         $username = config('services.tbo_flight.username');
         $password = config('services.tbo_flight.password');
 
@@ -127,11 +128,11 @@ class HomeController extends Controller
                 'Password' => $password,
                 'BookingMode' => 'API',
                 'IPAddress' => request()->ip(),
-            ] )
+            ])
             ->asJson()
             ->get();
-dd($response);
-        $response= (new TBOFlightBookingService)->getAgencyBalance();
+        dd($response);
+        $response = (new TBOFlightBookingService)->getAgencyBalance();
         dd($response);
     }
 }

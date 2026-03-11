@@ -11,11 +11,13 @@ class FlightDetails extends Component
      * Create a new component instance.
      */
     public $flightSegment;
+
     public $inboundFlightSegment;
-    public function __construct($flightSegment=null,$inboundFlightSegment=null)
+
+    public function __construct($flightSegment = null, $inboundFlightSegment = null)
     {
-        $this->flightSegment=$flightSegment;
-        $this->inboundFlightSegment=$inboundFlightSegment;
+        $this->flightSegment = $flightSegment;
+        $this->inboundFlightSegment = $inboundFlightSegment;
         //
     }
 
@@ -24,7 +26,6 @@ class FlightDetails extends Component
      *
      * @return \Illuminate\Contracts\View\View|Closure|string
      */
-
     public function render()
     {
         return view('components.flight-details');

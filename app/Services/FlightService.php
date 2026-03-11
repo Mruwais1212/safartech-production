@@ -30,7 +30,7 @@ class FlightService
             'user_id' => $this->userId,
             'user_password' => $this->userPassword,
             'access' => 'Test',
-            'ip_address' => $ip, //check not work because this ip
+            'ip_address' => $ip, // check not work because this ip
             'requiredCurrency' => 'USD',
             'journeyType' => 'Return',
             'OriginDestinationInfo' => [

@@ -46,7 +46,7 @@ class ReservationHotel extends Model
         'price_without_tax',
         'price_with_tax',
         'tax_amount',
-        'room_details'
+        'room_details',
     ];
 
     public function reservation()

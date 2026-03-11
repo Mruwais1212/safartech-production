@@ -9,13 +9,15 @@ use App\Models\ReservationHotel;
 use App\Models\ReservationPassenger;
 use App\Models\User;
 use App\Services\ReservationService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Route;
-use Mockery;
 use Tests\TestCase;
 
 class PatchSet4VerificationTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_state_changing_routes_are_post_only_for_target_endpoints(): void
     {
         $routes = collect(Route::getRoutes()->getRoutes());
@@ -41,6 +43,7 @@ class PatchSet4VerificationTest extends TestCase
                 $allMatches = $routes->filter(fn ($route) => str_contains($route->uri(), $target));
                 $methods = $allMatches->flatMap(fn ($route) => $route->methods())->unique()->values()->all();
                 $this->assertContains('POST', $methods);
+
                 continue;
             }
 
@@ -66,8 +69,19 @@ class PatchSet4VerificationTest extends TestCase
 
         ReservationHotel::create([
             'reservation_id' => $reservation->id,
-            'booking_code' => 'HCODE123',
+            'hotel_id' => 'HOTEL123',
+            'check_in' => '2026-04-01',
+            'check_out' => '2026-04-03',
+            'rooms' => 1,
+            'adults' => 1,
+            'children' => 0,
             'price' => 150,
+            'currency' => 'SAR',
+            'hotel_name' => 'Test Hotel',
+            'hotel_image' => 'img.jpg',
+            'hotel_address' => 'Riyadh',
+            'hotel_rate' => '4',
+            'booking_code' => 'HCODE123',
             'status' => 0,
         ]);
 
@@ -89,12 +103,12 @@ class PatchSet4VerificationTest extends TestCase
 
         Queue::fake();
 
-        $hotelService = Mockery::mock('overload:App\\Services\\TBOHotelBookingService');
+        $hotelService = $this->mock(\App\Services\TBOHotelBookingService::class);
         $hotelService->shouldReceive('bookingRoom')->once()->andReturn([
             'Status' => ['Code' => 200],
             'ConfirmationNumber' => 'CN-123',
         ]);
-        $hotelService->shouldReceive('bookingDetails')->once()->andReturn([
+        $hotelService->shouldReceive('bookingDetails')->andReturn([
             'Rooms' => [['IsRefundable' => true]],
             'Status' => ['Code' => 200],
         ]);
@@ -140,8 +154,19 @@ class PatchSet4VerificationTest extends TestCase
 
         ReservationHotel::create([
             'reservation_id' => $reservation->id,
-            'booking_code' => 'HCODE500',
+            'hotel_id' => 'HOTEL500',
+            'check_in' => '2026-04-01',
+            'check_out' => '2026-04-03',
+            'rooms' => 1,
+            'adults' => 1,
+            'children' => 0,
             'price' => 150,
+            'currency' => 'SAR',
+            'hotel_name' => 'Test Hotel',
+            'hotel_image' => 'img.jpg',
+            'hotel_address' => 'Riyadh',
+            'hotel_rate' => '4',
+            'booking_code' => 'HCODE500',
             'status' => 0,
         ]);
 
@@ -161,7 +186,7 @@ class PatchSet4VerificationTest extends TestCase
             'title' => 'Ms',
         ]);
 
-        $hotelService = Mockery::mock('overload:App\\Services\\TBOHotelBookingService');
+        $hotelService = $this->mock(\App\Services\TBOHotelBookingService::class);
         $hotelService->shouldReceive('bookingRoom')->once()->andThrow(new \RuntimeException('supplier timeout'));
 
         $result = ReservationService::completeBooking($reservation->id, 'test-corr-ex');

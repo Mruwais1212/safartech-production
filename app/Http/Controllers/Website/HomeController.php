@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Website;
 
+use App\Mail\BookingEmail;
 use App\Models\Destination;
 use App\Models\PageContent;
 use App\Models\Reservation;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use App\Mail\BookingEmail;
 use Illuminate\Support\Facades\Mail;
 
 class HomeController extends Controller implements HasMiddleware

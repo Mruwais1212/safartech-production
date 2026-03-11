@@ -2,17 +2,16 @@
 
 namespace App\Exports;
 
-use App\Models\Reservation;
+use App\Traits\PriceCalculationTrait;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use Illuminate\Support\Str;
-use App\Traits\PriceCalculationTrait;
 
 class ReservationsExport implements FromCollection, WithHeadings, WithStyles
 {
     protected $reservations;
+
     use PriceCalculationTrait;
 
     public function __construct($reservations)
@@ -28,8 +27,8 @@ class ReservationsExport implements FromCollection, WithHeadings, WithStyles
         foreach ($this->reservations as $reservation) {
             $isInternal = $reservation->reservation_type === 'inside';
             $tripType = $isInternal ? 'داخلي' : 'خارجي';
-            $phone = $reservation->user->phone_code . $reservation->user->phone ?? 'غير محدد';
-            $phone = is_numeric($phone) ? (string)$phone : $phone;
+            $phone = $reservation->user->phone_code.$reservation->user->phone ?? 'غير محدد';
+            $phone = is_numeric($phone) ? (string) $phone : $phone;
 
             $baseData = [
                 'payment_type' => $reservation->payment_type == 'mada' ? 'مدى' : 'فيزا',
@@ -52,8 +51,8 @@ class ReservationsExport implements FromCollection, WithHeadings, WithStyles
                     'to' => $reservation->to_city ?? 'غير محدد',
                     'trip_type' => $tripType,
                     'supplier_cost' => $hotel->price_without_tax,
-                    'tax1_rate' => (string)$hotel->first_tax_rate . '%',
-                    'tax1_amount' => (string)$hotel->first_tax_amount,
+                    'tax1_rate' => (string) $hotel->first_tax_rate.'%',
+                    'tax1_amount' => (string) $hotel->first_tax_amount,
                     'admin_fee_rate' => $hotel->administrative_tax_rate.'%',
                     'admin_fee' => $hotel->administrative_tax_amount,
                     'tax2_rate' => $hotel->second_tax_rate.'%',
@@ -75,8 +74,8 @@ class ReservationsExport implements FromCollection, WithHeadings, WithStyles
                         'to' => $flight->to_city ?? $reservation->to_city ?? 'غير محدد',
                         'trip_type' => $tripType,
                         'supplier_cost' => $flight->price_without_tax,
-                        'tax1_rate' => (string)$flight->first_tax_rate . '%',
-                        'tax1_amount' => (string)$flight->first_tax_amount,
+                        'tax1_rate' => (string) $flight->first_tax_rate.'%',
+                        'tax1_amount' => (string) $flight->first_tax_amount,
                         'admin_fee_rate' => $flight->administrative_tax_rate.'%',
                         'admin_fee' => $flight->administrative_tax_amount,
                         'tax2_rate' => $flight->second_tax_rate.'%',
@@ -143,7 +142,7 @@ class ReservationsExport implements FromCollection, WithHeadings, WithStyles
             ],
         ]);
 
-        $sheet->getStyle('A2:V' . ($this->collection()->count() + 1))->applyFromArray([
+        $sheet->getStyle('A2:V'.($this->collection()->count() + 1))->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,

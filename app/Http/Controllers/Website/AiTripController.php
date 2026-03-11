@@ -18,7 +18,7 @@ class AiTripController extends Controller
 
     public function index()
     {
-        $interests = TravelInterest::where('type','ai')->get();
+        $interests = TravelInterest::where('type', 'ai')->get();
         $countries = Country::all();
 
         if (session()->has('flight')) {
@@ -55,8 +55,9 @@ class AiTripController extends Controller
 
         $trip = Destination::find($request->trip_id);
 
-        return redirect('/choose/' . $trip->id);
+        return redirect('/choose/'.$trip->id);
     }
+
     public function searchPlansNew(Request $request)
     {
         $request->validate([
@@ -67,7 +68,6 @@ class AiTripController extends Controller
 
         $trip = Destination::find($request->trip_id);
 
-        return redirect('/choose/' . $trip->id);
+        return redirect('/choose/'.$trip->id);
     }
-
 }

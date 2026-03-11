@@ -15,7 +15,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        if (!User::where('email','superadmin@gmail.com')->orWhere('phone','0123456789')->count() > 0) {
+        if (! User::where('email', 'superadmin@gmail.com')->orWhere('phone', '0123456789')->count() > 0) {
             User::create([
                 'name' => 'SuperAdmin', 'phone' => '0123456789', 'email' => 'superadmin@gmail.com',
                 'password' => bcrypt('password'), 'user_type_id' => UserType::SUPER_ADMIN, 'group_privilege_id' => 1,
@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        if (!User::where('email','admin@gmail.com')->orWhere('phone','0123456788')->count() > 0) {
+        if (! User::where('email', 'admin@gmail.com')->orWhere('phone', '0123456788')->count() > 0) {
             User::create([
                 'name' => 'Admin', 'phone' => '0123456788', 'email' => 'admin@gmail.com',
                 'password' => bcrypt('password'), 'user_type_id' => UserType::ADMIN, 'group_privilege_id' => 2,

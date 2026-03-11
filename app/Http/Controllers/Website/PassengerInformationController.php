@@ -6,7 +6,6 @@ use App\Http\Requests\Website\PassengerInformationRequest;
 use App\Services\TBOFlightBookingService;
 use App\Support\LogRedactor;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 
 class PassengerInformationController extends Controller
@@ -33,10 +32,10 @@ class PassengerInformationController extends Controller
 
         // Save passengers to session
         session(['passengers' => $passengers]);
-        
+
         // Call SSR API to get available meal and baggage options
         $this->callSSR();
-        
+
         // Set success message for modal handling
         session()->flash('passenger_success', true);
 
@@ -45,28 +44,26 @@ class PassengerInformationController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Passengers saved successfully!',
-                'passengers_count' => count($passengers)
+                'passengers_count' => count($passengers),
             ]);
         }
 
         return redirect('/summary');
     }
 
-
-
-
     private function callSSR()
     {
         try {
-            $tboService = new TBOFlightBookingService();
-            
+            $tboService = new TBOFlightBookingService;
+
             // Get current flight session data
             $traceId = session('traceId');
             $outboundResultIndex = session('flight.flightResult');
             $inboundResultIndex = session('flight.inbound_flightResult');
-            
-            if (!$traceId) {
+
+            if (! $traceId) {
                 Log::warning('No traceId found in session for SSR API calls');
+
                 return;
             }
             Log::info('Starting SSR API calls', ['traceId' => $traceId, 'outboundResultIndex' => $outboundResultIndex, 'inboundResultIndex' => $inboundResultIndex]);
@@ -74,16 +71,16 @@ class PassengerInformationController extends Controller
             if ($outboundResultIndex) {
                 Log::info('Calling SSR API for outbound flight', [
                     'traceId' => $traceId,
-                    'resultIndex' => $outboundResultIndex
+                    'resultIndex' => $outboundResultIndex,
                 ]);
 
                 $ssrResponse = $tboService->ssr($traceId, $outboundResultIndex);
                 Log::info('SSR API response for outbound flight', LogRedactor::redact(['trace_id' => $traceId, 'response' => $ssrResponse]));
-                
+
                 // Parse the SSR response using the new method
-                //$parsedSSR = $tboService->parseSSRResponse($ssrResponse);
-                
-                if ($ssrResponse && $ssrResponse['Response']['ResponseStatus'] == 1 ) {
+                // $parsedSSR = $tboService->parseSSRResponse($ssrResponse);
+
+                if ($ssrResponse && $ssrResponse['Response']['ResponseStatus'] == 1) {
                     $flight = session('flight', []);
                     $flight['SSRDetails'] = $ssrResponse['Response'];
                     session(['flight' => $flight]);
@@ -105,20 +102,20 @@ class PassengerInformationController extends Controller
             if ($inboundResultIndex) {
                 Log::info('Calling SSR API for inbound flight', [
                     'traceId' => $traceId,
-                    'resultIndex' => $inboundResultIndex
+                    'resultIndex' => $inboundResultIndex,
                 ]);
 
                 $inboundSSRResponse = $tboService->ssr($traceId, $inboundResultIndex);
                 Log::info('SSR API response for inbound flight', LogRedactor::redact(['trace_id' => $traceId, 'response' => $inboundSSRResponse]));
-                
-                // Parse the SSR response using the new method
-                //$parsedInboundSSR = $tboService->parseSSRResponse($inboundSSRResponse);
 
-                if ($inboundSSRResponse && $inboundSSRResponse['Response']['ResponseStatus'] == 1 ) {
+                // Parse the SSR response using the new method
+                // $parsedInboundSSR = $tboService->parseSSRResponse($inboundSSRResponse);
+
+                if ($inboundSSRResponse && $inboundSSRResponse['Response']['ResponseStatus'] == 1) {
                     $flight = session('flight', []);
                     $flight['InboundSSRDetails'] = $inboundSSRResponse['Response'];
                     session(['flight' => $flight]);
-                    
+
                 } else {
                     Log::warning('Failed to parse inbound SSR response');
                     // Set empty SSR data as fallback
@@ -133,7 +130,7 @@ class PassengerInformationController extends Controller
                 'error' => $e->getMessage(),
                 'trace_id' => $traceId ?? null,
             ]);
-            
+
             // Set empty SSR data as fallback to prevent page crashes
             $flight = session('flight', []);
             $flight['SSRDetails'] = ['is_lcc' => false, 'MealDynamic' => [], 'Baggage' => [], 'Seats' => []];
@@ -148,17 +145,17 @@ class PassengerInformationController extends Controller
     public function getSSRData()
     {
         $flight = session('flight', []);
-        
+
         $ssrData = [
             'outbound_ssr' => $flight['SSRDetails'] ?? [],
-            'inbound_ssr' => $flight['InboundSSRDetails'] ?? []
+            'inbound_ssr' => $flight['InboundSSRDetails'] ?? [],
         ];
 
         // If this is an AJAX request, return JSON
         if (request()->ajax() || request()->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'data' => $ssrData
+                'data' => $ssrData,
             ]);
         }
 
@@ -173,15 +170,15 @@ class PassengerInformationController extends Controller
         try {
             $validated = $request->validate([
                 'passenger_index' => ['required', 'integer', 'min:0'],
-                'ssr_type'        => ['required', 'in:meal,baggage'],
-                'ssr_value'       => ['required', 'string', 'max:255'],
-                'ssr_price'       => ['nullable', 'numeric', 'min:0'],
+                'ssr_type' => ['required', 'in:meal,baggage'],
+                'ssr_value' => ['required', 'string', 'max:255'],
+                'ssr_price' => ['nullable', 'numeric', 'min:0'],
             ]);
 
             $passengerIndex = (int) $validated['passenger_index'];
-            $ssrType        = $validated['ssr_type'];
-            $ssrValue       = $validated['ssr_value'];
-            $ssrPrice       = (float) ($validated['ssr_price'] ?? 0);
+            $ssrType = $validated['ssr_type'];
+            $ssrValue = $validated['ssr_value'];
+            $ssrPrice = (float) ($validated['ssr_price'] ?? 0);
 
             // Get current passengers from session
             $passengers = session('passengers', []);
@@ -205,29 +202,29 @@ class PassengerInformationController extends Controller
             // Update session
             session(['passengers' => $passengers]);
 
-            Log::info("Updated passenger SSR data", [
+            Log::info('Updated passenger SSR data', [
                 'passenger_index' => $passengerIndex,
                 'ssr_type' => $ssrType,
                 'ssr_value' => $ssrValue,
                 'ssr_price' => $ssrPrice,
-                'updated_passenger' => $passengers[$passengerIndex] ?? null
+                'updated_passenger' => $passengers[$passengerIndex] ?? null,
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'SSR data updated successfully',
-                'passenger' => $passengers[$passengerIndex] ?? null
+                'passenger' => $passengers[$passengerIndex] ?? null,
             ]);
 
         } catch (\Exception $e) {
-            Log::error("Error updating passenger SSR data", [
+            Log::error('Error updating passenger SSR data', [
                 'error' => $e->getMessage(),
-                'request_data' => $request->all()
+                'request_data' => $request->all(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error updating SSR data: ' . $e->getMessage()
+                'message' => 'Error updating SSR data: '.$e->getMessage(),
             ], 500);
         }
     }

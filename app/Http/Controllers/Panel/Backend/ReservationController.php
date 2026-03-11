@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Panel\Backend;
 
+use App\Exports\ReservationsExport;
 use App\Http\Controllers\Panel\Controller;
 use App\Models\Reservation;
-use App\Exports\ReservationsExport;
 use App\Models\ReservationFlight;
 use App\Models\ReservationHotel;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +18,7 @@ class ReservationController extends Controller
         $reservations = Reservation::with('hotel', 'flight')
             ->filterDate()
             ->get();
+
         return view('admin.backend.reservation.index', compact('reservations'));
     }
 
@@ -31,6 +32,7 @@ class ReservationController extends Controller
         DB::table('flight_segment_destinations')->truncate();
         DB::table('flight_segment_origins')->truncate();
         DB::table('reservations')->truncate();
+
         return 'done';
     }
 
@@ -47,6 +49,7 @@ class ReservationController extends Controller
         if (request('export')) {
             return Excel::download(new ReservationsExport($reservations), 'reservations_report.xlsx');
         }
+
         return view('admin.backend.reservation.reports', compact('reservations', 'from', 'to'));
     }
 
@@ -76,6 +79,7 @@ class ReservationController extends Controller
                 ->whereHas('hotel')
                 ->get();
         }
+
         return view('admin.backend.reservation.index', compact('reservations'));
     }
 

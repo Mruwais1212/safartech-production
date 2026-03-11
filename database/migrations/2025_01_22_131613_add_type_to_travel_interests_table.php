@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('travel_interests', function (Blueprint $table) {
-            $table->enum('type',['ai' , 'dalelah'])->nullable()->default('ai');
+            $table->enum('type', ['ai', 'dalelah'])->nullable()->default('ai');
         });
     }
 
