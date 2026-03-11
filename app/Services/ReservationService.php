@@ -120,13 +120,46 @@ class ReservationService
 
 
 
-        $reservation = Reservation::updateOrCreate(
-            [
-                'user_id' => auth('web')->id(),
-                'payment_method' => 0,
-            ],
-            $reservationData
-        );
+        // Safe reservation creation — avoids overwriting a pending reservation that is
+        // already locked (payment in flight). If a non-locked draft exists for this user,
+        // delete it first, then create fresh. All in one transaction so child-deletes and
+        // parent-create are atomic.
+        $reservation = DB::transaction(function () use ($reservationData) {
+            $userId = auth('web')->id();
+
+            $existing = Reservation::where('user_id', $userId)
+                ->where('payment_method', 0)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing) {
+                // Do NOT replace if booking is actively processing — that reservation belongs
+                // to an in-flight payment and overwriting it would cause data loss.
+                $locked = $existing->booking_in_progress
+                    && $existing->booking_processing_started_at
+                    && $existing->booking_processing_started_at->gt(now()->subMinutes(15));
+
+                if ($locked) {
+                    // Create a separate new reservation rather than overwriting the locked one.
+                    return Reservation::create(
+                        array_merge($reservationData, ['user_id' => $userId])
+                    );
+                }
+
+                // Draft exists and is not locked — safe to replace it.
+                $existing->hotel()->delete();
+                $existing->flight()->delete();
+                $existing->passengers()->delete();
+                $existing->delete();
+            }
+
+            return Reservation::create(
+                array_merge($reservationData, ['user_id' => $userId])
+            );
+        });
+
+        // Belt-and-suspenders: if a stale draft slipped through (e.g. session timing),
+        // clean up any orphaned children now. The transaction above handles the typical case.
         $reservation->hotel()->delete();
         $reservation->flight()->delete();
         $reservation->passengers()->delete();

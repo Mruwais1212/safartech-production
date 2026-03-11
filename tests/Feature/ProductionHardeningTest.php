@@ -262,4 +262,83 @@ class ProductionHardeningTest extends TestCase
                 && str_contains($request->url(), '/v1/payments/pay_123/refund');
         });
     }
+
+    // -------------------------------------------------------------------------
+    // Issue: Client-trusted SSR pricing — price must come from session catalog
+    // -------------------------------------------------------------------------
+
+    public function test_ssr_price_lookup_returns_catalog_price_for_meal(): void
+    {
+        // Seed the session with TBO-returned SSR catalog data
+        session(['flight' => [
+            'SSRDetails' => [
+                'MealDynamic' => [
+                    [
+                        ['Code' => 'VGML', 'AirlineDescription' => 'Vegetarian', 'Price' => 75.0],
+                        ['Code' => 'HNML', 'AirlineDescription' => 'Hindu Meal',  'Price' => 85.0],
+                    ],
+                ],
+            ],
+        ]]);
+
+        $controller = app(\App\Http\Controllers\Website\PassengerInformationController::class);
+
+        // Use reflection to test the private method
+        $method = new \ReflectionMethod($controller, 'lookupSSRPrice');
+        $method->setAccessible(true);
+
+        $price = $method->invoke($controller, 'meal', 'VGML');
+        $this->assertSame(75.0, $price, 'Should return catalog price for VGML');
+
+        $unknownPrice = $method->invoke($controller, 'meal', 'XXXX');
+        $this->assertSame(0.0, $unknownPrice, 'Unknown code should return 0 not a client value');
+    }
+
+    public function test_ssr_price_lookup_returns_catalog_price_for_baggage(): void
+    {
+        session(['flight' => [
+            'SSRDetails' => [
+                'Baggage' => [
+                    [
+                        ['Code' => 'BG20', 'Description' => '20kg Baggage', 'Price' => 150.0],
+                    ],
+                ],
+            ],
+        ]]);
+
+        $controller = app(\App\Http\Controllers\Website\PassengerInformationController::class);
+
+        $method = new \ReflectionMethod($controller, 'lookupSSRPrice');
+        $method->setAccessible(true);
+
+        $price = $method->invoke($controller, 'baggage', 'BG20');
+        $this->assertSame(150.0, $price);
+    }
+
+    public function test_ssr_update_endpoint_ignores_client_price(): void
+    {
+        session(['passengers' => [['first_name' => 'Ahmed', 'last_name' => 'Ali', 'pax_type' => 1]]]);
+        session(['flight' => [
+            'SSRDetails' => [
+                'MealDynamic' => [
+                    [['Code' => 'VGML', 'Price' => 75.0]],
+                ],
+            ],
+        ]]);
+
+        // Client attempts to send ssr_price=9999 (price manipulation attempt)
+        $response = $this->postJson('/passenger-information/update-ssr', [
+            'passenger_index' => 0,
+            'ssr_type'        => 'meal',
+            'ssr_value'       => 'VGML',
+            'ssr_price'       => 9999,
+        ]);
+
+        $response->assertStatus(200);
+
+        // The stored price must be the catalog price (75), not the client-supplied 9999
+        $storedPassengers = session('passengers');
+        $this->assertSame(75.0, $storedPassengers[0]['meal_price'],
+            'meal_price must be catalog price (75), not client-supplied 9999');
+    }
 }

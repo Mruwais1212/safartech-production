@@ -174,7 +174,10 @@ class PassengerInformationController extends Controller
             $passengerIndex = $request->input('passenger_index');
             $ssrType = $request->input('ssr_type'); // 'meal' or 'baggage'
             $ssrValue = $request->input('ssr_value');
-            $ssrPrice = $request->input('ssr_price', 0);
+            // ssr_price is intentionally NOT accepted from the client.
+            // Price is looked up server-side from the session SSR catalog so the
+            // client cannot inject an arbitrary amount that would be charged to Moyasar.
+            $ssrPrice = $this->lookupSSRPrice($ssrType, $ssrValue);
 
             // Get current passengers from session
             $passengers = session('passengers', []);
@@ -223,5 +226,76 @@ class PassengerInformationController extends Controller
                 'message' => 'Error updating SSR data: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Look up an SSR price from the server-side session SSR catalog.
+     *
+     * The TBO API returns a catalog of available meals and baggage options with
+     * their prices in session('flight.SSRDetails') and session('flight.InboundSSRDetails').
+     * We match the selected code against that catalog instead of trusting the
+     * client-supplied price.
+     *
+     * Returns 0 if the code cannot be found in the catalog (selection will still
+     * be stored, but at zero cost — the booking team can reconcile manually).
+     */
+    private function lookupSSRPrice(string $ssrType, ?string $code): float
+    {
+        if (empty($code) || $code === 'none') {
+            return 0.0;
+        }
+
+        $flight = session('flight', []);
+        $ssrSources = [
+            $flight['SSRDetails'] ?? [],
+            $flight['InboundSSRDetails'] ?? [],
+        ];
+
+        foreach ($ssrSources as $ssrData) {
+            if (empty($ssrData)) {
+                continue;
+            }
+
+            if ($ssrType === 'meal') {
+                // MealDynamic: nested array [segmentIndex][mealIndex]
+                $mealData = $ssrData['MealDynamic'] ?? [];
+                foreach ($mealData as $segment) {
+                    if (! is_array($segment)) {
+                        continue;
+                    }
+                    foreach ($segment as $meal) {
+                        if (($meal['Code'] ?? null) === $code) {
+                            return (float) ($meal['Price'] ?? 0);
+                        }
+                    }
+                }
+                // Fallback: flat Meal array
+                foreach ($ssrData['Meal'] ?? [] as $meal) {
+                    if (($meal['Code'] ?? null) === $code) {
+                        return (float) ($meal['Price'] ?? 0);
+                    }
+                }
+            } elseif ($ssrType === 'baggage') {
+                // Baggage: nested [segmentIndex][baggageIndex]
+                $baggageData = $ssrData['Baggage'] ?? [];
+                foreach ($baggageData as $segment) {
+                    if (! is_array($segment)) {
+                        continue;
+                    }
+                    foreach ($segment as $baggage) {
+                        if (($baggage['Code'] ?? null) === $code) {
+                            return (float) ($baggage['Price'] ?? 0);
+                        }
+                    }
+                }
+            }
+        }
+
+        Log::warning('SSR price lookup failed — code not found in session catalog', [
+            'ssr_type' => $ssrType,
+            'ssr_code' => $code,
+        ]);
+
+        return 0.0;
     }
 }
